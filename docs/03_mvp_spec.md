@@ -6,23 +6,25 @@
 
 ## Category
 
-Reliability layer for engineering answers and agent-adjacent change analysis.
+Reliability layer for AI agents, with engineering change intelligence as the
+first benchmarked workflow.
 
 ## Target user
 
-Engineering teams using AI over internal code, docs, runbooks, PRs, and incident
-history.
+AI platform teams, developer tooling teams, and enterprise engineering orgs
+using AI over internal code, docs, runbooks, PRs, and incident history.
 
 ## User problem
 
 Most AI systems over internal corpora retrieve text but do not decide well when
 evidence is weak, stale, or structurally mismatched. They answer anyway instead
-of showing the user whether the request is well-supported.
+of showing whether the request is actually well-supported.
 
 ## Core promise
 
-Before an answer or recommendation is returned, Evidence Gate decides whether the
-request is structurally supported.
+Before an answer or recommendation is returned, Evidence Gate decides whether
+the request is structurally supported by evidence and precedent in the target
+corpus.
 
 ## Primary workflow
 
@@ -69,6 +71,19 @@ prior incidents are impacted?"
 - `abstain`: evidence is insufficient, so the system should refuse a confident answer
 - `escalate`: near matches exist, but a stronger review step is needed
 
+## Current alpha proof
+
+The repo includes a reproducible FastAPI retrieval-and-decision benchmark over
+50 admit/withhold cases. The checked-in report shows:
+
+- structural binary accuracy: 84.00%
+- baseline binary accuracy: 76.00%
+- structural false-admit rate: 0.00%
+- baseline false-admit rate: 48.00%
+
+That matters because the product wedge is not only answering more often. It is
+admitting only when evidence is structurally supported.
+
 ## MVP scope
 
 ### Implemented alpha scope
@@ -80,14 +95,17 @@ prior incidents are impacted?"
 - blast radius for code-oriented questions
 - audit logging for decisions
 - lifecycle and maintenance controls for persisted knowledge bases
+- reproducible benchmark harness and checked-in evaluation report
+- MCP server surface for IDE and agent workflows over `stdio` and `streamable-http`
 
 ### Explicitly deferred
 
-- action gating endpoints
-- MCP server surface
-- benchmark corpus and formal evaluation harness
-- packaging beyond local developer usage
-- production auth, multi-tenant controls, and deployment hardening
+- action gating endpoint: `POST /v1/decide/action`
+- Docker or similarly simple evaluator kit
+- CI packaging and required-check integrations
+- multi-tenant auth, production controls, and deployment hardening
+- external connectors such as Jira, PagerDuty, Slack, and Confluence
+- multi-corpus evaluation beyond the checked-in FastAPI slice
 
 ## Implemented endpoints
 
@@ -103,9 +121,21 @@ prior incidents are impacted?"
 - `POST /v1/decide/change-impact`
 - `GET /v1/decisions/{id}`
 
+## Implemented MCP surfaces
+
+- `evidence_gate_ingest_repository`
+- `evidence_gate_list_knowledge_bases`
+- `evidence_gate_get_knowledge_base_status`
+- `evidence_gate_decide_query`
+- `evidence_gate_decide_change_impact`
+- `evidence_gate_get_decision`
+- `evidence-gate://schemas/decision-record`
+- `evidence-gate://decisions/{decision_id}`
+- `evidence_gate_review_change`
+
 ## Next contract extension
 
-The next API addition after the benchmark and demo package should be:
+The next API addition after the evaluator kit should be:
 
 - `POST /v1/decide/action`
 
@@ -123,6 +153,7 @@ One real engineering repository plus:
 
 ## Success metrics
 
+- low false-admit rate on benchmarked change-intelligence cases
 - stronger citation quality than weak baseline retrieval
 - calibrated abstention instead of answer-forcing
 - faster engineering investigations on change-impact questions
@@ -133,4 +164,4 @@ One real engineering repository plus:
 - training a new model
 - leading with compression as the product narrative
 - broad chat UI before the workflow proves value
-- claiming production readiness before benchmarked proof exists
+- claiming production readiness before partner-ready packaging exists

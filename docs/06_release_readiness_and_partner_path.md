@@ -2,137 +2,135 @@
 
 ## Bottom line
 
-`Evidence Gate` is not yet ready to hand to an outside team as a polished
-self-serve product.
+`Evidence Gate` is ready today as a benchmarked technical preview for a serious
+design partner or technical reviewer.
 
-It is ready to send as a technical preview to a serious prospect who is willing
-to review code, run a guided setup, and evaluate the workflow on a real corpus.
+It is not yet ready as a polished self-serve product or production deployment.
+The missing step is no longer basic proof of concept. The missing step is
+packaging and workflow placement.
 
-The missing step between "interesting alpha" and "worth piloting" is proof.
+## What evidence exists today
+
+The repo already includes one public proof surface:
+
+- a reproducible FastAPI retrieval-and-decision benchmark over 50 cases
+- 84.00% structural binary accuracy versus 76.00% for the baseline
+- 0.00% structural false-admit rate versus 48.00% for the baseline
+
+That is meaningful because the product promise is not "retrieve something." It
+is "do not admit when the evidence is weak."
 
 ## What an external reviewer can do today
 
 With the current repo, a reviewer can:
 
 1. boot the API locally
-2. ingest a repository into a knowledge base
-3. run change-impact and engineering evidence queries
-4. inspect citations, twins, blast radius, and decision outputs
-5. inspect the test suite and maintenance controls
+2. boot the MCP server locally over `stdio` or `streamable-http`
+3. ingest a repository into a knowledge base
+4. run change-impact and engineering evidence queries
+5. inspect citations, twins, blast radius, and decision outputs
+6. inspect the test suite and maintenance controls
+7. inspect the checked-in benchmark report and rerun it
 
-That is enough for technical diligence.
+That is enough for technical diligence and a guided design-partner evaluation.
 
-## Why this is not yet a strong external package
+## Why this is still not a strong self-serve package
 
 The key missing pieces are:
 
-### 1. No benchmarked proof
-
-There is no evaluation report yet showing that the system beats a simple
-baseline on citation quality, abstention quality, or change-impact usefulness.
-
-### 2. No polished demo corpus
-
-The repo does not yet ship with a canonical demo target or a repeatable example
-project that makes first-run experience predictable.
-
-### 3. No simple packaging path
+### 1. No evaluator kit yet
 
 The service runs locally, but there is not yet a one-command Docker or similar
 setup for an outside evaluator.
 
-### 4. No MCP delivery yet
+### 2. No polished MCP packaging yet
 
-The current API is useful, but many prospective users will want to try it from
-an agent or coding-assistant workflow directly.
+The server now exposes a first-cut MCP surface, but it still needs more
+copy-paste setup examples, broader client validation, and a simpler evaluator
+package for outside teams.
 
-### 5. No evaluation narrative
+### 3. No action-gating path yet
 
-A prospect needs not only code, but also an answer to:
+The service can decide on change-impact queries, but it does not yet expose the
+next contract extension for gating actions or pull requests directly.
 
-"Why should I believe this helps more than ordinary repo search or weak RAG?"
+### 4. No partner adaptation guide
 
-## What would make this genuinely worthwhile to send
+A prospect still needs clearer instructions for adapting the workflow to their
+own private repository, docs, runbooks, and precedent history.
+
+### 5. No broader enterprise connectors yet
+
+The current system is repository-local. The long-term institutional-memory
+story needs connectors for Jira, PagerDuty or Slack, and Confluence.
+
+## What would make this genuinely worthwhile to send broadly
 
 The minimum credible partner-review package should include:
 
 1. a clean GitHub repo
 2. a concise README
 3. a one-command local startup path
-4. one demo corpus or reproducible demo setup
+4. one reproducible demo corpus or setup guide
 5. sample requests with expected outputs
-6. a short benchmark or evaluation summary
+6. a short benchmark summary
 7. a clear list of known limitations
+8. documented MCP setup for at least one agent workflow
 
 ## Suggested path from here
 
-### Step 1: lock the repo surface
+### Step 1: package the benchmarked alpha
 
 Deliverable:
-clean technical-preview repo
+technical-preview evaluator kit
 
 Tasks:
 
-- keep generated artifacts out of source control
-- keep README and core docs current
+- add Docker or equivalent local packaging
+- keep README and benchmark summary tight
+- add a short demo script
 - add CI for tests
-- add Docker or equivalent local run path
 
-### Step 2: create the demo package
+### Step 2: place it in the agent workflow
 
 Deliverable:
-repeatable demo on one real engineering corpus
+MCP-backed design-partner preview
 
 Tasks:
 
-- choose one target repository
-- collect docs, PR notes, and incident material
-- add a script or instructions for ingest
-- add 5 to 10 canonical demo prompts
-- capture example outputs
+- add example agent configuration
+- keep the API and MCP contract aligned
+- document a private-repo evaluation flow
+- validate the setup against a few target clients such as Cursor and Cline
 
-### Step 3: prove comparative value
+### Step 3: gate actions in delivery
 
 Deliverable:
-short evaluation report
+CI action-gating preview
 
 Tasks:
 
-- create 25 to 50 benchmark questions
-- label expected citations and acceptable abstentions
-- compare against a simple baseline
-- summarize wins, losses, and failure modes
+- add `POST /v1/decide/action`
+- add GitHub or GitLab check integration
+- define escalation rules using blast radius plus missing evidence
+- emit auditable machine-readable outputs
 
-### Step 4: make it partner-usable
+### Step 4: expand to enterprise memory
 
 Deliverable:
-partner technical preview kit
+multi-source reliability layer
 
 Tasks:
 
-- add MCP support
-- add a maintenance history surface to the audit log
-- add deployment notes
-- add a short "how to adapt this to your repo" guide
-
-### Step 5: define pilot success
-
-Deliverable:
-design-partner pilot plan
-
-Tasks:
-
-- define the target workflow
-- define how usefulness will be measured
-- define what counts as a good abstention
-- define what evidence a partner must provide
+- add Jira, incident, and architecture-doc connectors
+- link code changes to operational history
+- re-benchmark on multi-source corpora
 
 ## Recommended near-term milestone
 
 The next milestone worth optimizing for is:
 
-`A benchmarked technical preview on one real repository with a demo script and a short evaluation summary.`
+`A benchmarked evaluator kit with Docker, a demo walkthrough, and MCP delivery on one real repository.`
 
-Once that exists, the repo is no longer only interesting to read. It becomes
-something a prospective partner can actually review, try, and build from in a
-tangible way.
+Once that exists, the repo becomes easy to try in the exact environment where
+the product claim matters: before an AI agent answers or acts.

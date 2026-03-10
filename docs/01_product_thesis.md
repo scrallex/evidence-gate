@@ -2,9 +2,10 @@
 
 ## Short version
 
-The strongest SEP commercialization path is a verified admission layer for AI systems.
+The strongest commercialization path here is a verified admission layer for AI
+systems.
 
-The recurring invention across the earlier SEP research threads is not a new
+The recurring invention across the earlier research threads is not a new
 model and not compression as the primary story. It is a structural reliability
 layer that decides whether a model or agent is supported enough to answer or
 act.

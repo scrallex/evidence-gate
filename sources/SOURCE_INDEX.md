@@ -8,7 +8,7 @@ The public claim for this repo is:
 
 This repo now stands on its own through its implementation, API surface,
 benchmark proof, and partner-facing docs. It does not need to broadcast the
-exploratory trading or Quantum Field Harmonics material that preceded it.
+exploratory research material that preceded it.
 
 ## Public Source Policy
 
@@ -21,7 +21,7 @@ Keep only source material that directly supports review or use of this product:
 ## Archive Policy
 
 The public repo intentionally does not ship the exploratory whitepapers, raw
-PDFs, extracted text files, trading notes, or QFH research archive.
+PDFs, extracted text files, or legacy research archive.
 
 If that historical material needs to be retained for provenance, keep it in a
 private archive or separate private storage rather than on the public GitHub

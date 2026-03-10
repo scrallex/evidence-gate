@@ -2,17 +2,18 @@
 
 ## Executive Read
 
-This repository is now a real alpha implementation surface for `Evidence Gate`,
-not only a planning workspace. That is the good news.
+This repository is a real alpha implementation surface for `Evidence Gate`, not
+only a planning workspace. It also now has one concrete public proof surface:
+the checked-in FastAPI benchmark.
 
-The main repo-quality issue before promotion was not lack of code. It was lack of
-discipline around presentation:
+The main repo-quality issue before promotion was not lack of code. It was lack
+of discipline around presentation:
 
 - generated runtime outputs were mixed into the repo surface
 - the README still read like a planning folder
-- key docs still described a pre-build state that is no longer true
+- key docs still described a pre-build or pre-benchmark state
 
-Those issues make the project look less mature than it actually is.
+Those issues made the project look less mature than it actually was.
 
 ## Current repo reality
 
@@ -25,6 +26,7 @@ Those issues make the project look less mature than it actually is.
 - audit logging for decisions
 - knowledge-base lifecycle and maintenance endpoints
 - regression tests
+- a reproducible FastAPI benchmark and checked-in report
 
 ### What the alpha already demonstrates
 
@@ -39,6 +41,18 @@ For a target repository, the service can:
 
 That is a meaningful technical preview, not only an idea.
 
+### What the benchmark already demonstrates
+
+On the checked-in 50-case FastAPI slice:
+
+- structural binary accuracy is 84.00%
+- baseline binary accuracy is 76.00%
+- structural false-admit rate is 0.00%
+- baseline false-admit rate is 48.00%
+
+That does not prove universal superiority. It does prove the product wedge:
+Evidence Gate is materially safer when evidence is weak.
+
 ## Repo-quality audit
 
 ### What needed correction
@@ -49,7 +63,7 @@ That is a meaningful technical preview, not only an idea.
 3. Python bytecode and test caches should not be tracked.
 4. Exploratory research archives should not be shipped in the public repo.
 5. The GitHub landing page should lead with the current alpha and its limits.
-6. Planning docs should not contradict the implemented service.
+6. Planning docs should not contradict the implemented service or checked-in benchmark.
 
 ### What a professional presentation requires
 
@@ -68,14 +82,14 @@ The right public claim for this repo is:
 The first workflow used to demonstrate that claim is engineering change
 intelligence.
 
-That is strong enough to be credible and restrained enough to be honest.
+That is strong enough to be differentiated and restrained enough to be honest.
 
 The repo should not yet claim:
 
 - production readiness
-- benchmarked superiority across corpora
-- a finished MCP product
-- a polished self-serve experience
+- benchmarked superiority across many corpora
+- mature MCP ecosystem coverage
+- a polished self-serve evaluator experience
 
 ## What is worth showing today
 
@@ -83,9 +97,11 @@ A prospective reviewer can already inspect and run:
 
 - the decision contract
 - the API surface
+- the MCP surface for local agent and IDE use
 - structural retrieval and verification behavior
 - knowledge-base persistence and maintenance flows
 - test coverage proving the current slice works
+- the FastAPI benchmark report showing low false-admit behavior
 
 That is enough for:
 
@@ -97,68 +113,79 @@ It is not yet enough for:
 
 - broad public launch
 - paid pilot without guided setup
-- independent proof of ROI
+- independent proof of ROI across customer corpora
 
-The repo should not ship archived QFH or trading papers in the public tree at
-all. If historical provenance needs to be retained, keep it in a private
-archive so the GitHub surface stays implementation-first.
+The repo should not ship archived exploratory papers or internal whitepapers in
+the public tree at all. If historical provenance needs to be retained, keep it
+in a private archive so the GitHub surface stays implementation-first.
 
 ## Delivery gameplan from this point
 
-### Track 1: repo and packaging hygiene
+### Track 1: evaluator kit and packaging
 
 Goal:
-make the repo easy to review and run.
+make the benchmarked alpha easy for an outside engineer to run.
 
 Tasks:
 
 1. Keep runtime outputs out of source control.
-2. Keep the README concise and current.
-3. Maintain a clean quickstart and sample requests.
-4. Add CI and basic linting.
-5. Add a one-command local run path such as Docker.
+2. Keep the README and core docs current.
+3. Add CI for tests.
+4. Add Docker or an equivalent one-command local run path.
+5. Add a short demo script or copy-paste walkthrough.
 
-### Track 2: proof of value
+### Track 2: workflow placement
 
 Goal:
-show that the system is useful on a real engineering corpus.
+put Evidence Gate into the path where agents and engineers already work.
 
 Tasks:
 
-1. Select one real target repository.
-2. Assemble supporting docs, PR notes, and incident material.
-3. Create a benchmark set with labeled expectations.
-4. Compare against a simple baseline.
-5. Publish a short results summary.
+1. Harden MCP delivery for coding agents and IDEs.
+2. Reuse the existing decision contract rather than creating a parallel interface.
+3. Add a sample auth or session change-impact walkthrough.
+4. Document how a partner points the system at a private repo.
+5. Capture known limitations clearly so setup expectations stay honest.
 
-### Track 3: partner review package
+### Track 3: action gating
 
 Goal:
-make the system tangible for an external technical reviewer.
+turn the service from advisory intelligence into a delivery-path guardrail.
 
 Tasks:
 
-1. Prepare a short walkthrough:
-   - ingest
-   - query
-   - change-impact request
-   - interpretation of `admit | abstain | escalate`
-2. Add a demo script or copy-paste curl flow.
-3. Summarize known limitations clearly.
-4. Include one evaluation or benchmark summary.
-5. Add MCP delivery once the API demo is benchmarked.
+1. Add `POST /v1/decide/action`.
+2. Add GitHub and GitLab required-check integration.
+3. Fail or escalate when blast radius is high and evidence coverage is weak.
+4. Emit citations and missing-evidence reasons in PR feedback.
+5. Extend the audit log for repeated gating runs.
+
+### Track 4: broader enterprise memory
+
+Goal:
+connect code-change decisions to the surrounding institutional record.
+
+Tasks:
+
+1. Add Jira, PagerDuty or Slack, and Confluence connectors.
+2. Link AST-derived blast radius to external incident history.
+3. Re-rank twins across code, docs, tickets, and postmortems.
+4. Re-benchmark on partner-shaped corpora once connectors exist.
 
 ## Practical conclusion
 
-This repo is past the "idea only" stage.
+This repo is past the "idea only" stage and past the "unproven alpha" stage on
+one public corpus.
 
 The next threshold is not more internal architecture work for its own sake. The
-next threshold is external proof:
+next threshold is packaging and workflow placement:
 
 - clean repo
-- repeatable demo
-- benchmark evidence
+- repeatable evaluator kit
+- MCP integration
+- CI gating path
 - partner-review package
 
 Once those exist, the project is credible to send to a prospective design
-partner in a way that lets them evaluate real value rather than only the thesis.
+partner in a way that lets them evaluate practical value rather than only the
+thesis.

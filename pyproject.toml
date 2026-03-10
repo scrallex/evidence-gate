@@ -10,9 +10,13 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.115,<1.0",
+  "mcp>=1.26,<2",
   "pydantic>=2.8,<3.0",
   "uvicorn>=0.30,<1.0",
 ]
+
+[project.scripts]
+evidence-gate-mcp = "evidence_gate.mcp.server:main"
 
 [project.optional-dependencies]
 dev = [
@@ -28,4 +32,3 @@ where = ["app"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-

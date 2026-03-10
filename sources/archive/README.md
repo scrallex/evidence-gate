@@ -2,8 +2,8 @@
 
 The legacy research archive is intentionally not included in this public repo.
 
-If prior whitepapers, extracted text, trading notes, or QFH material need to be
-retained for provenance, keep them in private storage.
+If prior whitepapers, extracted text, or other exploratory research material
+need to be retained for provenance, keep them in private storage.
 
 The public GitHub surface should stay focused on:
 
