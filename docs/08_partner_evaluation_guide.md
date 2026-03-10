@@ -130,16 +130,39 @@ Minimal usage example:
 ```yaml
 jobs:
   evidence-gate:
+    permissions:
+      contents: read
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - id: diff
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          echo 'paths=["src/session.py","src/auth.py"]' >> "$GITHUB_OUTPUT"
-      - uses: ./ 
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+
+          output = subprocess.check_output(
+              ["git", "diff", "--name-only", f"{os.environ['BASE_SHA']}..{os.environ['HEAD_SHA']}"],
+              text=True,
+          )
+          paths = [line.strip() for line in output.splitlines() if line.strip()]
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"paths={json.dumps(paths)}\n")
+          PY
+      - id: evidence_gate
+        uses: scrallex/evidence-gate@evidence-gate
         with:
           action_summary: "Review the auth/session PR before merge"
           changed_paths: ${{ steps.diff.outputs.paths }}
+          fail_on_block: "false"
 ```
 
 The action exposes:
@@ -149,6 +172,9 @@ The action exposes:
 - `decision_id`
 - `response_path`
 - `comment_path`
+
+In this repository, the same pattern is already wired in
+[evidence-gate-guardrail.yml](/sep/evidence-gate/.github/workflows/evidence-gate-guardrail.yml).
 
 ## 7. What a partner should provide for a useful evaluation
 
