@@ -36,23 +36,23 @@ a SWE-bench replay with a healing retry loop, and a cross-language multi-corpus 
 ## 4. Multi-Corpus Generalization Pilot
 
 - Cases: 12 across 3 repositories
-- Gold-path allow rate: 25.00%
+- Gold-path allow rate: 75.00%
 - Decoy-path false-allow rate: 0.00%
 - Source-hit rate: 33.33%
 - Test-hit rate: 66.67%
 
 Per-repository detail:
+- facebook/react: commit 014138df8786, language=javascript, gold allow=100.00%, decoy false-allow=0.00%, source hit=25.00%, test hit=25.00%
 - redis/redis: commit 753c9f616f71, language=c, gold allow=75.00%, decoy false-allow=0.00%, source hit=25.00%, test hit=100.00%
-- facebook/react: commit 014138df8786, language=javascript, gold allow=0.00%, decoy false-allow=0.00%, source hit=25.00%, test hit=25.00%
-- vitejs/vite: commit b9187e04e816, language=typescript, gold allow=0.00%, decoy false-allow=0.00%, source hit=50.00%, test hit=75.00%
+- vitejs/vite: commit b9187e04e816, language=typescript, gold allow=50.00%, decoy false-allow=0.00%, source hit=50.00%, test hit=75.00%
 
 ## Findings
 
 - Evidence Gate retains a much lower false-admit profile than a lexical baseline on deliberately poisoned corpora.
 - External incident evidence can now block a change that a repo-only review would otherwise allow.
-- On the SWE-bench replay, changed-path alignment blocked every wrong-file decoy that the lexical baseline would have allowed.
-- The healing loop converts missing-evidence strings into a second attempt instead of treating `escalate` as a terminal failure.
-- The cross-language pilot shows whether the same gate behavior survives beyond Python-centric corpora.
+- On the SWE-bench replay, changed-path alignment blocked every wrong-file decoy while the healing loop raised gold-path allow from 25.00% to 75.00%.
+- The healing loop turns `missing_evidence` into a compiler-like retry instruction instead of treating `escalate` as a terminal failure.
+- After the JS or TS test-classification and workspace-alias fixes, the cross-language pilot reached 75.00% gold-path allow with 0.00% false-allow.
 
 ## Limitations
 
@@ -60,4 +60,5 @@ Per-repository detail:
 - The checked-in SWE-bench pilot uses a 4-repo slice by default so the run completes in a reasonable time; scale it out with the script flags when you want a longer sweep.
 - The mixed-source benchmark is synthetic but exercises the live Jira, PagerDuty, Slack, and Confluence ingestors.
 - The multi-corpus pilot is still a curated slice; scale it out to more repositories and cases if you need a broader confidence interval.
-- Evidence Gate remains strongest on Python repositories; JavaScript, TypeScript, and C rely on lighter import parsing today.
+- The cross-language source-hit rate is still only 33.33%, so JS or TS workspace-to-source linking remains partial.
+- Evidence Gate remains strongest on Python repositories; JavaScript, TypeScript, and C still rely on lighter import parsing today.

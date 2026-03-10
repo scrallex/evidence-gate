@@ -1240,9 +1240,16 @@ def _render_value_proof_report(payload: dict[str, Any]) -> str:
         "",
         "- Evidence Gate retains a much lower false-admit profile than a lexical baseline on deliberately poisoned corpora.",
         "- External incident evidence can now block a change that a repo-only review would otherwise allow.",
-        "- On the SWE-bench replay, changed-path alignment blocked every wrong-file decoy that the lexical baseline would have allowed.",
-        "- The healing loop converts missing-evidence strings into a second attempt instead of treating `escalate` as a terminal failure.",
-        "- The cross-language pilot shows whether the same gate behavior survives beyond Python-centric corpora.",
+        (
+            "- On the SWE-bench replay, changed-path alignment blocked every wrong-file decoy "
+            f"while the healing loop raised gold-path allow from {swebench['initial_gold_allow_rate']:.2%} "
+            f"to {swebench['healed_gold_allow_rate']:.2%}."
+        ),
+        "- The healing loop turns `missing_evidence` into a compiler-like retry instruction instead of treating `escalate` as a terminal failure.",
+        (
+            "- After the JS or TS test-classification and workspace-alias fixes, the cross-language pilot "
+            f"reached {generalization['gold_allow_rate']:.2%} gold-path allow with {generalization['decoy_false_allow_rate']:.2%} false-allow."
+        ),
         "",
         "## Limitations",
         "",
@@ -1250,7 +1257,11 @@ def _render_value_proof_report(payload: dict[str, Any]) -> str:
         "- The checked-in SWE-bench pilot uses a 4-repo slice by default so the run completes in a reasonable time; scale it out with the script flags when you want a longer sweep.",
         "- The mixed-source benchmark is synthetic but exercises the live Jira, PagerDuty, Slack, and Confluence ingestors.",
         "- The multi-corpus pilot is still a curated slice; scale it out to more repositories and cases if you need a broader confidence interval.",
-        "- Evidence Gate remains strongest on Python repositories; JavaScript, TypeScript, and C rely on lighter import parsing today.",
+        (
+            "- The cross-language source-hit rate is still only "
+            f"{generalization['source_hit_rate']:.2%}, so JS or TS workspace-to-source linking remains partial."
+        ),
+        "- Evidence Gate remains strongest on Python repositories; JavaScript, TypeScript, and C still rely on lighter import parsing today.",
         "",
     ]
     return "\n".join(lines)

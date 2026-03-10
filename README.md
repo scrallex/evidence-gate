@@ -3,7 +3,8 @@
 `Evidence Gate: The Reliability Layer for AI Agents.`
 
 It decides whether an AI system has enough structural evidence and precedent to
-answer or act.
+answer or act, and when it blocks an agent it returns the missing evidence
+needed for the next repair attempt.
 
 This repo is the alpha implementation of that reliability layer. Its first
 benchmarked workflow is engineering change intelligence: ingest a target
@@ -19,13 +20,16 @@ proceeds.
 - answers change-impact and engineering evidence queries
 - returns cited evidence spans, prior PR or incident twins, blast radius, and an
   `admit | abstain | escalate` decision
+- turns blocked action decisions into repair hints through `missing_evidence`
+  so agents can retry with the required tests or file changes
 - writes decision audit records and manages knowledge-base lifecycle and retention
 - exposes the same decision contract through an MCP server and a composite
   GitHub Action for agent, IDE, and CI workflows
 
 ## Why It Matters
 
-The product wedge is not "repo chat." It is safer admission behavior.
+The product wedge is not "repo chat." It is safer admission behavior plus a
+compiler-like healing loop for agents.
 
 In the checked-in 50-case FastAPI benchmark, `Evidence Gate structural` reaches
 84.00% binary accuracy with a 0.00% false-admit rate. The baseline reaches
@@ -206,13 +210,14 @@ The broader proof suite now adds four more signals:
 - poisoned corpus: 12.50% structural false-admit versus 87.50% for the lexical baseline
 - mixed-source incident blocking: 80.00% incremental block rate when external incident evidence is available
 - SWE-bench replay with healing loop: 25.00% initial gold-path allow, 75.00% healed gold-path allow, and 0.00% wrong-file false-allow
-- multi-corpus generalization pilot: 12 curated cases across Redis, React, and Vite with 0.00% wrong-file false-allow but only 25.00% gold-path allow
+- multi-corpus generalization pilot: 12 curated cases across Redis, React, and Vite with 75.00% gold-path allow and 0.00% wrong-file false-allow
 
 The current evidence therefore supports a strong false-admit and safety claim,
-plus an initial autonomous-uplift claim when the agent consumes `missing_evidence`
-and retries. It does not yet support a broad claim of cross-language autonomous
-throughput because React and Vite still under-retrieve test evidence in the
-current pilot.
+an initial autonomous-uplift claim when the agent consumes `missing_evidence`
+and retries, and a cross-language design-partner story across Python, C,
+JavaScript, and TypeScript. It still does not support a universal throughput
+claim because the current pilot retains a low source-hit rate and Vite only
+reaches 50.00% gold-path allow.
 
 ## Roadmap
 

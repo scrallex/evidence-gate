@@ -49,3 +49,8 @@ The extended proof suite adds:
 - a mixed-source incident benchmark to test external operational blocking
 - a `SWE-bench_Lite` replay with a healing retry loop that feeds `missing_evidence` back into the next attempt
 - a curated multi-corpus pilot across Redis, React, and Vite to test wrong-file rejection outside Python-heavy repos
+
+Current checked-in headline:
+
+- `SWE-bench_Lite` replay: 75.00% healed gold-path allow with 0.00% wrong-file false-allow
+- multi-corpus pilot: 75.00% gold-path allow with 0.00% wrong-file false-allow

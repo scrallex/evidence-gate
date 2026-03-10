@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -38,8 +39,10 @@ class ASTDependencyAnalyzer:
         self.repo_root = Path(repo_root)
         self.dependencies: dict[str, DependencyInfo] = {}
         self.module_to_file: dict[str, str] = {}
+        self.workspace_roots: dict[str, str] = {}
 
     def build_dependency_graph(self) -> None:
+        self.workspace_roots = self._discover_workspace_roots()
         source_files = [
             path
             for path in self.repo_root.rglob("*")
@@ -188,5 +191,94 @@ class ASTDependencyAnalyzer:
         for module_name, module_file in self.module_to_file.items():
             if module_name == normalized or module_name.startswith(normalized + ".") or module_name.endswith("." + normalized):
                 return module_file
+        workspace_match = self._resolve_workspace_import(imported_module)
+        if workspace_match is not None:
+            return workspace_match
         return None
 
+    def _discover_workspace_roots(self) -> dict[str, str]:
+        workspace_roots: dict[str, str] = {}
+        for package_json in self.repo_root.rglob("package.json"):
+            if any(part in SKIP_DIRS for part in package_json.parts):
+                continue
+            rel_dir = package_json.parent.relative_to(self.repo_root).as_posix()
+            for alias in self._workspace_aliases_for_package_json(package_json, rel_dir):
+                workspace_roots.setdefault(alias, rel_dir)
+        return workspace_roots
+
+    def _workspace_aliases_for_package_json(self, package_json: Path, rel_dir: str) -> set[str]:
+        aliases: set[str] = set()
+        try:
+            payload = json.loads(package_json.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            payload = {}
+        package_name = payload.get("name")
+        if isinstance(package_name, str) and package_name.strip():
+            aliases.add(package_name.strip())
+            if package_name.startswith("@") and "/" in package_name:
+                aliases.add(package_name.split("/", maxsplit=1)[1])
+        parts = Path(rel_dir).parts
+        if len(parts) >= 2 and parts[0] in {"packages", "apps", "libs", "playground"}:
+            aliases.add(parts[1])
+        return aliases
+
+    def _resolve_workspace_import(self, imported_module: str) -> str | None:
+        package_name, remainder = self._split_workspace_import(imported_module)
+        if not package_name:
+            return None
+        workspace_root = self.workspace_roots.get(package_name)
+        if workspace_root is None and package_name.startswith("@") and "/" in package_name:
+            workspace_root = self.workspace_roots.get(package_name.split("/", maxsplit=1)[1])
+        if workspace_root is None:
+            return None
+
+        if remainder:
+            normalized_remainder = remainder.replace("./", "").replace("/", ".")
+            candidates = [
+                module_file
+                for module_name, module_file in self.module_to_file.items()
+                if module_file.startswith(f"{workspace_root}/")
+                and (
+                    module_name.endswith("." + normalized_remainder)
+                    or module_name.endswith(normalized_remainder)
+                    or Path(module_file).stem == Path(remainder).stem
+                )
+            ]
+            if candidates:
+                return min(candidates, key=lambda path: (path.count("/"), len(path)))
+        return self._preferred_workspace_entry(workspace_root)
+
+    def _split_workspace_import(self, imported_module: str) -> tuple[str, str]:
+        if not imported_module or imported_module.startswith("."):
+            return "", ""
+        if imported_module.startswith("@"):
+            parts = imported_module.split("/")
+            if len(parts) < 2:
+                return imported_module, ""
+            return "/".join(parts[:2]), "/".join(parts[2:])
+        package_name, _, remainder = imported_module.partition("/")
+        return package_name, remainder
+
+    def _preferred_workspace_entry(self, workspace_root: str) -> str | None:
+        preferred_suffixes = (
+            "/src/index.ts",
+            "/src/index.tsx",
+            "/src/index.js",
+            "/src/index.jsx",
+            "/index.ts",
+            "/index.tsx",
+            "/index.js",
+            "/index.jsx",
+        )
+        for suffix in preferred_suffixes:
+            candidate = f"{workspace_root}{suffix}"
+            if candidate in self.dependencies:
+                return candidate
+        candidates = [
+            path
+            for path in self.dependencies
+            if path.startswith(f"{workspace_root}/")
+        ]
+        if not candidates:
+            return None
+        return min(candidates, key=lambda path: ("/src/" not in path, path.count("/"), len(path)))

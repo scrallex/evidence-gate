@@ -77,7 +77,7 @@ repos?
 Current result:
 
 - 12 curated cases across Redis, React, and Vite
-- gold-path allow rate: 25.00%
+- gold-path allow rate: 75.00%
 - decoy-path false-allow rate: 0.00%
 - source-hit rate: 33.33%
 - test-hit rate: 66.67%
@@ -85,17 +85,19 @@ Current result:
 Repository detail:
 
 - `redis/redis` at `753c9f616f71`: 75.00% gold allow, 0.00% decoy false-allow
-- `facebook/react` at `014138df8786`: 0.00% gold allow, 0.00% decoy false-allow
-- `vitejs/vite` at `b9187e04e816`: 0.00% gold allow, 0.00% decoy false-allow
+- `facebook/react` at `014138df8786`: 100.00% gold allow, 0.00% decoy false-allow
+- `vitejs/vite` at `b9187e04e816`: 50.00% gold allow, 0.00% decoy false-allow
 
 Interpretation:
-this is proof of cross-language kill-switch behavior, not yet proof of
-cross-language autonomous throughput. The decoy false-allow rate stayed at
-0.00%, which is good. The low gold-path allow and source-hit rates on React and
-Vite show a real retrieval gap: the current structural heuristics still miss
-too much test evidence in large JavaScript and TypeScript repos. Redis also
-needed one fairness fix in this pass, adding `.tcl` test files to the ingestible
-text extensions so its unit and integration tests are visible to the gate.
+this is now proof of a cross-language baseline, not just a kill switch. After
+fixing JS or TS test classification and adding a fuzzier workspace import
+resolver, the pilot moved from 25.00% to 75.00% gold allow while keeping
+0.00% false-allow. That is strong enough to support a design-partner pitch
+across Python, C, JavaScript, and TypeScript. It is still not proof of full
+universality: the source-hit rate remains low, and Vite still admits only half
+of the curated gold paths. Redis also needed one fairness fix in this pass,
+adding `.tcl` test files to the ingestible text extensions so its unit and
+integration tests are visible to the gate.
 
 ## Honest conclusion
 
@@ -107,6 +109,8 @@ What is now proven:
   would wave through.
 - Evidence Gate can improve a SWE-bench-style replay when an agent retries with
   the gate's `missing_evidence` guidance.
+- Evidence Gate now shows a credible cross-language baseline on curated
+  Python, C, JavaScript, and TypeScript corpora.
 
 What is not yet proven:
 
@@ -116,6 +120,7 @@ What is not yet proven:
   SWE-agent or OpenHands
 
 That means the current repo now supports a strong claim about reliability,
-negative-ROI prevention, and an initial healing-loop uplift on SWE-bench-style
-tasks. It still does not support a broad claim of universal autonomous software
-engineering throughput gains.
+negative-ROI prevention, and a compiler-like healing loop on SWE-bench-style
+tasks. It also supports an early cross-language design-partner claim. It still
+does not support a broad claim of universal autonomous software engineering
+throughput gains.

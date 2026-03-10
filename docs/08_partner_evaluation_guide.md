@@ -144,6 +144,10 @@ If this open-source gate still returns HTTP `403`, treat
 `decision_record.missing_evidence` as repair instructions for the next agent
 attempt instead of ending the run immediately.
 
+For design-partner framing, this behaves more like a compiler for agent PRs
+than a passive reviewer: the first blocked attempt returns concrete diagnostics,
+and the follow-up attempt is expected to satisfy them before submission.
+
 ## 5. Connect an MCP client
 
 Use the streamable-http endpoint:

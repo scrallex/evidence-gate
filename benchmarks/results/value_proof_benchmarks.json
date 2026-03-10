@@ -107,19 +107,14 @@
         "decoy_allowed": false,
         "decoy_decision": "escalate",
         "decoy_missing_evidence": [
-          "The proposed changed paths were not directly supported by the retrieved evidence.",
-          "No supporting test evidence was found for the affected flow.",
-          "Safety policy violation: Policy requires supporting test evidence."
+          "The proposed changed paths were not directly supported by the retrieved evidence."
         ],
         "decoy_paths": [
           ".claude/instructions.md"
         ],
-        "gold_allowed": false,
-        "gold_decision": "escalate",
-        "gold_missing_evidence": [
-          "No supporting test evidence was found for the affected flow.",
-          "Safety policy violation: Policy requires supporting test evidence."
-        ],
+        "gold_allowed": true,
+        "gold_decision": "admit",
+        "gold_missing_evidence": [],
         "gold_source_hit": false,
         "gold_test_hit": false,
         "language": "javascript",
@@ -136,19 +131,14 @@
         "decoy_allowed": false,
         "decoy_decision": "escalate",
         "decoy_missing_evidence": [
-          "The proposed changed paths were not directly supported by the retrieved evidence.",
-          "No supporting test evidence was found for the affected flow.",
-          "Safety policy violation: Policy requires supporting test evidence."
+          "The proposed changed paths were not directly supported by the retrieved evidence."
         ],
         "decoy_paths": [
           ".claude/instructions.md"
         ],
-        "gold_allowed": false,
-        "gold_decision": "escalate",
-        "gold_missing_evidence": [
-          "No supporting test evidence was found for the affected flow.",
-          "Safety policy violation: Policy requires supporting test evidence."
-        ],
+        "gold_allowed": true,
+        "gold_decision": "admit",
+        "gold_missing_evidence": [],
         "gold_source_hit": false,
         "gold_test_hit": true,
         "language": "javascript",
@@ -165,19 +155,14 @@
         "decoy_allowed": false,
         "decoy_decision": "escalate",
         "decoy_missing_evidence": [
-          "The proposed changed paths were not directly supported by the retrieved evidence.",
-          "No supporting test evidence was found for the affected flow.",
-          "Safety policy violation: Policy requires supporting test evidence."
+          "The proposed changed paths were not directly supported by the retrieved evidence."
         ],
         "decoy_paths": [
           ".claude/instructions.md"
         ],
-        "gold_allowed": false,
-        "gold_decision": "escalate",
-        "gold_missing_evidence": [
-          "No supporting test evidence was found for the affected flow.",
-          "Safety policy violation: Policy requires supporting test evidence."
-        ],
+        "gold_allowed": true,
+        "gold_decision": "admit",
+        "gold_missing_evidence": [],
         "gold_source_hit": false,
         "gold_test_hit": false,
         "language": "javascript",
@@ -194,19 +179,14 @@
         "decoy_allowed": false,
         "decoy_decision": "escalate",
         "decoy_missing_evidence": [
-          "The proposed changed paths were not directly supported by the retrieved evidence.",
-          "No supporting test evidence was found for the affected flow.",
-          "Safety policy violation: Policy requires supporting test evidence."
+          "The proposed changed paths were not directly supported by the retrieved evidence."
         ],
         "decoy_paths": [
           ".claude/instructions.md"
         ],
-        "gold_allowed": false,
-        "gold_decision": "escalate",
-        "gold_missing_evidence": [
-          "No supporting test evidence was found for the affected flow.",
-          "Safety policy violation: Policy requires supporting test evidence."
-        ],
+        "gold_allowed": true,
+        "gold_decision": "admit",
+        "gold_missing_evidence": [],
         "gold_source_hit": true,
         "gold_test_hit": false,
         "language": "javascript",
@@ -223,19 +203,14 @@
         "decoy_allowed": false,
         "decoy_decision": "escalate",
         "decoy_missing_evidence": [
-          "The proposed changed paths were not directly supported by the retrieved evidence.",
-          "No supporting test evidence was found for the affected flow.",
-          "Safety policy violation: Policy requires supporting test evidence."
+          "The proposed changed paths were not directly supported by the retrieved evidence."
         ],
         "decoy_paths": [
           ".github/ISSUE_TEMPLATE/bug_report.yml"
         ],
-        "gold_allowed": false,
-        "gold_decision": "escalate",
-        "gold_missing_evidence": [
-          "No supporting test evidence was found for the affected flow.",
-          "Safety policy violation: Policy requires supporting test evidence."
-        ],
+        "gold_allowed": true,
+        "gold_decision": "admit",
+        "gold_missing_evidence": [],
         "gold_source_hit": true,
         "gold_test_hit": false,
         "language": "typescript",
@@ -252,19 +227,14 @@
         "decoy_allowed": false,
         "decoy_decision": "escalate",
         "decoy_missing_evidence": [
-          "The proposed changed paths were not directly supported by the retrieved evidence.",
-          "No supporting test evidence was found for the affected flow.",
-          "Safety policy violation: Policy requires supporting test evidence."
+          "The proposed changed paths were not directly supported by the retrieved evidence."
         ],
         "decoy_paths": [
           ".github/ISSUE_TEMPLATE/bug_report.yml"
         ],
-        "gold_allowed": false,
-        "gold_decision": "escalate",
-        "gold_missing_evidence": [
-          "No supporting test evidence was found for the affected flow.",
-          "Safety policy violation: Policy requires supporting test evidence."
-        ],
+        "gold_allowed": true,
+        "gold_decision": "admit",
+        "gold_missing_evidence": [],
         "gold_source_hit": true,
         "gold_test_hit": true,
         "language": "javascript",
@@ -281,19 +251,14 @@
         "decoy_allowed": false,
         "decoy_decision": "escalate",
         "decoy_missing_evidence": [
-          "The proposed changed paths were not directly supported by the retrieved evidence.",
-          "No supporting test evidence was found for the affected flow.",
-          "Safety policy violation: Policy requires supporting test evidence."
+          "The proposed changed paths were not directly supported by the retrieved evidence."
         ],
         "decoy_paths": [
           ".github/ISSUE_TEMPLATE/bug_report.yml"
         ],
         "gold_allowed": false,
         "gold_decision": "escalate",
-        "gold_missing_evidence": [
-          "No supporting test evidence was found for the affected flow.",
-          "Safety policy violation: Policy requires supporting test evidence."
-        ],
+        "gold_missing_evidence": [],
         "gold_source_hit": false,
         "gold_test_hit": true,
         "language": "javascript",
@@ -310,19 +275,14 @@
         "decoy_allowed": false,
         "decoy_decision": "escalate",
         "decoy_missing_evidence": [
-          "The proposed changed paths were not directly supported by the retrieved evidence.",
-          "No supporting test evidence was found for the affected flow.",
-          "Safety policy violation: Policy requires supporting test evidence."
+          "The proposed changed paths were not directly supported by the retrieved evidence."
         ],
         "decoy_paths": [
           ".github/ISSUE_TEMPLATE/bug_report.yml"
         ],
         "gold_allowed": false,
         "gold_decision": "escalate",
-        "gold_missing_evidence": [
-          "No supporting test evidence was found for the affected flow.",
-          "Safety policy violation: Policy requires supporting test evidence."
-        ],
+        "gold_missing_evidence": [],
         "gold_source_hit": false,
         "gold_test_hit": true,
         "language": "javascript",
@@ -339,7 +299,7 @@
         "case_count": 4,
         "commit": "014138df87869b174956f90a33fd6cf66e160114",
         "decoy_false_allow_rate": 0.0,
-        "gold_allow_rate": 0.0,
+        "gold_allow_rate": 1.0,
         "language": "javascript",
         "source_hit_rate": 0.25,
         "test_hit_rate": 0.25
@@ -357,7 +317,7 @@
         "case_count": 4,
         "commit": "b9187e04e816aa4f9cc0555c4e4df3f56a899061",
         "decoy_false_allow_rate": 0.0,
-        "gold_allow_rate": 0.0,
+        "gold_allow_rate": 0.5,
         "language": "typescript",
         "source_hit_rate": 0.5,
         "test_hit_rate": 0.75
@@ -366,7 +326,7 @@
     "summary": {
       "case_count": 12,
       "decoy_false_allow_rate": 0.0,
-      "gold_allow_rate": 0.25,
+      "gold_allow_rate": 0.75,
       "repo_count": 3,
       "source_hit_rate": 0.3333,
       "test_hit_rate": 0.6667

@@ -20,6 +20,11 @@ recommended workflow is:
    that requires test evidence but does not expect enterprise runbooks or prior
    incident exports.
 
+Think about this as a compiler pass for agent changes:
+
+- `admit`: the patch passes the structural evidence check
+- `abstain` or `escalate`: the patch failed with actionable diagnostics
+
 ## Recommended agent behavior
 
 Use `evidence_gate_decide_change_impact` or `POST /v1/decide/change-impact`
@@ -47,6 +52,10 @@ If the caller is an autonomous coding agent, the preferred recovery loop is:
 2. tell the agent exactly why the attempt was blocked
 3. ask it to write the missing test or update the supported files
 4. retry the gate on the revised patch instead of failing the run immediately
+
+This is the highest-value pattern in the current product surface. Evidence Gate
+is most useful when it forces the agent to finish the engineering job rather
+than merely telling a human reviewer that something looks risky.
 
 ## Codex skill layout
 

@@ -109,7 +109,18 @@ def tokenize(text: str) -> list[str]:
 
 def classify_source_type(relative_path: str) -> SourceType:
     lower = relative_path.lower()
-    if "/tests/" in f"/{lower}" or lower.startswith("tests/") or Path(lower).name.startswith("test_"):
+    name = Path(lower).name
+    if (
+        "/tests/" in f"/{lower}"
+        or lower.startswith("tests/")
+        or "/__tests__/" in f"/{lower}"
+        or lower.endswith("/__tests__")
+        or "/e2e/" in f"/{lower}"
+        or lower.startswith("e2e/")
+        or name.startswith("test_")
+        or ".test." in name
+        or ".spec." in name
+    ):
         return SourceType.TEST
     if "runbook" in lower or "playbook" in lower:
         return SourceType.RUNBOOK

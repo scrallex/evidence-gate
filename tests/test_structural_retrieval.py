@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from evidence_gate.blast_radius.ast_deps import ASTDependencyAnalyzer
 from evidence_gate.config import Settings
+from evidence_gate.retrieval.repository import SourceType, classify_source_type
 from evidence_gate.retrieval.structural import search_repository
 
 
@@ -61,3 +63,39 @@ def test_structural_search_surfaces_verified_and_diverse_hits(tmp_path: Path) ->
     assert any(hit.path == "prs/pr_1842.md" for hit in hits)
     assert len({hit.path for hit in hits}) == len(hits)
     assert any(hit.verified for hit in hits)
+
+
+def test_classify_source_type_recognizes_js_ts_test_conventions() -> None:
+    assert classify_source_type("packages/react-art/src/__tests__/ReactART-test.js") == SourceType.TEST
+    assert classify_source_type("playground/alias/__tests__/alias.spec.ts") == SourceType.TEST
+    assert classify_source_type("apps/web/e2e/login.test.ts") == SourceType.TEST
+
+
+def test_ast_dependency_analyzer_resolves_workspace_package_aliases(tmp_path: Path) -> None:
+    repo_root = tmp_path / "monorepo"
+    _write(
+        repo_root / "packages" / "cache-kit" / "package.json",
+        '{\n  "name": "cache-kit"\n}\n',
+    )
+    _write(
+        repo_root / "packages" / "cache-kit" / "src" / "index.ts",
+        "export {loadCache} from './store';\n",
+    )
+    _write(
+        repo_root / "packages" / "cache-kit" / "src" / "store.ts",
+        "export function loadCache(key: string) {\n  return key;\n}\n",
+    )
+    _write(
+        repo_root / "packages" / "cache-kit" / "__tests__" / "cache.spec.ts",
+        "import {loadCache} from 'cache-kit';\n\n"
+        "test('loadCache', () => {\n"
+        "  expect(loadCache('abc')).toBe('abc');\n"
+        "});\n",
+    )
+
+    analyzer = ASTDependencyAnalyzer(repo_root)
+    analyzer.build_dependency_graph()
+
+    impacted = analyzer.impacted_files("packages/cache-kit/src/store.ts")
+
+    assert "packages/cache-kit/__tests__/cache.spec.ts" in impacted
