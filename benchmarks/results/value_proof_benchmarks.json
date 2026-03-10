@@ -1,0 +1,3483 @@
+{
+  "multi_source_incident": {
+    "cases": [
+      {
+        "case_id": "multi-source-01-01",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5001.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "billing-guard"
+      },
+      {
+        "case_id": "multi-source-01-02",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5001.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "billing-guard"
+      },
+      {
+        "case_id": "multi-source-01-03",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5001.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "billing-guard"
+      },
+      {
+        "case_id": "multi-source-01-04",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5001.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "billing-guard"
+      },
+      {
+        "case_id": "multi-source-01-05",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5001.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "billing-guard"
+      },
+      {
+        "case_id": "multi-source-01-06",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5001.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "billing-guard"
+      },
+      {
+        "case_id": "multi-source-01-07",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5001.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "billing-guard"
+      },
+      {
+        "case_id": "multi-source-01-08",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5001.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "billing-guard"
+      },
+      {
+        "case_id": "multi-source-01-09",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5001.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "billing-guard"
+      },
+      {
+        "case_id": "multi-source-01-10",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5001.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "billing-guard"
+      },
+      {
+        "case_id": "multi-source-02-01",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/refunds/1741600002.123456.md",
+          "external_slack/ledger/1741600010.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "refund-ledger"
+      },
+      {
+        "case_id": "multi-source-02-02",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/refunds/1741600002.123456.md",
+          "external_slack/ledger/1741600010.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "refund-ledger"
+      },
+      {
+        "case_id": "multi-source-02-03",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/refunds/1741600002.123456.md",
+          "external_slack/ledger/1741600010.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "refund-ledger"
+      },
+      {
+        "case_id": "multi-source-02-04",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/refunds/1741600002.123456.md",
+          "external_slack/ledger/1741600010.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "refund-ledger"
+      },
+      {
+        "case_id": "multi-source-02-05",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/refunds/1741600002.123456.md",
+          "external_slack/ledger/1741600010.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "refund-ledger"
+      },
+      {
+        "case_id": "multi-source-02-06",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/refunds/1741600002.123456.md",
+          "external_slack/ledger/1741600010.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "refund-ledger"
+      },
+      {
+        "case_id": "multi-source-02-07",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/refunds/1741600002.123456.md",
+          "external_slack/ledger/1741600010.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "refund-ledger"
+      },
+      {
+        "case_id": "multi-source-02-08",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/refunds/1741600002.123456.md",
+          "external_slack/ledger/1741600010.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "refund-ledger"
+      },
+      {
+        "case_id": "multi-source-02-09",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/refunds/1741600002.123456.md",
+          "external_slack/ledger/1741600010.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "refund-ledger"
+      },
+      {
+        "case_id": "multi-source-02-10",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/refunds/1741600002.123456.md",
+          "external_slack/ledger/1741600010.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "refund-ledger"
+      },
+      {
+        "case_id": "multi-source-03-01",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [],
+        "multi_source_allowed": true,
+        "multi_source_decision": "admit",
+        "policy_violations": [],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "entitlement-cache"
+      },
+      {
+        "case_id": "multi-source-03-02",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [],
+        "multi_source_allowed": true,
+        "multi_source_decision": "admit",
+        "policy_violations": [],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "entitlement-cache"
+      },
+      {
+        "case_id": "multi-source-03-03",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [],
+        "multi_source_allowed": true,
+        "multi_source_decision": "admit",
+        "policy_violations": [],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "entitlement-cache"
+      },
+      {
+        "case_id": "multi-source-03-04",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [],
+        "multi_source_allowed": true,
+        "multi_source_decision": "admit",
+        "policy_violations": [],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "entitlement-cache"
+      },
+      {
+        "case_id": "multi-source-03-05",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [],
+        "multi_source_allowed": true,
+        "multi_source_decision": "admit",
+        "policy_violations": [],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "entitlement-cache"
+      },
+      {
+        "case_id": "multi-source-03-06",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [],
+        "multi_source_allowed": true,
+        "multi_source_decision": "admit",
+        "policy_violations": [],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "entitlement-cache"
+      },
+      {
+        "case_id": "multi-source-03-07",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [],
+        "multi_source_allowed": true,
+        "multi_source_decision": "admit",
+        "policy_violations": [],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "entitlement-cache"
+      },
+      {
+        "case_id": "multi-source-03-08",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [],
+        "multi_source_allowed": true,
+        "multi_source_decision": "admit",
+        "policy_violations": [],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "entitlement-cache"
+      },
+      {
+        "case_id": "multi-source-03-09",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [],
+        "multi_source_allowed": true,
+        "multi_source_decision": "admit",
+        "policy_violations": [],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "entitlement-cache"
+      },
+      {
+        "case_id": "multi-source-03-10",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [],
+        "multi_source_allowed": true,
+        "multi_source_decision": "admit",
+        "policy_violations": [],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "entitlement-cache"
+      },
+      {
+        "case_id": "multi-source-04-01",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/sessions/1741600004.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "session-fence"
+      },
+      {
+        "case_id": "multi-source-04-02",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/sessions/1741600004.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "session-fence"
+      },
+      {
+        "case_id": "multi-source-04-03",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/sessions/1741600004.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "session-fence"
+      },
+      {
+        "case_id": "multi-source-04-04",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/sessions/1741600004.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "session-fence"
+      },
+      {
+        "case_id": "multi-source-04-05",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/sessions/1741600004.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "session-fence"
+      },
+      {
+        "case_id": "multi-source-04-06",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/sessions/1741600004.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "session-fence"
+      },
+      {
+        "case_id": "multi-source-04-07",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/sessions/1741600004.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "session-fence"
+      },
+      {
+        "case_id": "multi-source-04-08",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/sessions/1741600004.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "session-fence"
+      },
+      {
+        "case_id": "multi-source-04-09",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/sessions/1741600004.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "session-fence"
+      },
+      {
+        "case_id": "multi-source-04-10",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/sessions/1741600004.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "session-fence"
+      },
+      {
+        "case_id": "multi-source-05-01",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [],
+        "multi_source_allowed": true,
+        "multi_source_decision": "admit",
+        "policy_violations": [],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "invoice-queue"
+      },
+      {
+        "case_id": "multi-source-05-02",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [],
+        "multi_source_allowed": true,
+        "multi_source_decision": "admit",
+        "policy_violations": [],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "invoice-queue"
+      },
+      {
+        "case_id": "multi-source-05-03",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [],
+        "multi_source_allowed": true,
+        "multi_source_decision": "admit",
+        "policy_violations": [],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "invoice-queue"
+      },
+      {
+        "case_id": "multi-source-05-04",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [],
+        "multi_source_allowed": true,
+        "multi_source_decision": "admit",
+        "policy_violations": [],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "invoice-queue"
+      },
+      {
+        "case_id": "multi-source-05-05",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [],
+        "multi_source_allowed": true,
+        "multi_source_decision": "admit",
+        "policy_violations": [],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "invoice-queue"
+      },
+      {
+        "case_id": "multi-source-05-06",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [],
+        "multi_source_allowed": true,
+        "multi_source_decision": "admit",
+        "policy_violations": [],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "invoice-queue"
+      },
+      {
+        "case_id": "multi-source-05-07",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [],
+        "multi_source_allowed": true,
+        "multi_source_decision": "admit",
+        "policy_violations": [],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "invoice-queue"
+      },
+      {
+        "case_id": "multi-source-05-08",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [],
+        "multi_source_allowed": true,
+        "multi_source_decision": "admit",
+        "policy_violations": [],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "invoice-queue"
+      },
+      {
+        "case_id": "multi-source-05-09",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [],
+        "multi_source_allowed": true,
+        "multi_source_decision": "admit",
+        "policy_violations": [],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "invoice-queue"
+      },
+      {
+        "case_id": "multi-source-05-10",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [],
+        "multi_source_allowed": true,
+        "multi_source_decision": "admit",
+        "policy_violations": [],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "invoice-queue"
+      },
+      {
+        "case_id": "multi-source-06-01",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/auth/1741600006.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "auth-throttle"
+      },
+      {
+        "case_id": "multi-source-06-02",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/auth/1741600006.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "auth-throttle"
+      },
+      {
+        "case_id": "multi-source-06-03",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/auth/1741600006.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "auth-throttle"
+      },
+      {
+        "case_id": "multi-source-06-04",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/auth/1741600006.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "auth-throttle"
+      },
+      {
+        "case_id": "multi-source-06-05",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/auth/1741600006.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "auth-throttle"
+      },
+      {
+        "case_id": "multi-source-06-06",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/auth/1741600006.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "auth-throttle"
+      },
+      {
+        "case_id": "multi-source-06-07",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/auth/1741600006.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "auth-throttle"
+      },
+      {
+        "case_id": "multi-source-06-08",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/auth/1741600006.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "auth-throttle"
+      },
+      {
+        "case_id": "multi-source-06-09",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/auth/1741600006.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "auth-throttle"
+      },
+      {
+        "case_id": "multi-source-06-10",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/auth/1741600006.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "auth-throttle"
+      },
+      {
+        "case_id": "multi-source-07-01",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5007.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "shipment-hold"
+      },
+      {
+        "case_id": "multi-source-07-02",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5007.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "shipment-hold"
+      },
+      {
+        "case_id": "multi-source-07-03",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5007.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "shipment-hold"
+      },
+      {
+        "case_id": "multi-source-07-04",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5007.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "shipment-hold"
+      },
+      {
+        "case_id": "multi-source-07-05",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5007.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "shipment-hold"
+      },
+      {
+        "case_id": "multi-source-07-06",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5007.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "shipment-hold"
+      },
+      {
+        "case_id": "multi-source-07-07",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5007.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "shipment-hold"
+      },
+      {
+        "case_id": "multi-source-07-08",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5007.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "shipment-hold"
+      },
+      {
+        "case_id": "multi-source-07-09",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5007.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "shipment-hold"
+      },
+      {
+        "case_id": "multi-source-07-10",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5007.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "shipment-hold"
+      },
+      {
+        "case_id": "multi-source-08-01",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/quota/1741600008.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "quota-lock"
+      },
+      {
+        "case_id": "multi-source-08-02",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/quota/1741600008.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "quota-lock"
+      },
+      {
+        "case_id": "multi-source-08-03",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/quota/1741600008.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "quota-lock"
+      },
+      {
+        "case_id": "multi-source-08-04",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/quota/1741600008.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "quota-lock"
+      },
+      {
+        "case_id": "multi-source-08-05",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/quota/1741600008.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "quota-lock"
+      },
+      {
+        "case_id": "multi-source-08-06",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/quota/1741600008.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "quota-lock"
+      },
+      {
+        "case_id": "multi-source-08-07",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/quota/1741600008.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "quota-lock"
+      },
+      {
+        "case_id": "multi-source-08-08",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/quota/1741600008.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "quota-lock"
+      },
+      {
+        "case_id": "multi-source-08-09",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/quota/1741600008.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "quota-lock"
+      },
+      {
+        "case_id": "multi-source-08-10",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/quota/1741600008.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "quota-lock"
+      },
+      {
+        "case_id": "multi-source-09-01",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5009.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "audit-drain"
+      },
+      {
+        "case_id": "multi-source-09-02",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5009.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "audit-drain"
+      },
+      {
+        "case_id": "multi-source-09-03",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5009.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "audit-drain"
+      },
+      {
+        "case_id": "multi-source-09-04",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5009.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "audit-drain"
+      },
+      {
+        "case_id": "multi-source-09-05",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5009.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "audit-drain"
+      },
+      {
+        "case_id": "multi-source-09-06",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5009.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "audit-drain"
+      },
+      {
+        "case_id": "multi-source-09-07",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5009.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "audit-drain"
+      },
+      {
+        "case_id": "multi-source-09-08",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5009.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "audit-drain"
+      },
+      {
+        "case_id": "multi-source-09-09",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5009.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "audit-drain"
+      },
+      {
+        "case_id": "multi-source-09-10",
+        "expected_incident_source": "pagerduty",
+        "incident_twin_sources": [
+          "external_pagerduty/5009.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "audit-drain"
+      },
+      {
+        "case_id": "multi-source-10-01",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/ledger/1741600010.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "ledger-snapshot"
+      },
+      {
+        "case_id": "multi-source-10-02",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/ledger/1741600010.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "ledger-snapshot"
+      },
+      {
+        "case_id": "multi-source-10-03",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/ledger/1741600010.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "ledger-snapshot"
+      },
+      {
+        "case_id": "multi-source-10-04",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/ledger/1741600010.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "ledger-snapshot"
+      },
+      {
+        "case_id": "multi-source-10-05",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/ledger/1741600010.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "ledger-snapshot"
+      },
+      {
+        "case_id": "multi-source-10-06",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/ledger/1741600010.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "ledger-snapshot"
+      },
+      {
+        "case_id": "multi-source-10-07",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/ledger/1741600010.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "ledger-snapshot"
+      },
+      {
+        "case_id": "multi-source-10-08",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/ledger/1741600010.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "ledger-snapshot"
+      },
+      {
+        "case_id": "multi-source-10-09",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/ledger/1741600010.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "ledger-snapshot"
+      },
+      {
+        "case_id": "multi-source-10-10",
+        "expected_incident_source": "slack",
+        "incident_twin_sources": [
+          "external_slack/ledger/1741600010.123456.md"
+        ],
+        "multi_source_allowed": false,
+        "multi_source_decision": "escalate",
+        "policy_violations": [
+          "Policy blocks changes that match prior incident precedent."
+        ],
+        "repo_only_allowed": true,
+        "repo_only_decision": "admit",
+        "topic": "ledger-snapshot"
+      }
+    ],
+    "summary": {
+      "case_count": 100,
+      "incident_twin_hit_rate": 0.8,
+      "incremental_block_rate": 0.8,
+      "multi_source_block_rate": 0.8,
+      "repo_only_block_rate": 0.0
+    }
+  },
+  "poisoned_corpus": {
+    "cases": [
+      {
+        "baseline": {
+          "evidence_sources": [
+            "prs/billing-guard_precedent.md",
+            "docs/billing-guard.md",
+            "archive/billing-guard_deprecated.md",
+            "runbooks/billing-guard_rollback.md",
+            "tests/test_billing_guard.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3487,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-01-1",
+        "query": "If we change duplicate-charge guard behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "docs/billing-guard.md",
+            "archive/billing-guard_deprecated.md",
+            "runbooks/billing-guard_rollback.md",
+            "services/billing-guard.py",
+            "docs/token-issuer.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.6836,
+          "twin_sources": [
+            "prs/billing-guard_precedent.md",
+            "prs/invoice-queue_precedent.md",
+            "prs/entitlement-cache_precedent.md"
+          ]
+        },
+        "topic": "billing-guard"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "prs/billing-guard_precedent.md",
+            "docs/billing-guard.md",
+            "archive/billing-guard_deprecated.md",
+            "runbooks/billing-guard_rollback.md",
+            "services/billing-guard.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3955,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-01-2",
+        "query": "If we adjust billing duplicate-charge guard handling, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "docs/billing-guard.md",
+            "archive/billing-guard_deprecated.md",
+            "runbooks/billing-guard_rollback.md",
+            "docs/session-fence.md",
+            "docs/shipment-hold.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.7047,
+          "twin_sources": [
+            "prs/billing-guard_precedent.md",
+            "prs/session-fence_precedent.md",
+            "prs/entitlement-cache_precedent.md"
+          ]
+        },
+        "topic": "billing-guard"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/billing-guard_deprecated.md",
+            "prs/billing-guard_precedent.md",
+            "docs/billing-guard.md",
+            "runbooks/billing-guard_rollback.md",
+            "tests/test_billing_guard.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": false,
+          "raw_decision": "withhold",
+          "support_score": 0.346,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-01-1",
+        "query": "If we change legacy sentinel duplicate-charge guard behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/billing-guard_deprecated.md",
+            "docs/billing-guard.md",
+            "runbooks/billing-guard_rollback.md",
+            "services/billing-guard.py",
+            "archive/quota-lock_deprecated.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.6959,
+          "twin_sources": [
+            "prs/billing-guard_precedent.md"
+          ]
+        },
+        "topic": "billing-guard"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/billing-guard_deprecated.md",
+            "docs/billing-guard.md",
+            "archive/audit-drain_deprecated.md",
+            "archive/auth-throttle_deprecated.md",
+            "archive/entitlement-cache_deprecated.md"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3938,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-01-2",
+        "query": "If we change the deprecated legacy sentinel duplicate-charge guard path, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/billing-guard_deprecated.md",
+            "docs/billing-guard.md",
+            "archive/ledger-snapshot_deprecated.md",
+            "runbooks/billing-guard_rollback.md",
+            "archive/quota-lock_deprecated.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.689,
+          "twin_sources": [
+            "prs/billing-guard_precedent.md"
+          ]
+        },
+        "topic": "billing-guard"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "prs/refund-ledger_precedent.md",
+            "docs/refund-ledger.md",
+            "archive/refund-ledger_deprecated.md",
+            "runbooks/refund-ledger_rollback.md",
+            "tests/test_refund_ledger.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3504,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-02-1",
+        "query": "If we change refund ledger reconciliation behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "docs/refund-ledger.md",
+            "runbooks/refund-ledger_rollback.md",
+            "archive/refund-ledger_deprecated.md",
+            "docs/ledger-snapshot.md",
+            "tests/test_refund_ledger.py"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe."
+          ],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.7358,
+          "twin_sources": [
+            "prs/refund-ledger_precedent.md",
+            "prs/ledger-snapshot_precedent.md",
+            "prs/billing-guard_precedent.md"
+          ]
+        },
+        "topic": "refund-ledger"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "docs/refund-ledger.md",
+            "runbooks/refund-ledger_rollback.md",
+            "prs/refund-ledger_precedent.md",
+            "archive/refund-ledger_deprecated.md",
+            "tests/test_refund_ledger.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3599,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-02-2",
+        "query": "If we adjust refunds refund ledger reconciliation handling, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "docs/refund-ledger.md",
+            "runbooks/refund-ledger_rollback.md",
+            "archive/refund-ledger_deprecated.md",
+            "tests/test_refund_ledger.py",
+            "docs/ledger-snapshot.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe."
+          ],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.7329,
+          "twin_sources": [
+            "prs/refund-ledger_precedent.md",
+            "prs/ledger-snapshot_precedent.md",
+            "prs/billing-guard_precedent.md"
+          ]
+        },
+        "topic": "refund-ledger"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/refund-ledger_deprecated.md",
+            "prs/refund-ledger_precedent.md",
+            "docs/refund-ledger.md",
+            "archive/ledger-snapshot_deprecated.md",
+            "runbooks/refund-ledger_rollback.md"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": false,
+          "raw_decision": "withhold",
+          "support_score": 0.3475,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-02-1",
+        "query": "If we change legacy sentinel refund ledger reconciliation behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/refund-ledger_deprecated.md",
+            "docs/refund-ledger.md",
+            "archive/ledger-snapshot_deprecated.md",
+            "runbooks/refund-ledger_rollback.md",
+            "docs/ledger-snapshot.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.6993,
+          "twin_sources": [
+            "prs/refund-ledger_precedent.md",
+            "prs/ledger-snapshot_precedent.md"
+          ]
+        },
+        "topic": "refund-ledger"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/refund-ledger_deprecated.md",
+            "archive/ledger-snapshot_deprecated.md",
+            "docs/refund-ledger.md",
+            "archive/audit-drain_deprecated.md",
+            "archive/auth-throttle_deprecated.md"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.4132,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-02-2",
+        "query": "If we change the deprecated legacy sentinel refund ledger reconciliation path, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/refund-ledger_deprecated.md",
+            "docs/refund-ledger.md",
+            "archive/ledger-snapshot_deprecated.md",
+            "runbooks/refund-ledger_rollback.md",
+            "docs/ledger-snapshot.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.7218,
+          "twin_sources": [
+            "prs/refund-ledger_precedent.md",
+            "prs/ledger-snapshot_precedent.md"
+          ]
+        },
+        "topic": "refund-ledger"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "prs/entitlement-cache_precedent.md",
+            "docs/entitlement-cache.md",
+            "archive/entitlement-cache_deprecated.md",
+            "runbooks/entitlement-cache_rollback.md",
+            "tests/test_entitlement_cache.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3536,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-03-1",
+        "query": "If we change entitlement cache invalidation behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "docs/entitlement-cache.md",
+            "runbooks/entitlement-cache_rollback.md",
+            "archive/entitlement-cache_deprecated.md",
+            "docs/token-issuer.md",
+            "docs/auth-throttle.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.6875,
+          "twin_sources": [
+            "prs/entitlement-cache_precedent.md",
+            "prs/billing-guard_precedent.md"
+          ]
+        },
+        "topic": "entitlement-cache"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "docs/entitlement-cache.md",
+            "runbooks/entitlement-cache_rollback.md",
+            "prs/entitlement-cache_precedent.md",
+            "archive/entitlement-cache_deprecated.md",
+            "tests/test_entitlement_cache.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3627,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-03-2",
+        "query": "If we adjust entitlements entitlement cache invalidation handling, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "docs/entitlement-cache.md",
+            "runbooks/entitlement-cache_rollback.md",
+            "archive/entitlement-cache_deprecated.md",
+            "docs/token-issuer.md",
+            "docs/auth-throttle.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.6901,
+          "twin_sources": [
+            "prs/entitlement-cache_precedent.md",
+            "prs/billing-guard_precedent.md"
+          ]
+        },
+        "topic": "entitlement-cache"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/entitlement-cache_deprecated.md",
+            "prs/entitlement-cache_precedent.md",
+            "docs/entitlement-cache.md",
+            "runbooks/entitlement-cache_rollback.md",
+            "tests/test_entitlement_cache.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3504,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-03-1",
+        "query": "If we change legacy sentinel entitlement cache invalidation behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/entitlement-cache_deprecated.md",
+            "docs/entitlement-cache.md",
+            "runbooks/entitlement-cache_rollback.md",
+            "archive/token-issuer_deprecated.md",
+            "archive/auth-throttle_deprecated.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.7029,
+          "twin_sources": [
+            "prs/entitlement-cache_precedent.md"
+          ]
+        },
+        "topic": "entitlement-cache"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/entitlement-cache_deprecated.md",
+            "docs/entitlement-cache.md",
+            "archive/audit-drain_deprecated.md",
+            "archive/auth-throttle_deprecated.md",
+            "archive/billing-guard_deprecated.md"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3959,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-03-2",
+        "query": "If we change the deprecated legacy sentinel entitlement cache invalidation path, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "docs/entitlement-cache.md",
+            "archive/entitlement-cache_deprecated.md",
+            "runbooks/entitlement-cache_rollback.md",
+            "archive/ledger-snapshot_deprecated.md",
+            "archive/auth-throttle_deprecated.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.6957,
+          "twin_sources": [
+            "prs/entitlement-cache_precedent.md"
+          ]
+        },
+        "topic": "entitlement-cache"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "prs/session-fence_precedent.md",
+            "docs/session-fence.md",
+            "archive/session-fence_deprecated.md",
+            "runbooks/session-fence_rollback.md",
+            "tests/test_session_fence.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3536,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-04-1",
+        "query": "If we change session consistency fence behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "docs/session-fence.md",
+            "runbooks/session-fence_rollback.md",
+            "services/session-fence.py",
+            "archive/session-fence_deprecated.md",
+            "docs/billing-guard.md"
+          ],
+          "missing_evidence": [
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.6923,
+          "twin_sources": [
+            "prs/session-fence_precedent.md",
+            "prs/billing-guard_precedent.md",
+            "prs/entitlement-cache_precedent.md"
+          ]
+        },
+        "topic": "session-fence"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "docs/session-fence.md",
+            "runbooks/session-fence_rollback.md",
+            "prs/session-fence_precedent.md",
+            "archive/session-fence_deprecated.md",
+            "tests/test_session_fence.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3627,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-04-2",
+        "query": "If we adjust sessions session consistency fence handling, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "docs/session-fence.md",
+            "runbooks/session-fence_rollback.md",
+            "services/session-fence.py",
+            "archive/session-fence_deprecated.md",
+            "docs/billing-guard.md"
+          ],
+          "missing_evidence": [
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.6929,
+          "twin_sources": [
+            "prs/session-fence_precedent.md",
+            "prs/billing-guard_precedent.md",
+            "prs/entitlement-cache_precedent.md"
+          ]
+        },
+        "topic": "session-fence"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/session-fence_deprecated.md",
+            "prs/session-fence_precedent.md",
+            "docs/session-fence.md",
+            "runbooks/session-fence_rollback.md",
+            "tests/test_session_fence.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3504,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-04-1",
+        "query": "If we change legacy sentinel session consistency fence behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/session-fence_deprecated.md",
+            "docs/session-fence.md",
+            "runbooks/session-fence_rollback.md",
+            "services/session-fence.py",
+            "archive/billing-guard_deprecated.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.697,
+          "twin_sources": [
+            "prs/session-fence_precedent.md",
+            "prs/billing-guard_precedent.md",
+            "prs/entitlement-cache_precedent.md"
+          ]
+        },
+        "topic": "session-fence"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/session-fence_deprecated.md",
+            "docs/session-fence.md",
+            "archive/audit-drain_deprecated.md",
+            "archive/auth-throttle_deprecated.md",
+            "archive/billing-guard_deprecated.md"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3959,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-04-2",
+        "query": "If we change the deprecated legacy sentinel session consistency fence path, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/session-fence_deprecated.md",
+            "docs/session-fence.md",
+            "services/session-fence.py",
+            "archive/ledger-snapshot_deprecated.md",
+            "archive/auth-throttle_deprecated.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow.",
+            "No runbook or operational handling evidence was found."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.657,
+          "twin_sources": [
+            "prs/session-fence_precedent.md",
+            "prs/ledger-snapshot_precedent.md",
+            "prs/billing-guard_precedent.md"
+          ]
+        },
+        "topic": "session-fence"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "prs/invoice-queue_precedent.md",
+            "docs/invoice-queue.md",
+            "archive/invoice-queue_deprecated.md",
+            "runbooks/invoice-queue_rollback.md",
+            "tests/test_invoice_queue.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3536,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-05-1",
+        "query": "If we change invoice queue ordering behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "runbooks/invoice-queue_rollback.md",
+            "docs/invoice-queue.md",
+            "docs/billing-guard.md",
+            "docs/entitlement-cache.md",
+            "docs/audit-drain.md"
+          ],
+          "missing_evidence": [
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.6339,
+          "twin_sources": [
+            "prs/invoice-queue_precedent.md",
+            "prs/billing-guard_precedent.md",
+            "prs/entitlement-cache_precedent.md"
+          ]
+        },
+        "topic": "invoice-queue"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "docs/invoice-queue.md",
+            "runbooks/invoice-queue_rollback.md",
+            "prs/invoice-queue_precedent.md",
+            "archive/invoice-queue_deprecated.md",
+            "tests/test_invoice_queue.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3627,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-05-2",
+        "query": "If we adjust invoices invoice queue ordering handling, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "runbooks/invoice-queue_rollback.md",
+            "docs/invoice-queue.md",
+            "docs/entitlement-cache.md",
+            "archive/invoice-queue_deprecated.md",
+            "docs/audit-drain.md"
+          ],
+          "missing_evidence": [
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.6337,
+          "twin_sources": [
+            "prs/invoice-queue_precedent.md",
+            "prs/billing-guard_precedent.md"
+          ]
+        },
+        "topic": "invoice-queue"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/invoice-queue_deprecated.md",
+            "prs/invoice-queue_precedent.md",
+            "docs/invoice-queue.md",
+            "runbooks/invoice-queue_rollback.md",
+            "tests/test_invoice_queue.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3504,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-05-1",
+        "query": "If we change legacy sentinel invoice queue ordering behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/invoice-queue_deprecated.md",
+            "runbooks/invoice-queue_rollback.md",
+            "docs/invoice-queue.md",
+            "archive/billing-guard_deprecated.md",
+            "archive/ledger-snapshot_deprecated.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.6383,
+          "twin_sources": [
+            "prs/invoice-queue_precedent.md",
+            "prs/billing-guard_precedent.md"
+          ]
+        },
+        "topic": "invoice-queue"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/invoice-queue_deprecated.md",
+            "docs/invoice-queue.md",
+            "archive/audit-drain_deprecated.md",
+            "archive/auth-throttle_deprecated.md",
+            "archive/billing-guard_deprecated.md"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3959,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-05-2",
+        "query": "If we change the deprecated legacy sentinel invoice queue ordering path, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/invoice-queue_deprecated.md",
+            "archive/ledger-snapshot_deprecated.md",
+            "runbooks/invoice-queue_rollback.md",
+            "docs/ledger-snapshot.md",
+            "archive/auth-throttle_deprecated.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.6651,
+          "twin_sources": [
+            "prs/invoice-queue_precedent.md"
+          ]
+        },
+        "topic": "invoice-queue"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "prs/auth-throttle_precedent.md",
+            "docs/auth-throttle.md",
+            "archive/auth-throttle_deprecated.md",
+            "runbooks/auth-throttle_rollback.md",
+            "tests/test_auth_throttle.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3536,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-06-1",
+        "query": "If we change authentication throttle window behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "docs/auth-throttle.md",
+            "archive/auth-throttle_deprecated.md",
+            "runbooks/auth-throttle_rollback.md",
+            "services/auth-throttle.py",
+            "tests/test_auth_throttle.py"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe."
+          ],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.7449,
+          "twin_sources": [
+            "prs/auth-throttle_precedent.md",
+            "prs/billing-guard_precedent.md",
+            "prs/entitlement-cache_precedent.md"
+          ]
+        },
+        "topic": "auth-throttle"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "prs/auth-throttle_precedent.md",
+            "docs/auth-throttle.md",
+            "archive/auth-throttle_deprecated.md",
+            "runbooks/auth-throttle_rollback.md",
+            "services/auth-throttle.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3997,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-06-2",
+        "query": "If we adjust auth authentication throttle window handling, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "docs/auth-throttle.md",
+            "runbooks/auth-throttle_rollback.md",
+            "archive/auth-throttle_deprecated.md",
+            "services/auth-throttle.py",
+            "tests/test_auth_throttle.py"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe."
+          ],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.7435,
+          "twin_sources": [
+            "prs/auth-throttle_precedent.md",
+            "prs/billing-guard_precedent.md",
+            "prs/entitlement-cache_precedent.md"
+          ]
+        },
+        "topic": "auth-throttle"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/auth-throttle_deprecated.md",
+            "prs/auth-throttle_precedent.md",
+            "docs/auth-throttle.md",
+            "runbooks/auth-throttle_rollback.md",
+            "tests/test_auth_throttle.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3504,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-06-1",
+        "query": "If we change legacy sentinel authentication throttle window behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/auth-throttle_deprecated.md",
+            "docs/auth-throttle.md",
+            "runbooks/auth-throttle_rollback.md",
+            "services/auth-throttle.py",
+            "tests/test_auth_throttle.py"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe."
+          ],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.7569,
+          "twin_sources": [
+            "prs/auth-throttle_precedent.md",
+            "prs/entitlement-cache_precedent.md"
+          ]
+        },
+        "topic": "auth-throttle"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/auth-throttle_deprecated.md",
+            "docs/auth-throttle.md",
+            "archive/audit-drain_deprecated.md",
+            "archive/billing-guard_deprecated.md",
+            "archive/entitlement-cache_deprecated.md"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3959,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-06-2",
+        "query": "If we change the deprecated legacy sentinel authentication throttle window path, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/auth-throttle_deprecated.md",
+            "docs/auth-throttle.md",
+            "runbooks/auth-throttle_rollback.md",
+            "archive/ledger-snapshot_deprecated.md",
+            "services/auth-throttle.py"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.7055,
+          "twin_sources": [
+            "prs/auth-throttle_precedent.md"
+          ]
+        },
+        "topic": "auth-throttle"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "prs/shipment-hold_precedent.md",
+            "docs/shipment-hold.md",
+            "archive/shipment-hold_deprecated.md",
+            "runbooks/shipment-hold_rollback.md",
+            "tests/test_shipment_hold.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3536,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-07-1",
+        "query": "If we change shipment hold release behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "archive/shipment-hold_deprecated.md",
+            "docs/shipment-hold.md",
+            "runbooks/shipment-hold_rollback.md",
+            "services/shipment-hold.py",
+            "tests/test_shipment_hold.py"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe."
+          ],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.7722,
+          "twin_sources": [
+            "prs/shipment-hold_precedent.md",
+            "prs/billing-guard_precedent.md",
+            "prs/entitlement-cache_precedent.md"
+          ]
+        },
+        "topic": "shipment-hold"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "docs/shipment-hold.md",
+            "runbooks/shipment-hold_rollback.md",
+            "prs/shipment-hold_precedent.md",
+            "archive/shipment-hold_deprecated.md",
+            "tests/test_shipment_hold.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3627,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-07-2",
+        "query": "If we adjust shipping shipment hold release handling, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "docs/shipment-hold.md",
+            "archive/shipment-hold_deprecated.md",
+            "runbooks/shipment-hold_rollback.md",
+            "services/shipment-hold.py",
+            "tests/test_shipment_hold.py"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe."
+          ],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.772,
+          "twin_sources": [
+            "prs/shipment-hold_precedent.md",
+            "prs/billing-guard_precedent.md",
+            "prs/entitlement-cache_precedent.md"
+          ]
+        },
+        "topic": "shipment-hold"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/shipment-hold_deprecated.md",
+            "prs/shipment-hold_precedent.md",
+            "docs/shipment-hold.md",
+            "runbooks/shipment-hold_rollback.md",
+            "tests/test_shipment_hold.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3504,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-07-1",
+        "query": "If we change legacy sentinel shipment hold release behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/shipment-hold_deprecated.md",
+            "docs/shipment-hold.md",
+            "runbooks/shipment-hold_rollback.md",
+            "services/shipment-hold.py",
+            "tests/test_shipment_hold.py"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe."
+          ],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.7768,
+          "twin_sources": [
+            "prs/shipment-hold_precedent.md",
+            "prs/entitlement-cache_precedent.md"
+          ]
+        },
+        "topic": "shipment-hold"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/shipment-hold_deprecated.md",
+            "docs/shipment-hold.md",
+            "archive/audit-drain_deprecated.md",
+            "archive/auth-throttle_deprecated.md",
+            "archive/billing-guard_deprecated.md"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3959,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-07-2",
+        "query": "If we change the deprecated legacy sentinel shipment hold release path, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/shipment-hold_deprecated.md",
+            "docs/shipment-hold.md",
+            "archive/ledger-snapshot_deprecated.md",
+            "runbooks/shipment-hold_rollback.md",
+            "services/shipment-hold.py"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.7338,
+          "twin_sources": [
+            "prs/shipment-hold_precedent.md",
+            "prs/ledger-snapshot_precedent.md"
+          ]
+        },
+        "topic": "shipment-hold"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "prs/quota-lock_precedent.md",
+            "docs/quota-lock.md",
+            "archive/quota-lock_deprecated.md",
+            "runbooks/quota-lock_rollback.md",
+            "tests/test_quota_lock.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3536,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-08-1",
+        "query": "If we change quota lock promotion behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "docs/quota-lock.md",
+            "archive/quota-lock_deprecated.md",
+            "runbooks/quota-lock_rollback.md",
+            "services/quota-lock.py",
+            "tests/test_quota_lock.py"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe."
+          ],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.7393,
+          "twin_sources": [
+            "prs/quota-lock_precedent.md",
+            "prs/billing-guard_precedent.md"
+          ]
+        },
+        "topic": "quota-lock"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "docs/quota-lock.md",
+            "archive/quota-lock_deprecated.md",
+            "prs/quota-lock_precedent.md",
+            "runbooks/quota-lock_rollback.md",
+            "tests/test_quota_lock.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3619,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-08-2",
+        "query": "If we adjust quota quota lock promotion handling, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "docs/quota-lock.md",
+            "archive/quota-lock_deprecated.md",
+            "runbooks/quota-lock_rollback.md",
+            "services/quota-lock.py",
+            "tests/test_quota_lock.py"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe."
+          ],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.7662,
+          "twin_sources": [
+            "prs/quota-lock_precedent.md",
+            "prs/billing-guard_precedent.md",
+            "prs/entitlement-cache_precedent.md"
+          ]
+        },
+        "topic": "quota-lock"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/quota-lock_deprecated.md",
+            "prs/quota-lock_precedent.md",
+            "docs/quota-lock.md",
+            "runbooks/quota-lock_rollback.md",
+            "tests/test_quota_lock.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3504,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-08-1",
+        "query": "If we change legacy sentinel quota lock promotion behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/quota-lock_deprecated.md",
+            "docs/quota-lock.md",
+            "runbooks/quota-lock_rollback.md",
+            "services/quota-lock.py",
+            "archive/billing-guard_deprecated.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.7,
+          "twin_sources": [
+            "prs/quota-lock_precedent.md",
+            "prs/billing-guard_precedent.md"
+          ]
+        },
+        "topic": "quota-lock"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/quota-lock_deprecated.md",
+            "docs/quota-lock.md",
+            "archive/audit-drain_deprecated.md",
+            "archive/auth-throttle_deprecated.md",
+            "archive/billing-guard_deprecated.md"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3959,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-08-2",
+        "query": "If we change the deprecated legacy sentinel quota lock promotion path, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/quota-lock_deprecated.md",
+            "docs/quota-lock.md",
+            "archive/ledger-snapshot_deprecated.md",
+            "runbooks/quota-lock_rollback.md",
+            "docs/ledger-snapshot.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.7003,
+          "twin_sources": [
+            "prs/quota-lock_precedent.md"
+          ]
+        },
+        "topic": "quota-lock"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "prs/audit-drain_precedent.md",
+            "docs/audit-drain.md",
+            "archive/audit-drain_deprecated.md",
+            "runbooks/audit-drain_rollback.md",
+            "tests/test_audit_drain.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3536,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-09-1",
+        "query": "If we change audit event drain behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "docs/audit-drain.md",
+            "archive/audit-drain_deprecated.md",
+            "runbooks/audit-drain_rollback.md",
+            "tests/test_audit_drain.py",
+            "docs/billing-guard.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe."
+          ],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.7315,
+          "twin_sources": [
+            "prs/audit-drain_precedent.md",
+            "prs/billing-guard_precedent.md"
+          ]
+        },
+        "topic": "audit-drain"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "docs/audit-drain.md",
+            "archive/audit-drain_deprecated.md",
+            "prs/audit-drain_precedent.md",
+            "runbooks/audit-drain_rollback.md",
+            "tests/test_audit_drain.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3619,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-09-2",
+        "query": "If we adjust audit audit event drain handling, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "docs/audit-drain.md",
+            "archive/audit-drain_deprecated.md",
+            "tests/test_audit_drain.py",
+            "docs/auth-throttle.md",
+            "docs/shipment-hold.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No runbook or operational handling evidence was found."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.6924,
+          "twin_sources": [
+            "prs/audit-drain_precedent.md",
+            "prs/billing-guard_precedent.md"
+          ]
+        },
+        "topic": "audit-drain"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/audit-drain_deprecated.md",
+            "prs/audit-drain_precedent.md",
+            "docs/audit-drain.md",
+            "runbooks/audit-drain_rollback.md",
+            "tests/test_audit_drain.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3504,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-09-1",
+        "query": "If we change legacy sentinel audit event drain behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/audit-drain_deprecated.md",
+            "docs/audit-drain.md",
+            "runbooks/audit-drain_rollback.md",
+            "archive/billing-guard_deprecated.md",
+            "tests/test_audit_drain.py"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe."
+          ],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.7429,
+          "twin_sources": [
+            "prs/audit-drain_precedent.md"
+          ]
+        },
+        "topic": "audit-drain"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/audit-drain_deprecated.md",
+            "docs/audit-drain.md",
+            "archive/auth-throttle_deprecated.md",
+            "archive/billing-guard_deprecated.md",
+            "archive/entitlement-cache_deprecated.md"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3959,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-09-2",
+        "query": "If we change the deprecated legacy sentinel audit event drain path, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/audit-drain_deprecated.md",
+            "docs/audit-drain.md",
+            "archive/ledger-snapshot_deprecated.md",
+            "archive/auth-throttle_deprecated.md",
+            "runbooks/audit-drain_rollback.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.6977,
+          "twin_sources": [
+            "prs/audit-drain_precedent.md"
+          ]
+        },
+        "topic": "audit-drain"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "prs/ledger-snapshot_precedent.md",
+            "docs/ledger-snapshot.md",
+            "archive/ledger-snapshot_deprecated.md",
+            "runbooks/ledger-snapshot_rollback.md",
+            "tests/test_ledger_snapshot.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3504,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-10-1",
+        "query": "If we change ledger snapshot checkpoint behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "archive/ledger-snapshot_deprecated.md",
+            "docs/ledger-snapshot.md",
+            "runbooks/ledger-snapshot_rollback.md",
+            "services/ledger-snapshot.py",
+            "tests/test_ledger_snapshot.py"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe."
+          ],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.7478,
+          "twin_sources": [
+            "prs/ledger-snapshot_precedent.md",
+            "prs/shipment-hold_precedent.md",
+            "prs/billing-guard_precedent.md"
+          ]
+        },
+        "topic": "ledger-snapshot"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "docs/ledger-snapshot.md",
+            "prs/ledger-snapshot_precedent.md",
+            "archive/ledger-snapshot_deprecated.md",
+            "runbooks/ledger-snapshot_rollback.md",
+            "tests/test_ledger_snapshot.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3575,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-10-2",
+        "query": "If we adjust ledger ledger snapshot checkpoint handling, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "docs/ledger-snapshot.md",
+            "archive/ledger-snapshot_deprecated.md",
+            "runbooks/ledger-snapshot_rollback.md",
+            "services/ledger-snapshot.py",
+            "tests/test_ledger_snapshot.py"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe."
+          ],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.7687,
+          "twin_sources": [
+            "prs/ledger-snapshot_precedent.md",
+            "prs/billing-guard_precedent.md",
+            "prs/entitlement-cache_precedent.md"
+          ]
+        },
+        "topic": "ledger-snapshot"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/ledger-snapshot_deprecated.md",
+            "prs/ledger-snapshot_precedent.md",
+            "docs/ledger-snapshot.md",
+            "archive/refund-ledger_deprecated.md",
+            "runbooks/ledger-snapshot_rollback.md"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": false,
+          "raw_decision": "withhold",
+          "support_score": 0.3475,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-10-1",
+        "query": "If we change legacy sentinel ledger snapshot checkpoint behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/ledger-snapshot_deprecated.md",
+            "docs/ledger-snapshot.md",
+            "runbooks/ledger-snapshot_rollback.md",
+            "services/ledger-snapshot.py",
+            "archive/shipment-hold_deprecated.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.7075,
+          "twin_sources": [
+            "prs/ledger-snapshot_precedent.md"
+          ]
+        },
+        "topic": "ledger-snapshot"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/ledger-snapshot_deprecated.md",
+            "archive/refund-ledger_deprecated.md",
+            "docs/ledger-snapshot.md",
+            "archive/audit-drain_deprecated.md",
+            "archive/auth-throttle_deprecated.md"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.4132,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-10-2",
+        "query": "If we change the deprecated legacy sentinel ledger snapshot checkpoint path, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/ledger-snapshot_deprecated.md",
+            "docs/ledger-snapshot.md",
+            "runbooks/ledger-snapshot_rollback.md",
+            "services/ledger-snapshot.py",
+            "archive/shipment-hold_deprecated.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.7361,
+          "twin_sources": [
+            "prs/ledger-snapshot_precedent.md"
+          ]
+        },
+        "topic": "ledger-snapshot"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "prs/retry-budget_precedent.md",
+            "docs/retry-budget.md",
+            "archive/retry-budget_deprecated.md",
+            "runbooks/retry-budget_rollback.md",
+            "tests/test_retry_budget.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3536,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-11-1",
+        "query": "If we change retry budget enforcement behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "docs/retry-budget.md",
+            "runbooks/retry-budget_rollback.md",
+            "archive/retry-budget_deprecated.md",
+            "tests/test_retry_budget.py",
+            "docs/billing-guard.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe."
+          ],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.7322,
+          "twin_sources": [
+            "prs/retry-budget_precedent.md",
+            "prs/billing-guard_precedent.md",
+            "prs/entitlement-cache_precedent.md"
+          ]
+        },
+        "topic": "retry-budget"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "docs/retry-budget.md",
+            "runbooks/retry-budget_rollback.md",
+            "prs/retry-budget_precedent.md",
+            "archive/retry-budget_deprecated.md",
+            "tests/test_retry_budget.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3627,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-11-2",
+        "query": "If we adjust jobs retry budget enforcement handling, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "docs/retry-budget.md",
+            "archive/retry-budget_deprecated.md",
+            "tests/test_retry_budget.py",
+            "docs/entitlement-cache.md",
+            "docs/shipment-hold.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No runbook or operational handling evidence was found."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.6612,
+          "twin_sources": [
+            "prs/retry-budget_precedent.md",
+            "prs/billing-guard_precedent.md",
+            "prs/entitlement-cache_precedent.md"
+          ]
+        },
+        "topic": "retry-budget"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/retry-budget_deprecated.md",
+            "prs/retry-budget_precedent.md",
+            "docs/retry-budget.md",
+            "runbooks/retry-budget_rollback.md",
+            "tests/test_retry_budget.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3504,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-11-1",
+        "query": "If we change legacy sentinel retry budget enforcement behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/retry-budget_deprecated.md",
+            "docs/retry-budget.md",
+            "runbooks/retry-budget_rollback.md",
+            "archive/billing-guard_deprecated.md",
+            "archive/auth-throttle_deprecated.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.6909,
+          "twin_sources": [
+            "prs/retry-budget_precedent.md",
+            "prs/entitlement-cache_precedent.md"
+          ]
+        },
+        "topic": "retry-budget"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/retry-budget_deprecated.md",
+            "docs/retry-budget.md",
+            "archive/audit-drain_deprecated.md",
+            "archive/auth-throttle_deprecated.md",
+            "archive/billing-guard_deprecated.md"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3959,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-11-2",
+        "query": "If we change the deprecated legacy sentinel retry budget enforcement path, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/retry-budget_deprecated.md",
+            "docs/retry-budget.md",
+            "archive/ledger-snapshot_deprecated.md",
+            "runbooks/retry-budget_rollback.md",
+            "archive/auth-throttle_deprecated.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.6956,
+          "twin_sources": [
+            "prs/retry-budget_precedent.md",
+            "prs/ledger-snapshot_precedent.md"
+          ]
+        },
+        "topic": "retry-budget"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "prs/token-issuer_precedent.md",
+            "docs/token-issuer.md",
+            "archive/token-issuer_deprecated.md",
+            "runbooks/token-issuer_rollback.md",
+            "tests/test_token_issuer.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3536,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-12-1",
+        "query": "If we change token issuer rotation behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "docs/token-issuer.md",
+            "archive/token-issuer_deprecated.md",
+            "runbooks/token-issuer_rollback.md",
+            "tests/test_token_issuer.py",
+            "docs/entitlement-cache.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe."
+          ],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.7437,
+          "twin_sources": [
+            "prs/token-issuer_precedent.md",
+            "prs/billing-guard_precedent.md"
+          ]
+        },
+        "topic": "token-issuer"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "docs/token-issuer.md",
+            "runbooks/token-issuer_rollback.md",
+            "prs/token-issuer_precedent.md",
+            "archive/token-issuer_deprecated.md",
+            "tests/test_token_issuer.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3627,
+          "twin_sources": []
+        },
+        "case_id": "poison-positive-12-2",
+        "query": "If we adjust tokens token issuer rotation handling, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": true,
+        "structural": {
+          "evidence_sources": [
+            "docs/token-issuer.md",
+            "archive/token-issuer_deprecated.md",
+            "runbooks/token-issuer_rollback.md",
+            "tests/test_token_issuer.py",
+            "docs/entitlement-cache.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe."
+          ],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.7369,
+          "twin_sources": [
+            "prs/token-issuer_precedent.md",
+            "prs/billing-guard_precedent.md",
+            "prs/auth-throttle_precedent.md"
+          ]
+        },
+        "topic": "token-issuer"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/token-issuer_deprecated.md",
+            "prs/token-issuer_precedent.md",
+            "docs/token-issuer.md",
+            "runbooks/token-issuer_rollback.md",
+            "tests/test_token_issuer.py"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3504,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-12-1",
+        "query": "If we change legacy sentinel token issuer rotation behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/token-issuer_deprecated.md",
+            "docs/token-issuer.md",
+            "runbooks/token-issuer_rollback.md",
+            "archive/auth-throttle_deprecated.md",
+            "archive/billing-guard_deprecated.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.7015,
+          "twin_sources": [
+            "prs/token-issuer_precedent.md"
+          ]
+        },
+        "topic": "token-issuer"
+      },
+      {
+        "baseline": {
+          "evidence_sources": [
+            "archive/token-issuer_deprecated.md",
+            "docs/token-issuer.md",
+            "archive/audit-drain_deprecated.md",
+            "archive/auth-throttle_deprecated.md",
+            "archive/billing-guard_deprecated.md"
+          ],
+          "missing_evidence": [],
+          "predicted_admit": true,
+          "raw_decision": "admit",
+          "support_score": 0.3959,
+          "twin_sources": []
+        },
+        "case_id": "poison-negative-12-2",
+        "query": "If we change the deprecated legacy sentinel token issuer rotation path, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        "should_admit": false,
+        "structural": {
+          "evidence_sources": [
+            "archive/token-issuer_deprecated.md",
+            "docs/token-issuer.md",
+            "archive/ledger-snapshot_deprecated.md",
+            "archive/auth-throttle_deprecated.md",
+            "runbooks/token-issuer_rollback.md"
+          ],
+          "missing_evidence": [
+            "Top retrieved evidence was marked deprecated or explicitly unsafe.",
+            "No supporting test evidence was found for the affected flow."
+          ],
+          "predicted_admit": false,
+          "raw_decision": "escalate",
+          "support_score": 0.6963,
+          "twin_sources": [
+            "prs/token-issuer_precedent.md"
+          ]
+        },
+        "topic": "token-issuer"
+      }
+    ],
+    "summary": {
+      "baseline_binary_accuracy": 0.5625,
+      "baseline_false_admit_rate": 0.875,
+      "baseline_true_admit_rate": 1.0,
+      "case_count": 48,
+      "negative_case_count": 24,
+      "positive_case_count": 24,
+      "structural_binary_accuracy": 0.8125,
+      "structural_false_admit_rate": 0.125,
+      "structural_true_admit_rate": 0.75
+    }
+  },
+  "swebench_replay": {
+    "cases": [
+      {
+        "alignment_gap_triggered": true,
+        "baseline_predicted_admit": true,
+        "decoy_allowed": false,
+        "decoy_decision": "escalate",
+        "decoy_missing_evidence": [
+          "The proposed changed paths were not directly supported by the retrieved evidence.",
+          "No supporting test evidence was found for the affected flow.",
+          "No runbook or operational handling evidence was found.",
+          "No prior PR or incident precedent was found."
+        ],
+        "decoy_paths": [
+          ".github/ISSUE_TEMPLATE/bug-report.md"
+        ],
+        "gold_allowed": false,
+        "gold_decision": "escalate",
+        "gold_missing_evidence": [
+          "No supporting test evidence was found for the affected flow.",
+          "No runbook or operational handling evidence was found.",
+          "No prior PR or incident precedent was found."
+        ],
+        "gold_paths": [
+          "src/flask/blueprints.py"
+        ],
+        "instance_id": "pallets__flask-4045",
+        "repo": "pallets/flask"
+      },
+      {
+        "alignment_gap_triggered": true,
+        "baseline_predicted_admit": true,
+        "decoy_allowed": false,
+        "decoy_decision": "escalate",
+        "decoy_missing_evidence": [
+          "The proposed changed paths were not directly supported by the retrieved evidence.",
+          "No runbook or operational handling evidence was found.",
+          "No prior PR or incident precedent was found."
+        ],
+        "decoy_paths": [
+          ".github/CONTRIBUTING.md"
+        ],
+        "gold_allowed": false,
+        "gold_decision": "escalate",
+        "gold_missing_evidence": [
+          "No runbook or operational handling evidence was found.",
+          "No prior PR or incident precedent was found."
+        ],
+        "gold_paths": [
+          "seaborn/_oldcore.py"
+        ],
+        "instance_id": "mwaskom__seaborn-2848",
+        "repo": "mwaskom/seaborn"
+      },
+      {
+        "alignment_gap_triggered": true,
+        "baseline_predicted_admit": true,
+        "decoy_allowed": false,
+        "decoy_decision": "escalate",
+        "decoy_missing_evidence": [
+          "The proposed changed paths were not directly supported by the retrieved evidence.",
+          "No supporting test evidence was found for the affected flow.",
+          "No runbook or operational handling evidence was found.",
+          "No prior PR or incident precedent was found."
+        ],
+        "decoy_paths": [
+          "AUTHORS.rst"
+        ],
+        "gold_allowed": false,
+        "gold_decision": "escalate",
+        "gold_missing_evidence": [
+          "No supporting test evidence was found for the affected flow.",
+          "No runbook or operational handling evidence was found.",
+          "No prior PR or incident precedent was found."
+        ],
+        "gold_paths": [
+          "requests/sessions.py"
+        ],
+        "instance_id": "psf__requests-1963",
+        "repo": "psf/requests"
+      },
+      {
+        "alignment_gap_triggered": true,
+        "baseline_predicted_admit": true,
+        "decoy_allowed": false,
+        "decoy_decision": "escalate",
+        "decoy_missing_evidence": [
+          "The proposed changed paths were not directly supported by the retrieved evidence.",
+          "No supporting test evidence was found for the affected flow.",
+          "No runbook or operational handling evidence was found.",
+          "No prior PR or incident precedent was found."
+        ],
+        "decoy_paths": [
+          ".github/CONTRIBUTING.md"
+        ],
+        "gold_allowed": false,
+        "gold_decision": "escalate",
+        "gold_missing_evidence": [
+          "No supporting test evidence was found for the affected flow.",
+          "No runbook or operational handling evidence was found.",
+          "No prior PR or incident precedent was found."
+        ],
+        "gold_paths": [
+          "pylint/checkers/misc.py"
+        ],
+        "instance_id": "pylint-dev__pylint-5859",
+        "repo": "pylint-dev/pylint"
+      }
+    ],
+    "dataset": "princeton-nlp/SWE-bench_Lite",
+    "summary": {
+      "alignment_gap_trigger_rate": 1.0,
+      "baseline_allow_rate": 1.0,
+      "case_count": 4,
+      "decoy_false_allow_rate": 0.0,
+      "gold_allow_rate": 0.0,
+      "repo_count": 4
+    }
+  }
+}

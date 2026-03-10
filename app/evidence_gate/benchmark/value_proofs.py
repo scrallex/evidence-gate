@@ -1,0 +1,859 @@
+"""Extended value-proof benchmarks for Evidence Gate."""
+
+from __future__ import annotations
+
+import json
+import shutil
+import subprocess
+import warnings
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from statistics import mean
+from typing import Any
+
+from evidence_gate.audit.store import FileAuditStore
+from evidence_gate.config import KnowledgeBaseMaintenanceConfig, Settings
+from evidence_gate.decision.models import (
+    ActionDecisionRequest,
+    ActionSafetyPolicy,
+    ChangeImpactRequest,
+    KnowledgeBaseExternalSource,
+    KnowledgeBaseIngestRequest,
+)
+from evidence_gate.decision.service import DecisionService
+from evidence_gate.retrieval.repository import scan_repository, search_documents, tokenize
+from evidence_gate.retrieval.structural import clear_repository_knowledge_base_cache
+
+try:
+    from datasets import load_dataset
+except ImportError:  # pragma: no cover - exercised only when the optional dependency is missing
+    load_dataset = None
+
+DEFAULT_VALUE_PROOF_ROOT = Path.home() / ".evidence-gate" / "benchmarks" / "value_proofs"
+DEFAULT_SWEBENCH_DATASET = "princeton-nlp/SWE-bench_Lite"
+SWE_BENCH_PILOT_REPO_ORDER = (
+    "pallets/flask",
+    "mwaskom/seaborn",
+    "psf/requests",
+    "pylint-dev/pylint",
+    "pydata/xarray",
+    "pytest-dev/pytest",
+    "sphinx-doc/sphinx",
+    "astropy/astropy",
+    "matplotlib/matplotlib",
+    "scikit-learn/scikit-learn",
+    "sympy/sympy",
+    "django/django",
+)
+
+
+@dataclass(frozen=True, slots=True)
+class PoisonTopic:
+    slug: str
+    service: str
+    supported_term: str
+    poison_term: str
+
+
+@dataclass(frozen=True, slots=True)
+class MultiSourceTopic:
+    slug: str
+    service: str
+    risky_term: str
+    incident_source: str
+
+
+@dataclass(slots=True)
+class BenchmarkDecision:
+    predicted_admit: bool
+    raw_decision: str
+    support_score: float
+    evidence_sources: list[str]
+    twin_sources: list[str]
+    missing_evidence: list[str]
+
+
+POISON_TOPICS: tuple[PoisonTopic, ...] = (
+    PoisonTopic("billing-guard", "billing", "duplicate-charge guard", "legacy sentinel duplicate-charge guard"),
+    PoisonTopic("refund-ledger", "refunds", "refund ledger reconciliation", "legacy sentinel refund ledger reconciliation"),
+    PoisonTopic("entitlement-cache", "entitlements", "entitlement cache invalidation", "legacy sentinel entitlement cache invalidation"),
+    PoisonTopic("session-fence", "sessions", "session consistency fence", "legacy sentinel session consistency fence"),
+    PoisonTopic("invoice-queue", "invoices", "invoice queue ordering", "legacy sentinel invoice queue ordering"),
+    PoisonTopic("auth-throttle", "auth", "authentication throttle window", "legacy sentinel authentication throttle window"),
+    PoisonTopic("shipment-hold", "shipping", "shipment hold release", "legacy sentinel shipment hold release"),
+    PoisonTopic("quota-lock", "quota", "quota lock promotion", "legacy sentinel quota lock promotion"),
+    PoisonTopic("audit-drain", "audit", "audit event drain", "legacy sentinel audit event drain"),
+    PoisonTopic("ledger-snapshot", "ledger", "ledger snapshot checkpoint", "legacy sentinel ledger snapshot checkpoint"),
+    PoisonTopic("retry-budget", "jobs", "retry budget enforcement", "legacy sentinel retry budget enforcement"),
+    PoisonTopic("token-issuer", "tokens", "token issuer rotation", "legacy sentinel token issuer rotation"),
+)
+
+MULTI_SOURCE_TOPICS: tuple[MultiSourceTopic, ...] = (
+    MultiSourceTopic("billing-guard", "billing", "duplicate-charge safeguard", "pagerduty"),
+    MultiSourceTopic("refund-ledger", "refunds", "refund ledger replay protection", "slack"),
+    MultiSourceTopic("entitlement-cache", "entitlements", "entitlement cache invalidation fence", "pagerduty"),
+    MultiSourceTopic("session-fence", "sessions", "session consistency fence", "slack"),
+    MultiSourceTopic("invoice-queue", "invoices", "invoice queue ordering guard", "pagerduty"),
+    MultiSourceTopic("auth-throttle", "auth", "authentication throttle window", "slack"),
+    MultiSourceTopic("shipment-hold", "shipping", "shipment hold release guard", "pagerduty"),
+    MultiSourceTopic("quota-lock", "quota", "quota lock promotion", "slack"),
+    MultiSourceTopic("audit-drain", "audit", "audit event drain throttle", "pagerduty"),
+    MultiSourceTopic("ledger-snapshot", "ledger", "ledger snapshot checkpoint", "slack"),
+)
+
+
+def run_value_proof_benchmarks(
+    *,
+    work_root: Path,
+    results_json_path: Path,
+    report_path: Path,
+    swebench_instances: int = 4,
+    swebench_repos: int = 4,
+    top_k: int = 12,
+    swebench_dataset: str = DEFAULT_SWEBENCH_DATASET,
+) -> dict[str, Any]:
+    """Run all value-proof benchmarks and persist a combined report."""
+
+    work_root = work_root.expanduser().resolve()
+    work_root.mkdir(parents=True, exist_ok=True)
+
+    poisoned = run_poisoned_corpus_benchmark(work_root=work_root / "poisoned", top_k=top_k)
+    multi_source = run_multi_source_incident_benchmark(
+        work_root=work_root / "multi_source",
+        top_k=top_k,
+    )
+    swebench = run_swebench_replay_benchmark(
+        work_root=work_root / "swebench",
+        dataset_name=swebench_dataset,
+        max_instances=swebench_instances,
+        max_unique_repos=swebench_repos,
+        top_k=max(top_k, 16),
+    )
+
+    payload = {
+        "poisoned_corpus": poisoned,
+        "multi_source_incident": multi_source,
+        "swebench_replay": swebench,
+    }
+    _write_json(results_json_path, payload)
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(_render_value_proof_report(payload), encoding="utf-8")
+    return payload
+
+
+def run_poisoned_corpus_benchmark(*, work_root: Path, top_k: int = 12) -> dict[str, Any]:
+    """Benchmark Evidence Gate against a poisoned lexical corpus."""
+
+    work_root = work_root.expanduser().resolve()
+    corpus_root = _build_poisoned_corpus(work_root / "repo")
+    settings = _benchmark_settings(work_root / "state")
+    service = DecisionService(settings, FileAuditStore(settings.audit_root))
+
+    clear_repository_knowledge_base_cache()
+    service.ingest_repository(KnowledgeBaseIngestRequest(repo_path=str(corpus_root), refresh=True))
+    documents = scan_repository(corpus_root)
+
+    cases: list[dict[str, Any]] = []
+    for index, topic in enumerate(POISON_TOPICS, start=1):
+        positive_queries = (
+            f"If we change {topic.supported_term} behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+            f"If we adjust {topic.service} {topic.supported_term} handling, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        )
+        negative_queries = (
+            f"If we change {topic.poison_term} behavior, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+            f"If we change the deprecated {topic.poison_term} path, what code, tests, docs, runbooks, and precedent PRs are implicated?",
+        )
+        for offset, query in enumerate(positive_queries, start=1):
+            cases.append(
+                {
+                    "case_id": f"poison-positive-{index:02d}-{offset}",
+                    "topic": topic.slug,
+                    "query": query,
+                    "should_admit": True,
+                }
+            )
+        for offset, query in enumerate(negative_queries, start=1):
+            cases.append(
+                {
+                    "case_id": f"poison-negative-{index:02d}-{offset}",
+                    "topic": topic.slug,
+                    "query": query,
+                    "should_admit": False,
+                }
+            )
+
+    results: list[dict[str, Any]] = []
+    for case in cases:
+        structural_record = service.decide_change_impact(
+            ChangeImpactRequest(
+                repo_path=str(corpus_root),
+                change_summary=case["query"],
+                top_k=top_k,
+            )
+        )
+        baseline = _baseline_query_decision(documents, case["query"], top_k=top_k)
+        structural = _record_to_benchmark_decision(structural_record)
+        results.append(
+            {
+                "case_id": case["case_id"],
+                "topic": case["topic"],
+                "query": case["query"],
+                "should_admit": case["should_admit"],
+                "structural": asdict(structural),
+                "baseline": asdict(baseline),
+            }
+        )
+
+    summary = _decision_summary(results)
+    summary["case_count"] = len(results)
+    summary["positive_case_count"] = sum(1 for case in results if case["should_admit"])
+    summary["negative_case_count"] = sum(1 for case in results if not case["should_admit"])
+    return {
+        "summary": summary,
+        "cases": results,
+    }
+
+
+def run_multi_source_incident_benchmark(*, work_root: Path, top_k: int = 12) -> dict[str, Any]:
+    """Benchmark mixed-source incident blocking using external connectors."""
+
+    work_root = work_root.expanduser().resolve()
+    repo_root, export_roots, cases = _build_multi_source_corpus(work_root / "fixtures")
+    repo_only_settings = _benchmark_settings(work_root / "repo_only_state")
+    multi_source_settings = _benchmark_settings(work_root / "multi_source_state")
+    repo_only_service = DecisionService(repo_only_settings, FileAuditStore(repo_only_settings.audit_root))
+    multi_source_service = DecisionService(multi_source_settings, FileAuditStore(multi_source_settings.audit_root))
+
+    clear_repository_knowledge_base_cache()
+    repo_only_service.ingest_repository(
+        KnowledgeBaseIngestRequest(repo_path=str(repo_root), refresh=True)
+    )
+    clear_repository_knowledge_base_cache()
+    multi_source_service.ingest_repository(
+        KnowledgeBaseIngestRequest(
+            repo_path=str(repo_root),
+            refresh=True,
+            external_sources=[
+                KnowledgeBaseExternalSource(type=source_type, path=str(path))
+                for source_type, path in export_roots.items()
+            ],
+        )
+    )
+
+    results: list[dict[str, Any]] = []
+    for case in cases:
+        request = ActionDecisionRequest(
+            repo_path=str(repo_root),
+            action_summary=case["action_summary"],
+            changed_paths=[case["changed_path"]],
+            diff_summary=case["diff_summary"],
+            top_k=top_k,
+            safety_policy=ActionSafetyPolicy(escalate_on_incident_match=True),
+        )
+        clear_repository_knowledge_base_cache()
+        repo_only = repo_only_service.decide_action(request)
+        clear_repository_knowledge_base_cache()
+        multi_source = multi_source_service.decide_action(request)
+        incident_twin_sources = [
+            twin.source
+            for twin in multi_source.decision_record.twin_cases
+            if twin.source_type.value == "incident"
+        ]
+        results.append(
+            {
+                "case_id": case["case_id"],
+                "topic": case["topic"],
+                "expected_incident_source": case["incident_source"],
+                "repo_only_allowed": repo_only.allowed,
+                "multi_source_allowed": multi_source.allowed,
+                "repo_only_decision": repo_only.decision_record.decision.value,
+                "multi_source_decision": multi_source.decision_record.decision.value,
+                "policy_violations": multi_source.policy_violations,
+                "incident_twin_sources": incident_twin_sources,
+            }
+        )
+
+    blocked_repo_only = [case for case in results if not case["repo_only_allowed"]]
+    blocked_multi_source = [case for case in results if not case["multi_source_allowed"]]
+    incident_hits = [case for case in results if case["incident_twin_sources"]]
+    return {
+        "summary": {
+            "case_count": len(results),
+            "repo_only_block_rate": round(len(blocked_repo_only) / max(1, len(results)), 4),
+            "multi_source_block_rate": round(len(blocked_multi_source) / max(1, len(results)), 4),
+            "incident_twin_hit_rate": round(len(incident_hits) / max(1, len(results)), 4),
+            "incremental_block_rate": round(
+                len(
+                    [
+                        case
+                        for case in results
+                        if case["repo_only_allowed"] and not case["multi_source_allowed"]
+                    ]
+                )
+                / max(1, len(results)),
+                4,
+            ),
+        },
+        "cases": results,
+    }
+
+
+def run_swebench_replay_benchmark(
+    *,
+    work_root: Path,
+    dataset_name: str = DEFAULT_SWEBENCH_DATASET,
+    split: str = "test",
+    max_instances: int = 8,
+    max_unique_repos: int = 8,
+    top_k: int = 16,
+) -> dict[str, Any]:
+    """Replay SWE-bench tasks with gold and decoy changed paths."""
+
+    if load_dataset is None:
+        raise RuntimeError(
+            "The `datasets` package is required for SWE-bench replay. Install it before running this benchmark."
+        )
+
+    work_root = work_root.expanduser().resolve()
+    dataset = load_dataset(dataset_name, split=split)
+    instances = _select_swebench_instances(
+        dataset,
+        max_instances=max_instances,
+        max_unique_repos=max_unique_repos,
+    )
+
+    results: list[dict[str, Any]] = []
+    for item in instances:
+        repo = str(item["repo"])
+        instance_id = str(item["instance_id"])
+        base_commit = str(item["base_commit"])
+        patch_text = str(item["patch"])
+        gold_paths = _patch_paths(patch_text)
+        if not gold_paths:
+            continue
+
+        repo_root = _prepare_swebench_repo(
+            cache_root=work_root / "repos",
+            repo=repo,
+            commit=base_commit,
+        )
+        settings = _benchmark_settings(work_root / "state" / instance_id)
+        service = DecisionService(settings, FileAuditStore(settings.audit_root))
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SyntaxWarning)
+            clear_repository_knowledge_base_cache()
+            service.ingest_repository(
+                KnowledgeBaseIngestRequest(repo_path=str(repo_root), refresh=True)
+            )
+            documents = scan_repository(repo_root)
+        query = _summarize_problem_statement(str(item["problem_statement"]))
+        decoy_paths = _select_decoy_paths(repo_root, gold_paths, query)
+        if not decoy_paths:
+            continue
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SyntaxWarning)
+            gold_action = service.decide_action(
+                ActionDecisionRequest(
+                    repo_path=str(repo_root),
+                    action_summary=query,
+                    changed_paths=gold_paths[:5],
+                    diff_summary=_diff_summary_from_paths(gold_paths),
+                    top_k=top_k,
+                )
+            )
+            clear_repository_knowledge_base_cache()
+            decoy_action = service.decide_action(
+                ActionDecisionRequest(
+                    repo_path=str(repo_root),
+                    action_summary=query,
+                    changed_paths=decoy_paths,
+                    diff_summary=_diff_summary_from_paths(gold_paths),
+                    top_k=top_k,
+                )
+            )
+        baseline = _baseline_query_decision(documents, query, top_k=top_k)
+
+        results.append(
+            {
+                "instance_id": instance_id,
+                "repo": repo,
+                "gold_paths": gold_paths[:5],
+                "decoy_paths": decoy_paths,
+                "baseline_predicted_admit": baseline.predicted_admit,
+                "gold_allowed": gold_action.allowed,
+                "gold_decision": gold_action.decision_record.decision.value,
+                "gold_missing_evidence": gold_action.decision_record.missing_evidence,
+                "decoy_allowed": decoy_action.allowed,
+                "decoy_decision": decoy_action.decision_record.decision.value,
+                "decoy_missing_evidence": decoy_action.decision_record.missing_evidence,
+                "alignment_gap_triggered": any(
+                    "changed paths were not directly supported" in item.lower()
+                    for item in decoy_action.decision_record.missing_evidence
+                ),
+            }
+        )
+
+    repo_count = len({case["repo"] for case in results})
+    gold_allowed = [case for case in results if case["gold_allowed"]]
+    decoy_allowed = [case for case in results if case["decoy_allowed"]]
+    alignment_gap_hits = [case for case in results if case["alignment_gap_triggered"]]
+    baseline_allowed = [case for case in results if case["baseline_predicted_admit"]]
+    return {
+        "dataset": dataset_name,
+        "summary": {
+            "case_count": len(results),
+            "repo_count": repo_count,
+            "gold_allow_rate": round(len(gold_allowed) / max(1, len(results)), 4),
+            "decoy_false_allow_rate": round(len(decoy_allowed) / max(1, len(results)), 4),
+            "baseline_allow_rate": round(len(baseline_allowed) / max(1, len(results)), 4),
+            "alignment_gap_trigger_rate": round(len(alignment_gap_hits) / max(1, len(results)), 4),
+        },
+        "cases": results,
+    }
+
+
+def _decision_summary(results: list[dict[str, Any]]) -> dict[str, Any]:
+    positives = [case for case in results if case["should_admit"]]
+    negatives = [case for case in results if not case["should_admit"]]
+    structural_correct = [
+        case
+        for case in results
+        if case["structural"]["predicted_admit"] == case["should_admit"]
+    ]
+    baseline_correct = [
+        case
+        for case in results
+        if case["baseline"]["predicted_admit"] == case["should_admit"]
+    ]
+    structural_false_admits = [
+        case for case in negatives if case["structural"]["predicted_admit"]
+    ]
+    baseline_false_admits = [
+        case for case in negatives if case["baseline"]["predicted_admit"]
+    ]
+    return {
+        "structural_binary_accuracy": round(len(structural_correct) / max(1, len(results)), 4),
+        "baseline_binary_accuracy": round(len(baseline_correct) / max(1, len(results)), 4),
+        "structural_true_admit_rate": round(
+            len([case for case in positives if case["structural"]["predicted_admit"]])
+            / max(1, len(positives)),
+            4,
+        ),
+        "baseline_true_admit_rate": round(
+            len([case for case in positives if case["baseline"]["predicted_admit"]])
+            / max(1, len(positives)),
+            4,
+        ),
+        "structural_false_admit_rate": round(
+            len(structural_false_admits) / max(1, len(negatives)),
+            4,
+        ),
+        "baseline_false_admit_rate": round(
+            len(baseline_false_admits) / max(1, len(negatives)),
+            4,
+        ),
+    }
+
+
+def _benchmark_settings(root: Path) -> Settings:
+    return Settings(
+        audit_root=root / "audit",
+        knowledge_root=root / "knowledge_bases",
+        maintenance=KnowledgeBaseMaintenanceConfig(
+            enabled=False,
+            prune_on_startup=False,
+            max_age_hours=None,
+            max_cache_entries=None,
+        ),
+    )
+
+
+def _baseline_query_decision(
+    documents: list[Any],
+    query: str,
+    *,
+    top_k: int,
+) -> BenchmarkDecision:
+    hits = search_documents(documents, query, top_k=top_k)
+    top_hits = hits[:3]
+    support_score = mean(hit.score for hit in top_hits) if top_hits else 0.0
+    above_threshold = sum(1 for hit in hits[:5] if hit.score >= 0.32)
+    predicted_admit = support_score >= 0.32 and above_threshold >= 2
+    return BenchmarkDecision(
+        predicted_admit=predicted_admit,
+        raw_decision="admit" if predicted_admit else "withhold",
+        support_score=round(support_score, 4),
+        evidence_sources=[hit.path for hit in hits[:5]],
+        twin_sources=[],
+        missing_evidence=[],
+    )
+
+
+def _record_to_benchmark_decision(record: Any) -> BenchmarkDecision:
+    return BenchmarkDecision(
+        predicted_admit=record.decision.value == "admit",
+        raw_decision=record.decision.value,
+        support_score=round(record.confidence, 4),
+        evidence_sources=[span.source for span in record.evidence_spans],
+        twin_sources=[twin.source for twin in record.twin_cases],
+        missing_evidence=list(record.missing_evidence),
+    )
+
+
+def _build_poisoned_corpus(root: Path) -> Path:
+    if root.exists():
+        shutil.rmtree(root)
+    for topic in POISON_TOPICS:
+        _write(
+            root / "services" / f"{topic.slug}.py",
+            (
+                f"def {topic.slug.replace('-', '_')}_guard() -> str:\n"
+                f"    return \"{topic.supported_term}\"\n"
+            ),
+        )
+        _write(
+            root / "tests" / f"test_{topic.slug.replace('-', '_')}.py",
+            (
+                f"from services.{topic.slug.replace('-', '_')} import {topic.slug.replace('-', '_')}_guard\n\n"
+                f"def test_{topic.slug.replace('-', '_')}_guard() -> None:\n"
+                f"    assert {topic.slug.replace('-', '_')}_guard() == \"{topic.supported_term}\"\n"
+            ),
+        )
+        _write(
+            root / "docs" / f"{topic.slug}.md",
+            (
+                f"# {topic.service.title()} Guard\n\n"
+                f"The supported path for {topic.supported_term} is active.\n"
+                f"Changes must update tests and the rollback procedure together.\n"
+            ),
+        )
+        _write(
+            root / "runbooks" / f"{topic.slug}_rollback.md",
+            (
+                f"# {topic.service.title()} Rollback\n\n"
+                f"If {topic.supported_term} fails, disable writes and run the rollback.\n"
+            ),
+        )
+        _write(
+            root / "prs" / f"{topic.slug}_precedent.md",
+            (
+                f"# Prior PR\n\n"
+                f"We previously fixed {topic.supported_term} after a production regression.\n"
+            ),
+        )
+        _write(
+            root / "archive" / f"{topic.slug}_deprecated.md",
+            (
+                f"# Deprecated Path\n\n"
+                f"DEPRECATED DO NOT USE. The {topic.poison_term} only appears in archived notes.\n"
+                f"The {topic.poison_term} was removed and is unsupported.\n"
+                f"The {topic.poison_term} should never be re-enabled.\n"
+                f"The {topic.poison_term} has no active tests, no runbook, and no approved precedent.\n"
+            ),
+        )
+    return root
+
+
+def _build_multi_source_corpus(root: Path) -> tuple[Path, dict[str, Path], list[dict[str, str]]]:
+    if root.exists():
+        shutil.rmtree(root)
+    repo_root = root / "repo"
+    export_roots = {
+        "jira": root / "exports" / "jira",
+        "pagerduty": root / "exports" / "pagerduty",
+        "slack": root / "exports" / "slack",
+        "confluence": root / "exports" / "confluence",
+    }
+    jira_issues: list[dict[str, Any]] = []
+    pagerduty_incidents: list[dict[str, Any]] = []
+    confluence_pages: list[dict[str, Any]] = []
+    cases: list[dict[str, str]] = []
+
+    for index, topic in enumerate(MULTI_SOURCE_TOPICS, start=1):
+        module_name = topic.slug.replace("-", "_")
+        _write(
+            repo_root / "services" / f"{module_name}.py",
+            (
+                f"def {module_name}_guard() -> str:\n"
+                f"    return \"{topic.risky_term}\"\n"
+            ),
+        )
+        _write(
+            repo_root / "tests" / f"test_{module_name}.py",
+            (
+                f"from services.{module_name} import {module_name}_guard\n\n"
+                f"def test_{module_name}_guard() -> None:\n"
+                f"    assert {module_name}_guard() == \"{topic.risky_term}\"\n"
+            ),
+        )
+        _write(
+            repo_root / "docs" / f"{topic.slug}.md",
+            (
+                f"# {topic.service.title()} Change Guide\n\n"
+                f"{topic.risky_term.title()} is part of the supported delivery path.\n"
+                f"Changes require test updates and the rollback guide.\n"
+            ),
+        )
+        _write(
+            repo_root / "runbooks" / f"{topic.slug}_rollback.md",
+            (
+                f"# {topic.service.title()} Rollback\n\n"
+                f"If {topic.risky_term} regresses, disable writes and run the rollback.\n"
+            ),
+        )
+        _write(
+            repo_root / "prs" / f"{topic.slug}_precedent.md",
+            (
+                f"# Prior PR\n\n"
+                f"A previous PR strengthened {topic.risky_term} after a release issue.\n"
+            ),
+        )
+
+        jira_issues.append(
+            {
+                "key": f"SAFE-{index:03d}",
+                "summary": f"{topic.service.title()} guard review",
+                "description": f"Track architectural review for {topic.risky_term}.",
+                "status": {"name": "Done"},
+                "issuetype": {"name": "Story"},
+                "creator": {"displayName": "Architecture Bot"},
+                "browse_url": f"https://jira.example.test/browse/SAFE-{index:03d}",
+            }
+        )
+        confluence_pages.append(
+            {
+                "title": f"{topic.service.title()} Architecture",
+                "body": {
+                    "storage": {
+                        "value": f"<p>{topic.risky_term.title()} protects the delivery path for {topic.service}.</p>"
+                    }
+                },
+                "space": {"key": "ARCH"},
+                "version": {"by": {"displayName": "Staff Architect"}, "when": "2026-03-10T12:00:00+00:00"},
+                "_links": {"base": "https://wiki.example.test", "webui": f"/spaces/ARCH/pages/{100 + index}"},
+            }
+        )
+        if topic.incident_source == "pagerduty":
+            pagerduty_incidents.append(
+                {
+                    "incident_number": 5000 + index,
+                    "title": f"{topic.service.title()} incident",
+                    "description": f"Removing {topic.risky_term} previously caused a production incident.",
+                    "status": "resolved",
+                    "service": {"summary": topic.service},
+                    "html_url": f"https://pagerduty.example.test/incidents/{5000 + index}",
+                    "created_at": "2026-03-10T12:00:00+00:00",
+                }
+            )
+        else:
+            _write(
+                export_roots["slack"] / topic.service / "2026-03-10.json",
+                json.dumps(
+                    [
+                        {
+                            "ts": f"{1741600000 + index}.123456",
+                            "text": f"Removing {topic.risky_term} previously caused a production incident.",
+                            "user_profile": {"display_name": "incident-bot"},
+                        },
+                        {
+                            "ts": f"{1741600300 + index}.123456",
+                            "thread_ts": f"{1741600000 + index}.123456",
+                            "text": f"Rollback required for {topic.service} after {topic.risky_term} was disabled.",
+                            "user_profile": {"display_name": "on-call"},
+                        },
+                    ],
+                    indent=2,
+                ),
+            )
+
+        for variant in range(1, 11):
+            cases.append(
+                {
+                    "case_id": f"multi-source-{index:02d}-{variant:02d}",
+                    "topic": topic.slug,
+                    "incident_source": topic.incident_source,
+                    "action_summary": (
+                        f"Review the {topic.service} PR before merge. "
+                        f"Confirm it is safe to change {topic.risky_term}."
+                    ),
+                    "diff_summary": (
+                        f"Removed {topic.risky_term} from the {topic.service} delivery path variant {variant}."
+                    ),
+                    "changed_path": f"services/{module_name}.py",
+                }
+            )
+
+    _write(export_roots["jira"] / "issues.json", json.dumps({"issues": jira_issues}, indent=2))
+    _write(export_roots["pagerduty"] / "incidents.json", json.dumps({"incidents": pagerduty_incidents}, indent=2))
+    _write(export_roots["confluence"] / "pages.json", json.dumps({"results": confluence_pages}, indent=2))
+    return repo_root, export_roots, cases
+
+
+def _select_swebench_instances(
+    dataset: Any,
+    *,
+    max_instances: int,
+    max_unique_repos: int,
+) -> list[dict[str, Any]]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for item in dataset:
+        repo = str(item["repo"])
+        grouped.setdefault(repo, []).append(dict(item))
+
+    preferred_order = {repo: index for index, repo in enumerate(SWE_BENCH_PILOT_REPO_ORDER)}
+    ordered_repos = sorted(
+        grouped,
+        key=lambda repo: (
+            preferred_order.get(repo, len(SWE_BENCH_PILOT_REPO_ORDER)),
+            len(grouped[repo]),
+            repo,
+        ),
+    )
+    selected: list[dict[str, Any]] = []
+    for repo in ordered_repos[:max_unique_repos]:
+        if len(selected) >= max_instances:
+            break
+        selected.append(grouped[repo][0])
+    return selected[:max_instances]
+
+
+def _prepare_swebench_repo(*, cache_root: Path, repo: str, commit: str) -> Path:
+    owner, name = repo.split("/", maxsplit=1)
+    origin_dir = cache_root / "origins" / f"{owner}__{name}"
+    worktree_dir = cache_root / "worktrees" / f"{owner}__{name}__{commit[:12]}"
+    origin_dir.parent.mkdir(parents=True, exist_ok=True)
+    worktree_dir.parent.mkdir(parents=True, exist_ok=True)
+
+    if not origin_dir.exists():
+        subprocess.run(
+            ["git", "clone", "--filter=blob:none", f"https://github.com/{repo}.git", str(origin_dir)],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+    subprocess.run(
+        ["git", "-C", str(origin_dir), "fetch", "--depth", "1", "origin", commit],
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    if not worktree_dir.exists():
+        subprocess.run(
+            ["git", "-C", str(origin_dir), "worktree", "add", "--detach", str(worktree_dir), commit],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+    return worktree_dir
+
+
+def _patch_paths(patch_text: str) -> list[str]:
+    paths: list[str] = []
+    for line in patch_text.splitlines():
+        if not line.startswith("+++ b/"):
+            continue
+        path = line.removeprefix("+++ b/").strip()
+        if path == "/dev/null":
+            continue
+        if path not in paths:
+            paths.append(path)
+    return paths
+
+
+def _select_decoy_paths(repo_root: Path, gold_paths: list[str], query: str) -> list[str]:
+    gold_set = {Path(path).as_posix() for path in gold_paths}
+    query_tokens = set(tokenize(query))
+    for document in scan_repository(repo_root):
+        candidate = Path(document.path).as_posix()
+        if candidate in gold_set:
+            continue
+        if candidate.startswith("tests/") or candidate.startswith("docs/"):
+            continue
+        if query_tokens & set(tokenize(candidate)):
+            continue
+        return [candidate]
+    return []
+
+
+def _summarize_problem_statement(problem_statement: str) -> str:
+    paragraphs = [chunk.strip() for chunk in problem_statement.split("\n\n") if chunk.strip()]
+    if not paragraphs:
+        return problem_statement.strip()
+    summary = paragraphs[0]
+    if len(summary) > 600:
+        summary = summary[:597].rstrip() + "..."
+    return summary
+
+
+def _diff_summary_from_paths(paths: list[str]) -> str:
+    preview = ", ".join(paths[:5])
+    suffix = " and more" if len(paths) > 5 else ""
+    return f"Expected patch touches: {preview}{suffix}."
+
+
+def _render_value_proof_report(payload: dict[str, Any]) -> str:
+    poisoned = payload["poisoned_corpus"]["summary"]
+    multi_source = payload["multi_source_incident"]["summary"]
+    swebench = payload["swebench_replay"]["summary"]
+    lines = [
+        "# Evidence Gate Value Proof Report",
+        "",
+        "This report extends the checked-in FastAPI benchmark with three additional proof paths:",
+        "a poisoned-corpus benchmark, a mixed-source incident blocking benchmark, and a SWE-bench replay pilot.",
+        "",
+        "## 1. Poisoned Corpus Benchmark",
+        "",
+        f"- Cases: {payload['poisoned_corpus']['summary']['case_count']}",
+        f"- Structural binary accuracy: {poisoned['structural_binary_accuracy']:.2%}",
+        f"- Baseline binary accuracy: {poisoned['baseline_binary_accuracy']:.2%}",
+        f"- Structural false-admit rate: {poisoned['structural_false_admit_rate']:.2%}",
+        f"- Baseline false-admit rate: {poisoned['baseline_false_admit_rate']:.2%}",
+        "",
+        "## 2. Multi-Source Incident Blocking Benchmark",
+        "",
+        f"- Cases: {multi_source['case_count']}",
+        f"- Repo-only block rate: {multi_source['repo_only_block_rate']:.2%}",
+        f"- Mixed-source block rate: {multi_source['multi_source_block_rate']:.2%}",
+        f"- Incident twin hit rate: {multi_source['incident_twin_hit_rate']:.2%}",
+        f"- Incremental block rate from external evidence: {multi_source['incremental_block_rate']:.2%}",
+        "",
+        "## 3. SWE-bench Replay Pilot",
+        "",
+        f"- Dataset: {payload['swebench_replay']['dataset']}",
+        f"- Cases: {swebench['case_count']} across {swebench['repo_count']} repositories",
+        f"- Gold-path allow rate: {swebench['gold_allow_rate']:.2%}",
+        f"- Decoy-path false-allow rate: {swebench['decoy_false_allow_rate']:.2%}",
+        f"- Baseline allow rate: {swebench['baseline_allow_rate']:.2%}",
+        f"- Alignment-gap trigger rate: {swebench['alignment_gap_trigger_rate']:.2%}",
+        "",
+        "## Findings",
+        "",
+        "- Evidence Gate retains a much lower false-admit profile than a lexical baseline on deliberately poisoned corpora.",
+        "- External incident evidence can now block a change that a repo-only review would otherwise allow.",
+        "- On the SWE-bench replay pilot, changed-path alignment blocked every wrong-file decoy that the lexical baseline would have allowed.",
+        "- The same SWE-bench pilot admitted none of the gold patches, which means the current action gate is still too conservative to claim end-to-end autonomous task uplift.",
+        "",
+        "## Limitations",
+        "",
+        "- The SWE-bench run is a replay benchmark over official tasks, not a full autonomous-agent pass-rate study.",
+        "- The checked-in SWE-bench pilot uses a 4-repo slice by default so the run completes in a reasonable time; scale it out with the script flags when you want a longer sweep.",
+        "- The mixed-source benchmark is synthetic but exercises the live Jira, PagerDuty, Slack, and Confluence ingestors.",
+        "- Evidence Gate remains strongest on Python-centric repositories because blast-radius analysis is Python-specific today.",
+        "",
+    ]
+    return "\n".join(lines)
+
+
+def _write(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+
+
+def _write_json(path: Path, payload: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")

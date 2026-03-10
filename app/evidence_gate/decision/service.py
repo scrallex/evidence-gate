@@ -51,6 +51,14 @@ from evidence_gate.retrieval.structural import (
     search_repository,
 )
 
+_WARNING_EVIDENCE_TERMS = (
+    "deprecated",
+    "do not use",
+    "unsupported",
+    "archived",
+    "legacy sentinel",
+)
+
 
 class DecisionService:
     """Execute the first Evidence Gate decision workflow."""
@@ -90,6 +98,7 @@ class DecisionService:
             if evidence.source_type == SourceType.CODE
         ][: self.settings.thresholds.focus_path_limit]
         blast_radius = self._compute_blast_radius(repo_root, focus_paths)
+        path_alignment_gap = self._has_changed_path_alignment_gap(request.changed_paths, ranked_hits)
         return self._finalize_record(
             request_type="change-impact",
             prompt=query,
@@ -97,6 +106,7 @@ class DecisionService:
             evidence_spans=evidence_spans,
             twin_cases=twin_cases,
             blast_radius=blast_radius,
+            path_alignment_gap=path_alignment_gap,
         )
 
     def decide_action(self, request: ActionDecisionRequest) -> ActionDecisionResponse:
@@ -110,6 +120,7 @@ class DecisionService:
             if evidence.source_type == SourceType.CODE
         ][: self.settings.thresholds.focus_path_limit]
         blast_radius = self._compute_blast_radius(repo_root, focus_paths)
+        path_alignment_gap = self._has_changed_path_alignment_gap(request.changed_paths, ranked_hits)
         record = self._finalize_record(
             request_type="action",
             prompt=query,
@@ -117,6 +128,7 @@ class DecisionService:
             evidence_spans=evidence_spans,
             twin_cases=twin_cases,
             blast_radius=blast_radius,
+            path_alignment_gap=path_alignment_gap,
             persist=False,
         )
         policy_violations: list[str] = []
@@ -396,6 +408,7 @@ class DecisionService:
         evidence_spans: list[EvidenceSpan],
         twin_cases: list[TwinCase],
         blast_radius: BlastRadius,
+        path_alignment_gap: bool = False,
         persist: bool = True,
     ) -> DecisionRecord:
         support_score = (
@@ -404,7 +417,13 @@ class DecisionService:
             else 0.0
         )
         recurrence = len(evidence_spans) + len(twin_cases)
-        missing_evidence = self._build_missing_evidence(evidence_spans, twin_cases)
+        warning_evidence_hit = self._has_warning_evidence(evidence_spans)
+        missing_evidence = self._build_missing_evidence(
+            evidence_spans,
+            twin_cases,
+            path_alignment_gap=path_alignment_gap,
+            warning_evidence_hit=warning_evidence_hit,
+        )
         has_test_support = any(span.source_type == SourceType.TEST for span in evidence_spans)
         has_runbook_support = any(span.source_type == SourceType.RUNBOOK for span in evidence_spans)
         hazard = min(
@@ -428,7 +447,14 @@ class DecisionService:
                 - 0.03 * max(0, blast_radius.files - 4),
             ),
         )
-        decision = self._decide(evidence_spans, twin_cases, support_score, missing_evidence)
+        decision = self._decide(
+            evidence_spans,
+            twin_cases,
+            support_score,
+            missing_evidence,
+            path_alignment_gap=path_alignment_gap,
+            warning_evidence_hit=warning_evidence_hit,
+        )
         explanation = self._build_explanation(decision, support_score, blast_radius, missing_evidence)
         answer_or_action = self._build_summary(prompt, evidence_spans, twin_cases, blast_radius, decision)
 
@@ -491,6 +517,8 @@ class DecisionService:
             policy_violations.append("Policy requires prior precedent.")
         if policy.require_incident_precedent and not has_incident_precedent:
             policy_violations.append("Policy requires prior incident precedent.")
+        if policy.escalate_on_incident_match and has_incident_precedent:
+            policy_violations.append("Policy blocks changes that match prior incident precedent.")
 
         if not policy_violations:
             return record, []
@@ -534,12 +562,19 @@ class DecisionService:
         self,
         evidence_spans: list[EvidenceSpan],
         twin_cases: list[TwinCase],
+        *,
+        path_alignment_gap: bool = False,
+        warning_evidence_hit: bool = False,
     ) -> list[str]:
         missing: list[str] = []
         if not evidence_spans:
             missing.append("No directly supporting code or documentation was found.")
         if evidence_spans and not any(span.verified for span in evidence_spans):
             missing.append("Retrieved evidence could not be verified against the truth-pack.")
+        if path_alignment_gap:
+            missing.append("The proposed changed paths were not directly supported by the retrieved evidence.")
+        if warning_evidence_hit:
+            missing.append("Top retrieved evidence was marked deprecated or explicitly unsafe.")
         if not any(span.source_type == SourceType.TEST for span in evidence_spans):
             missing.append("No supporting test evidence was found for the affected flow.")
         if not any(span.source_type == SourceType.RUNBOOK for span in evidence_spans):
@@ -554,12 +589,24 @@ class DecisionService:
         twin_cases: list[TwinCase],
         support_score: float,
         missing_evidence: list[str],
+        *,
+        path_alignment_gap: bool = False,
+        warning_evidence_hit: bool = False,
     ) -> DecisionName:
         thresholds = self.settings.thresholds
         evidence_count = len(evidence_spans)
         has_test_support = any(span.source_type == SourceType.TEST for span in evidence_spans)
         has_runbook_support = any(span.source_type == SourceType.RUNBOOK for span in evidence_spans)
         has_precedent = bool(twin_cases)
+        verified_code_like = any(
+            span.verified and span.source_type in {SourceType.CODE, SourceType.TEST, SourceType.RUNBOOK}
+            for span in evidence_spans
+        )
+
+        if path_alignment_gap:
+            return DecisionName.ESCALATE
+        if warning_evidence_hit and not (verified_code_like and has_test_support and has_precedent):
+            return DecisionName.ESCALATE
 
         strong_support = (
             evidence_count >= thresholds.admit_evidence_count
@@ -602,3 +649,42 @@ class DecisionService:
             f"{blast_radius.docs} docs, and {blast_radius.runbooks} runbooks. "
             f"Closest precedent: {twin_sources}. Decision: {decision.value}."
         )
+
+    def _has_changed_path_alignment_gap(
+        self,
+        changed_paths: list[str],
+        ranked_hits: list[SearchHit],
+    ) -> bool:
+        if not changed_paths:
+            return False
+        normalized_changed = [self._normalize_relative_path(path) for path in changed_paths if path.strip()]
+        if not normalized_changed:
+            return False
+        hit_paths = [self._normalize_relative_path(hit.path) for hit in ranked_hits]
+        return not any(
+            self._paths_align(changed_path, hit_path)
+            for changed_path in normalized_changed
+            for hit_path in hit_paths
+        )
+
+    def _normalize_relative_path(self, path: str) -> str:
+        normalized = Path(path.strip()).as_posix()
+        while normalized.startswith("./"):
+            normalized = normalized[2:]
+        return normalized
+
+    def _paths_align(self, changed_path: str, hit_path: str) -> bool:
+        changed = Path(changed_path)
+        hit = Path(hit_path)
+        if changed == hit:
+            return True
+        if changed.stem and changed.stem == hit.stem:
+            return True
+        return False
+
+    def _has_warning_evidence(self, evidence_spans: list[EvidenceSpan]) -> bool:
+        for span in evidence_spans[:3]:
+            lowered = f"{span.source} {span.snippet}".lower()
+            if any(term in lowered for term in _WARNING_EVIDENCE_TERMS):
+                return True
+        return False

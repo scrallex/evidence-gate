@@ -115,6 +115,7 @@ def test_action_and_change_requests_round_trip_with_diff_summary_and_safety_poli
             min_confidence=0.65,
             require_test_evidence=True,
             require_incident_precedent=True,
+            escalate_on_incident_match=True,
         ),
     )
     restored_action = ActionDecisionRequest.model_validate_json(action_request.model_dump_json())
@@ -124,6 +125,7 @@ def test_action_and_change_requests_round_trip_with_diff_summary_and_safety_poli
     assert restored_action.safety_policy is not None
     assert restored_action.safety_policy.max_blast_radius_files == 3
     assert restored_action.safety_policy.require_incident_precedent is True
+    assert restored_action.safety_policy.escalate_on_incident_match is True
 
     change_request = ChangeImpactRequest(
         repo_path="/repo",

@@ -162,6 +162,7 @@ One real engineering repository plus:
 - calibrated abstention instead of answer-forcing
 - faster engineering investigations on change-impact questions
 - higher reviewer trust in citations, twins, and escalation behavior
+- at least one documented follow-on proof suite beyond the initial FastAPI slice
 
 ## Non-goals
 

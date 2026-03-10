@@ -133,6 +133,12 @@ Run the checked-in FastAPI benchmark:
 python scripts/run_fastapi_benchmark.py
 ```
 
+Run the extended value-proof suite:
+
+```bash
+python scripts/run_value_proof_benchmarks.py
+```
+
 ## API Surface
 
 - `GET /health`
@@ -182,6 +188,8 @@ The repo now includes a reproducible benchmark against a real open-source corpus
 - `benchmarks/cases/fastapi_cases.json`: 50 admit/withhold benchmark queries
 - `benchmarks/results/fastapi_structural_vs_baseline.md`: latest checked-in report
 - `scripts/run_fastapi_benchmark.py`: rebuild the corpus and rerun the comparison
+- `benchmarks/results/value_proof_benchmarks.md`: poisoned-corpus, mixed-source, and SWE-bench replay findings
+- `scripts/run_value_proof_benchmarks.py`: rerun the extended proof suite
 
 Current checked-in result:
 
@@ -192,6 +200,15 @@ Current checked-in result:
 
 The benchmark uses a curated FastAPI slice with code, tests, English docs,
 deployment runbooks, and precedent PR summaries extracted from release notes.
+
+The broader proof suite adds three more signals:
+
+- poisoned corpus: 12.50% structural false-admit versus 87.50% for the lexical baseline
+- mixed-source incident blocking: 80.00% incremental block rate when external incident evidence is available
+- SWE-bench replay pilot: 0.00% wrong-file false-allow rate, but also 0.00% gold-path allow rate on the current action policy
+
+The current evidence therefore supports a strong false-admit and safety claim,
+but not yet a claim of higher autonomous task completion.
 
 ## Roadmap
 
@@ -233,3 +250,4 @@ partner-review materials.
 - `docs/07_mcp_server.md`
 - `docs/08_partner_evaluation_guide.md`
 - `docs/09_agent_skills.md`
+- `docs/10_value_proof.md`

@@ -125,8 +125,7 @@ async def _exercise_mcp_server(
                     "changed_paths": ["src/session.py"],
                     "diff_summary": "Legacy sentinel rollback required after token refresh regression.",
                     "safety_policy": {
-                        "max_blast_radius_files": 1,
-                        "require_incident_precedent": True,
+                        "escalate_on_incident_match": True,
                     },
                 },
             )
@@ -218,7 +217,9 @@ def test_mcp_stdio_server_exposes_evidence_gate_workflow(tmp_path: Path) -> None
     assert blocked_action_payload["allowed"] is False
     assert blocked_action_payload["status"] == "block"
     assert blocked_action_payload["decision_record"]["decision"] == "escalate"
-    assert blocked_action_payload["policy_violations"]
+    assert blocked_action_payload["policy_violations"] == [
+        "Policy blocks changes that match prior incident precedent."
+    ]
     assert any(
         twin["source"] == "external_incidents/incident_1842.md"
         for twin in blocked_action_payload["decision_record"]["twin_cases"]

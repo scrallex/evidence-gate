@@ -62,6 +62,11 @@ def _build_billing_repo(root: Path) -> None:
         "    return 'ok'\n",
     )
     _write(
+        root / "services" / "email.py",
+        "def send_receipt(invoice_id: str) -> str:\n"
+        "    return invoice_id\n",
+    )
+    _write(
         root / "tests" / "test_billing.py",
         "from services.billing import submit_invoice\n\n"
         "def test_submit_invoice() -> None:\n"
@@ -324,10 +329,10 @@ def test_action_decision_endpoint_enforces_safety_policy_with_external_connector
             "diff_summary": "Removed duplicate-charge safeguards from the billing authorization flow.",
             "top_k": 10,
             "safety_policy": {
-                "max_blast_radius_files": 1,
                 "require_test_evidence": True,
                 "require_precedent": True,
                 "require_incident_precedent": True,
+                "escalate_on_incident_match": True,
             },
         },
     )
@@ -339,13 +344,52 @@ def test_action_decision_endpoint_enforces_safety_policy_with_external_connector
     assert payload["failure_reason"].startswith(
         "Action blocked because Evidence Gate safety thresholds were violated:"
     )
-    assert any("Blast radius files" in violation for violation in payload["policy_violations"])
+    assert payload["policy_violations"] == [
+        "Policy blocks changes that match prior incident precedent."
+    ]
     assert any(
         twin["source"].startswith("external_pagerduty/")
         for twin in payload["decision_record"]["twin_cases"]
     )
     assert payload["decision_record"]["request_payload"]["diff_summary"] == (
         "Removed duplicate-charge safeguards from the billing authorization flow."
+    )
+
+
+def test_action_decision_endpoint_escalates_when_changed_paths_do_not_match_retrieved_evidence(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    repo_root = tmp_path / "billing_repo"
+    audit_root = tmp_path / "audit"
+    kb_root = tmp_path / "knowledge_bases"
+    _build_billing_repo(repo_root)
+
+    monkeypatch.setenv("EVIDENCE_GATE_AUDIT_ROOT", str(audit_root))
+    monkeypatch.setenv("EVIDENCE_GATE_KB_ROOT", str(kb_root))
+    get_settings.cache_clear()
+    get_audit_store.cache_clear()
+    get_decision_service.cache_clear()
+
+    client = TestClient(create_app())
+
+    response = client.post(
+        "/v1/decide/action",
+        json={
+            "repo_path": str(repo_root),
+            "action_summary": "Review the billing service PR before merge.",
+            "changed_paths": ["services/email.py"],
+            "diff_summary": "Removed duplicate-charge safeguards from the billing authorization flow.",
+            "top_k": 10,
+        },
+    )
+
+    assert response.status_code == 403
+    payload = response.json()
+    assert payload["decision_record"]["decision"] == "escalate"
+    assert any(
+        "proposed changed paths were not directly supported" in item.lower()
+        for item in payload["decision_record"]["missing_evidence"]
     )
 
 

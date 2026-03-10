@@ -87,6 +87,7 @@ class ActionSafetyPolicy(BaseModel):
     require_runbook_evidence: bool = False
     require_precedent: bool = False
     require_incident_precedent: bool = False
+    escalate_on_incident_match: bool = False
 
 
 class ActionDecisionRequest(BaseModel):

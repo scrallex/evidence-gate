@@ -251,3 +251,15 @@ If you want a reproducible public demo before using a private repo, run:
 That script clones FastAPI into `./data/repos/fastapi`, starts the Docker
 stack, ingests the repo, and prints copy-paste commands for the decision
 endpoints.
+
+## 10. Additional proof artifacts
+
+If a partner asks for broader evidence than the checked-in FastAPI report, point
+them at:
+
+- [value_proof_benchmarks.md](/sep/evidence-gate/benchmarks/results/value_proof_benchmarks.md)
+- [10_value_proof.md](/sep/evidence-gate/docs/10_value_proof.md)
+
+Those documents show the current shape of the claim honestly: strong false-admit
+prevention and mixed-source blocking, but not yet a demonstrated uplift on
+end-to-end autonomous task completion.
