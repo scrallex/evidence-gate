@@ -86,15 +86,23 @@ def create_mcp_server(
         name="evidence_gate_ingest_repository",
         description=(
             "Build or refresh a persisted structural knowledge base for a repository so later "
-            "decisions can reuse cached evidence."
+            "decisions can reuse cached evidence, including optional external incident exports."
         ),
         annotations=NON_DESTRUCTIVE,
         structured_output=True,
     )
-    def ingest_repository(repo_path: str, refresh: bool = False) -> KnowledgeBaseIngestResponse:
+    def ingest_repository(
+        repo_path: str,
+        refresh: bool = False,
+        external_sources: list[dict[str, str]] | None = None,
+    ) -> KnowledgeBaseIngestResponse:
         try:
             return get_decision_service().ingest_repository(
-                KnowledgeBaseIngestRequest(repo_path=repo_path, refresh=refresh)
+                KnowledgeBaseIngestRequest(
+                    repo_path=repo_path,
+                    refresh=refresh,
+                    external_sources=external_sources or [],
+                )
             )
         except ValueError as exc:
             raise ToolError(str(exc)) from exc

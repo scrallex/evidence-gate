@@ -50,7 +50,12 @@ def _build_sample_repo(root: Path) -> None:
     )
 
 
-async def _exercise_mcp_server(repo_root: Path, audit_root: Path, kb_root: Path) -> dict[str, object]:
+async def _exercise_mcp_server(
+    repo_root: Path,
+    incident_root: Path,
+    audit_root: Path,
+    kb_root: Path,
+) -> dict[str, object]:
     project_root = Path(__file__).resolve().parents[1]
     python_path_parts = [str(project_root / "app")]
     if existing_python_path := os.environ.get("PYTHONPATH"):
@@ -79,7 +84,15 @@ async def _exercise_mcp_server(repo_root: Path, audit_root: Path, kb_root: Path)
 
             ingest = await session.call_tool(
                 "evidence_gate_ingest_repository",
-                {"repo_path": str(repo_root)},
+                {
+                    "repo_path": str(repo_root),
+                    "external_sources": [
+                        {
+                            "type": "incidents",
+                            "path": str(incident_root),
+                        }
+                    ],
+                },
             )
             status = await session.call_tool(
                 "evidence_gate_get_knowledge_base_status",
@@ -108,6 +121,13 @@ async def _exercise_mcp_server(repo_root: Path, audit_root: Path, kb_root: Path)
                 "evidence_gate_list_recent_decisions",
                 {"limit": 5},
             )
+            external_query = await session.call_tool(
+                "evidence_gate_decide_query",
+                {
+                    "repo_path": str(repo_root),
+                    "query": "Which incident mentioned legacy sentinel rollback?",
+                },
+            )
 
             decision_resource = await session.read_resource(f"evidence-gate://decisions/{decision_id}")
             schema_resource = await session.read_resource("evidence-gate://schemas/decision-record")
@@ -131,6 +151,7 @@ async def _exercise_mcp_server(repo_root: Path, audit_root: Path, kb_root: Path)
         "decision": decision_payload,
         "action_decision": action_decision.structuredContent,
         "recent_decisions": recent_decisions.structuredContent,
+        "external_query": external_query.structuredContent,
         "decision_resource": decision_resource.contents[0].text,
         "schema_resource": schema_resource.contents[0].text,
         "audit_resource": audit_resource.contents[0].text,
@@ -140,11 +161,16 @@ async def _exercise_mcp_server(repo_root: Path, audit_root: Path, kb_root: Path)
 
 def test_mcp_stdio_server_exposes_evidence_gate_workflow(tmp_path: Path) -> None:
     repo_root = tmp_path / "sample_repo"
+    incident_root = tmp_path / "external_incidents"
     audit_root = tmp_path / "audit"
     kb_root = tmp_path / "knowledge_bases"
     _build_sample_repo(repo_root)
+    _write(
+        incident_root / "incident_1842.md",
+        "# Incident 1842\n\nLegacy sentinel rollback required after the token refresh regression.\n",
+    )
 
-    payload = asyncio.run(_exercise_mcp_server(repo_root, audit_root, kb_root))
+    payload = asyncio.run(_exercise_mcp_server(repo_root, incident_root, audit_root, kb_root))
 
     assert "evidence_gate_health" in payload["tools"]
     assert "evidence_gate_ingest_repository" in payload["tools"]
@@ -176,6 +202,12 @@ def test_mcp_stdio_server_exposes_evidence_gate_workflow(tmp_path: Path) -> None
 
     recent_decisions = payload["recent_decisions"]
     assert len(recent_decisions["decisions"]) >= 2
+
+    external_query_payload = payload["external_query"]
+    assert any(
+        twin["source"] == "external_incidents/incident_1842.md"
+        for twin in external_query_payload["twin_cases"]
+    )
 
     decision_resource = json.loads(payload["decision_resource"])
     assert decision_resource["decision_id"] == decision_payload["decision_id"]

@@ -88,7 +88,7 @@ admitting only when evidence is structurally supported.
 
 ### Implemented alpha scope
 
-- repository and document ingestion into a persisted knowledge base
+- repository ingestion plus optional local external incident corpora into a persisted knowledge base
 - structural evidence retrieval with truth-pack verification
 - change-impact and engineering query workflows
 - action-gating workflow with allow or block enforcement on top of the same decision engine
@@ -110,7 +110,7 @@ admitting only when evidence is structurally supported.
 ## Implemented endpoints
 
 - `GET /health`
-- `POST /v1/knowledge-bases/ingest`
+- `POST /v1/knowledge-bases/ingest` with optional `external_sources`
 - `GET /v1/knowledge-bases`
 - `GET /v1/knowledge-bases/status`
 - `DELETE /v1/knowledge-bases`
@@ -124,7 +124,7 @@ admitting only when evidence is structurally supported.
 
 ## Implemented MCP surfaces
 
-- `evidence_gate_ingest_repository`
+- `evidence_gate_ingest_repository` with optional `external_sources`
 - `evidence_gate_list_knowledge_bases`
 - `evidence_gate_get_knowledge_base_status`
 - `evidence_gate_decide_query`

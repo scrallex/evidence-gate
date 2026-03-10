@@ -59,6 +59,25 @@ Successful ingest returns:
 - `document_count`
 - `span_count`
 
+If you have incident or postmortem exports available inside the container, you
+can include them during ingest:
+
+```bash
+curl -X POST http://127.0.0.1:8000/v1/knowledge-bases/ingest \
+  -H "content-type: application/json" \
+  -d '{
+    "repo_path": "/workspace/target",
+    "external_sources": [
+      {"type": "incidents", "path": "/workspace/incidents"}
+    ]
+  }'
+```
+
+The bundled evaluator stack mounts only the target repository by default. If
+you want extra corpora in the container, mount them explicitly through a custom
+Compose override or use a host-local Evidence Gate process instead of the
+bundled container.
+
 ## 4. Run the core evaluation flows
 
 Engineering evidence query:
@@ -117,13 +136,18 @@ Cursor and Cline configurations.
 
 ## 6. Use the GitHub Action guardrail
 
-The repo now ships a root [action.yml](/sep/evidence-gate/action.yml) that:
+The repo ships a root [action.yml](/sep/evidence-gate/action.yml) that:
 
 - starts the Dockerized Evidence Gate service in CI
 - mounts the checked-out repo at `/workspace/target`
 - calls `POST /v1/decide/action`
 - writes a formatted PR comment markdown file
 - optionally fails the workflow when the action is blocked
+
+Today, the composite action evaluates the checked-out repository surface. If
+you need external incident corpora in CI, pre-ingest them through the API or
+point the action at an already-running Evidence Gate service that can see those
+paths.
 
 Minimal usage example:
 

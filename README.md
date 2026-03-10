@@ -7,14 +7,15 @@ answer or act.
 
 This repo is the alpha implementation of that reliability layer. Its first
 benchmarked workflow is engineering change intelligence: ingest a target
-repository into a structural knowledge base, retrieve cited evidence spans and
-prior cases, compute blast radius, and return an `admit | abstain | escalate`
-decision before a model or agent proceeds.
+repository plus optional local incident evidence into a structural knowledge
+base, retrieve cited evidence spans and prior cases, compute blast radius, and
+return an `admit | abstain | escalate` decision before a model or agent
+proceeds.
 
 ## What It Does Today
 
-- ingests code, docs, tests, runbooks, PRs, and incidents into a persisted
-  structural knowledge base
+- ingests repository content plus optional local external incident exports into
+  a persisted structural knowledge base
 - answers change-impact and engineering evidence queries
 - returns cited evidence spans, prior PR or incident twins, blast radius, and an
   `admit | abstain | escalate` decision
@@ -43,7 +44,7 @@ It is suitable today for:
 
 It is not yet ready as a self-serve product or production deployment. The main
 gaps are production hardening, broader CI adoption, partner validation on
-private corpora, and wider enterprise-source ingestion.
+private corpora, and wider connector coverage beyond local incident exports.
 
 ## Quickstart
 
@@ -91,6 +92,19 @@ curl -X POST http://127.0.0.1:8000/v1/knowledge-bases/ingest \
   -d '{"repo_path": "/path/to/repo"}'
 ```
 
+Build a mixed-source knowledge base with local incident exports:
+
+```bash
+curl -X POST http://127.0.0.1:8000/v1/knowledge-bases/ingest \
+  -H "content-type: application/json" \
+  -d '{
+    "repo_path": "/path/to/repo",
+    "external_sources": [
+      {"type": "incidents", "path": "/path/to/incidents"}
+    ]
+  }'
+```
+
 Ask a change-impact question:
 
 ```bash
@@ -132,14 +146,16 @@ python scripts/run_fastapi_benchmark.py
 
 ## MCP Surface
 
-The repo now ships a first-cut MCP server with:
+The repo ships an MCP server with:
 
-- tools for repository ingest, knowledge-base status, query decisions, change-impact decisions, action gating, and audit lookup
+- tools for repository ingest, optional mixed-source ingest, knowledge-base status,
+  query decisions, change-impact decisions, action gating, and audit lookup
 - a decision-contract schema resource, per-decision resources, and the raw audit ledger
 - a prompt that tells an agent to gate risky code edits before proceeding
 
 See `docs/07_mcp_server.md` for local `stdio` and remote `streamable-http`
-configuration examples.
+configuration examples, and `docs/09_agent_skills.md` for Codex-oriented skill
+guidance.
 
 ## Evaluator Kit
 
@@ -149,6 +165,11 @@ The repo now includes a design-partner evaluator path:
 - `docker-compose.yml`: mounts persistent audit and knowledge-base state under `./data`
 - `scripts/run_demo_sandbox.sh`: boots the stack, clones FastAPI, ingests it, and prints copy-paste test commands
 - `docs/08_partner_evaluation_guide.md`: step-by-step instructions for mounting a private repo into the container
+
+The composite GitHub Action currently evaluates the checked-out repository
+surface. If you need external incident corpora in CI, pre-ingest them through
+the API or point the action at an already-running Evidence Gate service that
+can see those paths.
 
 ## Benchmark Proof
 
@@ -207,3 +228,4 @@ partner-review materials.
 - `docs/06_release_readiness_and_partner_path.md`
 - `docs/07_mcp_server.md`
 - `docs/08_partner_evaluation_guide.md`
+- `docs/09_agent_skills.md`

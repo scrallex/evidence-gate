@@ -6,13 +6,16 @@ import hashlib
 import json
 import shutil
 from collections import Counter
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
 from evidence_gate.config import Settings
+from evidence_gate.decision.models import ExternalMetadata, KnowledgeBaseExternalSource, SourceType
 from evidence_gate.ingest.base import BaseIngestor
-from evidence_gate.decision.models import ExternalMetadata, SourceType
+from evidence_gate.ingest.local_repo import LocalRepoIngestor
+from evidence_gate.ingest.markdown_incident import MarkdownIncidentIngestor
 from evidence_gate.retrieval.repository import (
     DocumentRecord,
     SearchHit,
@@ -23,9 +26,12 @@ from evidence_gate.retrieval.repository import (
 from evidence_gate.structural.sidecar import ManifoldIndex, build_index, encode_text
 from evidence_gate.verification.truth_pack import TruthPackEngine, TruthPackSpan, _span_id
 
-KB_FORMAT_VERSION = 1
+KB_FORMAT_VERSION = 2
 MAX_IN_MEMORY_KB = 8
-_KB_CACHE: dict[tuple[str, str, str], "RepositoryKnowledgeBase"] = {}
+REPOSITORY_SOURCE_KIND = "repo"
+INCIDENT_SOURCE_KIND = "incidents"
+SUPPORTED_EXTERNAL_SOURCE_KINDS = frozenset({INCIDENT_SOURCE_KIND, "incident"})
+_KB_CACHE: dict[tuple[tuple[str, ...], str, str], "RepositoryKnowledgeBase"] = {}
 
 
 @dataclass(slots=True)
@@ -50,6 +56,7 @@ class RepositoryKnowledgeBaseMaterialization:
 @dataclass(slots=True)
 class RepositoryKnowledgeBaseManifest:
     repo_root: Path
+    source_specs: tuple["KnowledgeBaseSourceSpec", ...]
     repo_fingerprint: str
     settings_signature: str
     built_at: datetime | None
@@ -117,6 +124,18 @@ class RepositorySnapshot:
     entries: list[RepositorySnapshotEntry]
 
 
+@dataclass(slots=True, frozen=True)
+class KnowledgeBaseSourceSpec:
+    kind: str
+    root: Path
+
+
+@dataclass(slots=True, frozen=True)
+class RepositorySnapshotSource:
+    source_spec: KnowledgeBaseSourceSpec
+    exclude_relative_prefixes: tuple[str, ...] = ()
+
+
 def clear_repository_knowledge_base_cache() -> None:
     """Clear the process-local repository knowledge-base cache."""
 
@@ -149,17 +168,28 @@ def materialize_repository_knowledge_base(
     settings: Settings,
     *,
     force_refresh: bool = False,
+    ingestors: Sequence[BaseIngestor] | None = None,
+    source_specs: Sequence[KnowledgeBaseSourceSpec | KnowledgeBaseExternalSource] | None = None,
 ) -> RepositoryKnowledgeBaseMaterialization:
     repo_root = repo_root.resolve()
-    prefixes = _artifact_relative_prefixes(repo_root, settings)
-    snapshot = _snapshot_repository(repo_root, exclude_relative_prefixes=prefixes)
+    normalized_source_specs = _normalize_source_specs(repo_root, source_specs)
+    snapshot_sources = _snapshot_sources_for_specs(normalized_source_specs, settings)
+    snapshot = _snapshot_repository(snapshot_sources)
     settings_signature = _knowledge_base_settings_signature(settings)
-    cache_key = (str(repo_root), snapshot.fingerprint, settings_signature)
-    cache_dir = _cache_dir_for_repo(repo_root, settings)
+    source_identity = _source_specs_cache_identity(normalized_source_specs)
+    cache_key = (source_identity, snapshot.fingerprint, settings_signature)
+    cache_dir = _cache_dir_for_repo(normalized_source_specs, settings)
 
     if not force_refresh:
         cached = _KB_CACHE.get(cache_key)
         if cached is not None:
+            _remove_other_repository_cache_dirs(
+                repo_root,
+                active_cache_dir=cache_dir,
+                settings=settings,
+                active_source_identity=source_identity,
+            )
+            _store_in_memory_cache(cache_key, cached)
             return _materialization_result(
                 cached,
                 repo_root=repo_root,
@@ -171,11 +201,18 @@ def materialize_repository_knowledge_base(
         knowledge_base = _load_cached_repository_knowledge_base(
             cache_dir=cache_dir,
             repo_root=repo_root,
+            source_specs=normalized_source_specs,
             snapshot=snapshot,
             settings=settings,
             settings_signature=settings_signature,
         )
         if knowledge_base is not None:
+            _remove_other_repository_cache_dirs(
+                repo_root,
+                active_cache_dir=cache_dir,
+                settings=settings,
+                active_source_identity=source_identity,
+            )
             _store_in_memory_cache(cache_key, knowledge_base)
             return _materialization_result(
                 knowledge_base,
@@ -185,17 +222,24 @@ def materialize_repository_knowledge_base(
                 status="reused",
             )
 
-    knowledge_base = build_repository_knowledge_base(
-        repo_root,
+    active_ingestors = list(ingestors) if ingestors is not None else _build_ingestors_for_source_specs(
+        normalized_source_specs,
         settings,
-        exclude_relative_prefixes=prefixes,
     )
+    knowledge_base = build_knowledge_base_from_ingestors(active_ingestors, settings)
     _persist_repository_knowledge_base(
         knowledge_base,
         cache_dir=cache_dir,
         repo_root=repo_root,
+        source_specs=normalized_source_specs,
         snapshot=snapshot,
         settings_signature=settings_signature,
+    )
+    _remove_other_repository_cache_dirs(
+        repo_root,
+        active_cache_dir=cache_dir,
+        settings=settings,
+        active_source_identity=source_identity,
     )
     _store_in_memory_cache(cache_key, knowledge_base)
     return _materialization_result(
@@ -208,7 +252,14 @@ def materialize_repository_knowledge_base(
 
 
 def load_repository_knowledge_base(repo_root: Path, settings: Settings) -> RepositoryKnowledgeBase:
-    return materialize_repository_knowledge_base(repo_root, settings).knowledge_base
+    repo_root = repo_root.resolve()
+    manifest = _latest_repository_manifest_for_repo(repo_root, settings)
+    source_specs = manifest.source_specs if manifest is not None else _default_source_specs(repo_root)
+    return materialize_repository_knowledge_base(
+        repo_root,
+        settings,
+        source_specs=source_specs,
+    ).knowledge_base
 
 
 def get_repository_knowledge_base_status(
@@ -216,18 +267,19 @@ def get_repository_knowledge_base_status(
     settings: Settings,
 ) -> RepositoryKnowledgeBaseStatus:
     repo_root = repo_root.resolve()
-    snapshot = _snapshot_for_status(repo_root, settings)
-    cache_dir = _cache_dir_for_repo(repo_root, settings)
-    manifest = _load_repository_knowledge_base_manifest(cache_dir)
+    manifest = _latest_repository_manifest_for_repo(repo_root, settings)
+    source_specs = manifest.source_specs if manifest is not None else _default_source_specs(repo_root)
+    snapshot = _snapshot_for_status(source_specs, settings)
+    cache_dir = manifest.cache_dir if manifest is not None else _cache_dir_for_repo(source_specs, settings)
     if manifest is None:
         return RepositoryKnowledgeBaseStatus(
             repo_root=repo_root,
             cache_dir=cache_dir,
             status="missing",
             built_at=None,
-            current_repo_fingerprint=snapshot.fingerprint,
+            current_repo_fingerprint=snapshot.fingerprint if snapshot is not None else None,
             cached_repo_fingerprint=None,
-            current_file_count=len(snapshot.entries),
+            current_file_count=len(snapshot.entries) if snapshot is not None else 0,
             cached_file_count=0,
             document_count=0,
             span_count=0,
@@ -237,19 +289,22 @@ def get_repository_knowledge_base_status(
 
 
 def list_repository_knowledge_bases(settings: Settings) -> list[RepositoryKnowledgeBaseStatus]:
-    cache_root = _resolve_storage_root(settings.knowledge_root)
-    if not cache_root.exists():
-        return []
+    manifests_by_repo: dict[str, RepositoryKnowledgeBaseManifest] = {}
+    for manifest in _list_repository_knowledge_base_manifests(settings):
+        repo_key = str(manifest.repo_root)
+        existing = manifests_by_repo.get(repo_key)
+        if existing is None or _manifest_sort_key(manifest) > _manifest_sort_key(existing):
+            manifests_by_repo[repo_key] = manifest
 
     statuses: list[RepositoryKnowledgeBaseStatus] = []
-    for manifest_path in sorted(cache_root.rglob("manifest.json")):
-        manifest = _load_repository_knowledge_base_manifest(manifest_path.parent)
-        if manifest is None:
-            continue
-        snapshot = None
-        if manifest.repo_root.exists() and manifest.repo_root.is_dir():
-            snapshot = _snapshot_for_status(manifest.repo_root, settings)
-        statuses.append(_status_from_manifest(manifest, settings, snapshot))
+    for manifest in manifests_by_repo.values():
+        statuses.append(
+            _status_from_manifest(
+                manifest,
+                settings,
+                _snapshot_for_status(manifest.source_specs, settings),
+            )
+        )
 
     statuses.sort(
         key=lambda status: (
@@ -268,22 +323,28 @@ def delete_repository_knowledge_base(
     reason: str | None = None,
 ) -> RepositoryKnowledgeBaseRemoval:
     repo_root = repo_root.resolve()
-    cache_dir = _cache_dir_for_repo(repo_root, settings)
-    manifest = _load_repository_knowledge_base_manifest(cache_dir)
+    manifests = _repository_manifests_for_repo(repo_root, settings)
+    manifest = manifests[0] if manifests else None
+    cache_dir = manifest.cache_dir if manifest is not None else _cache_dir_for_repo(
+        _default_source_specs(repo_root),
+        settings,
+    )
 
     previous_status: str | None = "missing"
     document_count = 0
     span_count = 0
     if manifest is not None:
-        snapshot = None
-        if manifest.repo_root.exists() and manifest.repo_root.is_dir():
-            snapshot = _snapshot_for_status(manifest.repo_root, settings)
-        status = _status_from_manifest(manifest, settings, snapshot)
+        status = _status_from_manifest(
+            manifest,
+            settings,
+            _snapshot_for_status(manifest.source_specs, settings),
+        )
         previous_status = status.status
         document_count = status.document_count
         span_count = status.span_count
 
-    if not cache_dir.exists():
+    existing_cache_dirs = [candidate.cache_dir for candidate in manifests if candidate.cache_dir.exists()]
+    if not existing_cache_dirs and not cache_dir.exists():
         return RepositoryKnowledgeBaseRemoval(
             repo_root=repo_root,
             cache_dir=cache_dir,
@@ -297,7 +358,9 @@ def delete_repository_knowledge_base(
     if dry_run:
         action = "would_delete"
     else:
-        shutil.rmtree(cache_dir)
+        for existing_cache_dir in existing_cache_dirs or [cache_dir]:
+            if existing_cache_dir.exists():
+                shutil.rmtree(existing_cache_dir)
         _evict_in_memory_cache_for_repo(repo_root)
         action = "deleted"
 
@@ -475,7 +538,7 @@ def _materialization_result(
 
 
 def _store_in_memory_cache(
-    cache_key: tuple[str, str, str],
+    cache_key: tuple[tuple[str, ...], str, str],
     knowledge_base: RepositoryKnowledgeBase,
 ) -> None:
     if len(_KB_CACHE) >= MAX_IN_MEMORY_KB:
@@ -483,9 +546,21 @@ def _store_in_memory_cache(
     _KB_CACHE[cache_key] = knowledge_base
 
 
-def _evict_in_memory_cache_for_repo(repo_root: Path) -> None:
-    repo_key = str(repo_root.resolve())
-    stale_keys = [cache_key for cache_key in _KB_CACHE if cache_key[0] == repo_key]
+def _evict_in_memory_cache_for_repo(
+    repo_root: Path,
+    *,
+    active_source_identity: tuple[str, ...] | None = None,
+) -> None:
+    repo_token = _source_spec_identity(
+        KnowledgeBaseSourceSpec(kind=REPOSITORY_SOURCE_KIND, root=repo_root.resolve())
+    )
+    stale_keys = [
+        cache_key
+        for cache_key in _KB_CACHE
+        if cache_key[0]
+        and cache_key[0][0] == repo_token
+        and (active_source_identity is None or cache_key[0] != active_source_identity)
+    ]
     for cache_key in stale_keys:
         _KB_CACHE.pop(cache_key, None)
 
@@ -505,9 +580,14 @@ def _artifact_relative_prefixes(repo_root: Path, settings: Settings) -> tuple[st
     return tuple(sorted(prefixes))
 
 
-def _snapshot_for_status(repo_root: Path, settings: Settings) -> RepositorySnapshot:
-    prefixes = _artifact_relative_prefixes(repo_root, settings)
-    return _snapshot_repository(repo_root, exclude_relative_prefixes=prefixes)
+def _snapshot_for_status(
+    source_specs: Sequence[KnowledgeBaseSourceSpec],
+    settings: Settings,
+) -> RepositorySnapshot | None:
+    try:
+        return _snapshot_repository(_snapshot_sources_for_specs(source_specs, settings))
+    except (OSError, ValueError):
+        return None
 
 
 def _resolve_storage_root(path: Path) -> Path:
@@ -518,27 +598,35 @@ def _resolve_storage_root(path: Path) -> Path:
 
 
 def _snapshot_repository(
-    repo_root: Path,
-    *,
-    exclude_relative_prefixes: tuple[str, ...],
+    source_roots: Sequence[RepositorySnapshotSource],
 ) -> RepositorySnapshot:
     entries: list[RepositorySnapshotEntry] = []
     digest = hashlib.blake2b(digest_size=16)
-    for path in iter_repository_files(repo_root, exclude_relative_prefixes=exclude_relative_prefixes):
-        stat = path.stat()
-        rel_path = path.relative_to(repo_root).as_posix()
-        entry = RepositorySnapshotEntry(
-            path=rel_path,
-            size=stat.st_size,
-            mtime_ns=stat.st_mtime_ns,
-        )
-        entries.append(entry)
-        digest.update(rel_path.encode("utf-8"))
-        digest.update(b"\0")
-        digest.update(str(entry.size).encode("utf-8"))
-        digest.update(b"\0")
-        digest.update(str(entry.mtime_ns).encode("utf-8"))
-        digest.update(b"\n")
+    for source in source_roots:
+        root = source.source_spec.root
+        if not root.exists():
+            raise ValueError(f"Knowledge base source path does not exist: {root}")
+        if not root.is_dir():
+            raise ValueError(f"Knowledge base source path must be a directory: {root}")
+        for path in iter_repository_files(root, exclude_relative_prefixes=source.exclude_relative_prefixes):
+            stat = path.stat()
+            rel_path = path.relative_to(root).as_posix()
+            entry = RepositorySnapshotEntry(
+                path=_snapshot_entry_path(source.source_spec, rel_path),
+                size=stat.st_size,
+                mtime_ns=stat.st_mtime_ns,
+            )
+            entries.append(entry)
+            digest.update(source.source_spec.kind.encode("utf-8"))
+            digest.update(b"\0")
+            digest.update(str(root).encode("utf-8"))
+            digest.update(b"\0")
+            digest.update(rel_path.encode("utf-8"))
+            digest.update(b"\0")
+            digest.update(str(entry.size).encode("utf-8"))
+            digest.update(b"\0")
+            digest.update(str(entry.mtime_ns).encode("utf-8"))
+            digest.update(b"\n")
     return RepositorySnapshot(fingerprint=digest.hexdigest(), entries=entries)
 
 
@@ -554,9 +642,18 @@ def _knowledge_base_settings_signature(settings: Settings) -> str:
     return hashlib.blake2b(repr(payload).encode("utf-8"), digest_size=16).hexdigest()
 
 
-def _cache_dir_for_repo(repo_root: Path, settings: Settings) -> Path:
+def _cache_dir_for_repo(
+    source_specs: Sequence[KnowledgeBaseSourceSpec],
+    settings: Settings,
+) -> Path:
     cache_root = _resolve_storage_root(settings.knowledge_root)
-    repo_key = hashlib.blake2b(str(repo_root).encode("utf-8"), digest_size=12).hexdigest()
+    digest = hashlib.blake2b(digest_size=12)
+    for source_spec in source_specs:
+        digest.update(source_spec.kind.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(str(source_spec.root).encode("utf-8"))
+        digest.update(b"\n")
+    repo_key = digest.hexdigest()
     return cache_root / repo_key
 
 
@@ -573,12 +670,14 @@ def _manifest_matches(
     manifest: dict[str, object],
     *,
     repo_root: Path,
+    source_specs: Sequence[KnowledgeBaseSourceSpec],
     snapshot: RepositorySnapshot,
     settings_signature: str,
 ) -> bool:
     return (
         manifest.get("format_version") == KB_FORMAT_VERSION
         and manifest.get("repo_root") == str(repo_root)
+        and manifest.get("sources") == _source_specs_to_payload(source_specs)
         and manifest.get("repo_fingerprint") == snapshot.fingerprint
         and manifest.get("settings_signature") == settings_signature
     )
@@ -588,6 +687,7 @@ def _load_cached_repository_knowledge_base(
     *,
     cache_dir: Path,
     repo_root: Path,
+    source_specs: Sequence[KnowledgeBaseSourceSpec],
     snapshot: RepositorySnapshot,
     settings: Settings,
     settings_signature: str,
@@ -601,6 +701,7 @@ def _load_cached_repository_knowledge_base(
         if not _manifest_matches(
             manifest,
             repo_root=repo_root,
+            source_specs=source_specs,
             snapshot=snapshot,
             settings_signature=settings_signature,
         ):
@@ -639,8 +740,10 @@ def _load_repository_knowledge_base_manifest(cache_dir: Path) -> RepositoryKnowl
         built_at_raw = manifest.get("built_at")
         built_at = datetime.fromisoformat(str(built_at_raw)) if built_at_raw else None
         repo_root = Path(str(manifest["repo_root"])).expanduser().resolve()
+        source_specs = _source_specs_from_payload(repo_root, manifest.get("sources"))
         return RepositoryKnowledgeBaseManifest(
             repo_root=repo_root,
+            source_specs=source_specs,
             repo_fingerprint=str(manifest["repo_fingerprint"]),
             settings_signature=str(manifest["settings_signature"]),
             built_at=built_at,
@@ -689,6 +792,7 @@ def _persist_repository_knowledge_base(
     *,
     cache_dir: Path,
     repo_root: Path,
+    source_specs: Sequence[KnowledgeBaseSourceSpec],
     snapshot: RepositorySnapshot,
     settings_signature: str,
 ) -> None:
@@ -703,6 +807,7 @@ def _persist_repository_knowledge_base(
     manifest = {
         "format_version": KB_FORMAT_VERSION,
         "repo_root": str(repo_root),
+        "sources": _source_specs_to_payload(source_specs),
         "repo_fingerprint": snapshot.fingerprint,
         "settings_signature": settings_signature,
         "built_at": datetime.now(timezone.utc).isoformat(),
@@ -720,6 +825,199 @@ def _persist_repository_knowledge_base(
     _write_json(paths["spans"], spans_payload)
     _write_json(paths["sidecar"], sidecar_payload)
     _write_json(paths["manifest"], manifest)
+
+
+def _canonical_source_kind(kind: str) -> str:
+    normalized = kind.strip().lower()
+    if normalized in {REPOSITORY_SOURCE_KIND, "repository"}:
+        return REPOSITORY_SOURCE_KIND
+    if normalized in SUPPORTED_EXTERNAL_SOURCE_KINDS:
+        return INCIDENT_SOURCE_KIND
+    return normalized
+
+
+def _default_source_specs(repo_root: Path) -> tuple[KnowledgeBaseSourceSpec, ...]:
+    return (KnowledgeBaseSourceSpec(kind=REPOSITORY_SOURCE_KIND, root=repo_root.resolve()),)
+
+
+def _normalize_source_specs(
+    repo_root: Path,
+    source_specs: Sequence[KnowledgeBaseSourceSpec | KnowledgeBaseExternalSource] | None,
+) -> tuple[KnowledgeBaseSourceSpec, ...]:
+    repo_root = repo_root.resolve()
+    normalized_specs: list[KnowledgeBaseSourceSpec] = [KnowledgeBaseSourceSpec(kind=REPOSITORY_SOURCE_KIND, root=repo_root)]
+    seen = {_source_spec_identity(normalized_specs[0])}
+
+    for source_spec in source_specs or ():
+        if isinstance(source_spec, KnowledgeBaseSourceSpec):
+            candidate = KnowledgeBaseSourceSpec(
+                kind=_canonical_source_kind(source_spec.kind),
+                root=Path(source_spec.root).expanduser().resolve(),
+            )
+        else:
+            candidate = KnowledgeBaseSourceSpec(
+                kind=_canonical_source_kind(source_spec.type),
+                root=Path(source_spec.path).expanduser().resolve(),
+            )
+        identity = _source_spec_identity(candidate)
+        if identity in seen or candidate.kind == REPOSITORY_SOURCE_KIND:
+            continue
+        normalized_specs.append(candidate)
+        seen.add(identity)
+
+    extras = sorted(normalized_specs[1:], key=lambda source_spec: (source_spec.kind, source_spec.root.as_posix()))
+    return (normalized_specs[0], *extras)
+
+
+def _source_spec_identity(source_spec: KnowledgeBaseSourceSpec) -> str:
+    return f"{source_spec.kind}:{source_spec.root.as_posix()}"
+
+
+def _source_specs_cache_identity(
+    source_specs: Sequence[KnowledgeBaseSourceSpec],
+) -> tuple[str, ...]:
+    return tuple(_source_spec_identity(source_spec) for source_spec in source_specs)
+
+
+def _source_specs_to_payload(source_specs: Sequence[KnowledgeBaseSourceSpec]) -> list[dict[str, str]]:
+    return [
+        {
+            "type": source_spec.kind,
+            "path": str(source_spec.root),
+        }
+        for source_spec in source_specs
+    ]
+
+
+def _source_specs_from_payload(
+    repo_root: Path,
+    payload: object,
+) -> tuple[KnowledgeBaseSourceSpec, ...]:
+    if not isinstance(payload, list):
+        return _default_source_specs(repo_root)
+
+    source_specs: list[KnowledgeBaseSourceSpec] = []
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        source_type = item.get("type")
+        source_path = item.get("path")
+        if source_type is None or source_path is None:
+            continue
+        source_specs.append(
+            KnowledgeBaseSourceSpec(
+                kind=_canonical_source_kind(str(source_type)),
+                root=Path(str(source_path)).expanduser().resolve(),
+            )
+        )
+    return _normalize_source_specs(repo_root, source_specs)
+
+
+def _snapshot_sources_for_specs(
+    source_specs: Sequence[KnowledgeBaseSourceSpec],
+    settings: Settings,
+) -> tuple[RepositorySnapshotSource, ...]:
+    snapshot_sources: list[RepositorySnapshotSource] = []
+    for source_spec in source_specs:
+        exclude_relative_prefixes = ()
+        if source_spec.kind == REPOSITORY_SOURCE_KIND:
+            exclude_relative_prefixes = _artifact_relative_prefixes(source_spec.root, settings)
+        snapshot_sources.append(
+            RepositorySnapshotSource(
+                source_spec=source_spec,
+                exclude_relative_prefixes=exclude_relative_prefixes,
+            )
+        )
+    return tuple(snapshot_sources)
+
+
+def _snapshot_entry_path(source_spec: KnowledgeBaseSourceSpec, relative_path: str) -> str:
+    if source_spec.kind == REPOSITORY_SOURCE_KIND:
+        return relative_path
+    return f"{source_spec.kind}:{relative_path}"
+
+
+def _build_ingestors_for_source_specs(
+    source_specs: Sequence[KnowledgeBaseSourceSpec],
+    settings: Settings,
+) -> list[BaseIngestor]:
+    ingestors: list[BaseIngestor] = []
+    for source_spec in source_specs:
+        root = source_spec.root
+        if not root.exists():
+            raise ValueError(f"Knowledge base source path does not exist: {root}")
+        if not root.is_dir():
+            raise ValueError(f"Knowledge base source path must be a directory: {root}")
+        if source_spec.kind == REPOSITORY_SOURCE_KIND:
+            ingestors.append(
+                LocalRepoIngestor(
+                    root,
+                    exclude_relative_prefixes=_artifact_relative_prefixes(root, settings),
+                )
+            )
+            continue
+        if source_spec.kind == INCIDENT_SOURCE_KIND:
+            ingestors.append(MarkdownIncidentIngestor(root))
+            continue
+        raise ValueError(f"Unsupported external source type: {source_spec.kind}")
+    return ingestors
+
+
+def _manifest_sort_key(manifest: RepositoryKnowledgeBaseManifest) -> tuple[datetime, str]:
+    return (
+        manifest.built_at or datetime.min.replace(tzinfo=timezone.utc),
+        manifest.cache_dir.as_posix(),
+    )
+
+
+def _list_repository_knowledge_base_manifests(
+    settings: Settings,
+) -> list[RepositoryKnowledgeBaseManifest]:
+    cache_root = _resolve_storage_root(settings.knowledge_root)
+    if not cache_root.exists():
+        return []
+    manifests: list[RepositoryKnowledgeBaseManifest] = []
+    for manifest_path in sorted(cache_root.rglob("manifest.json")):
+        manifest = _load_repository_knowledge_base_manifest(manifest_path.parent)
+        if manifest is not None:
+            manifests.append(manifest)
+    return manifests
+
+
+def _repository_manifests_for_repo(
+    repo_root: Path,
+    settings: Settings,
+) -> list[RepositoryKnowledgeBaseManifest]:
+    resolved_repo_root = repo_root.resolve()
+    manifests = [
+        manifest
+        for manifest in _list_repository_knowledge_base_manifests(settings)
+        if manifest.repo_root == resolved_repo_root
+    ]
+    manifests.sort(key=_manifest_sort_key, reverse=True)
+    return manifests
+
+
+def _latest_repository_manifest_for_repo(
+    repo_root: Path,
+    settings: Settings,
+) -> RepositoryKnowledgeBaseManifest | None:
+    manifests = _repository_manifests_for_repo(repo_root, settings)
+    return manifests[0] if manifests else None
+
+
+def _remove_other_repository_cache_dirs(
+    repo_root: Path,
+    *,
+    active_cache_dir: Path,
+    settings: Settings,
+    active_source_identity: tuple[str, ...],
+) -> None:
+    for manifest in _repository_manifests_for_repo(repo_root, settings):
+        if manifest.cache_dir == active_cache_dir or not manifest.cache_dir.exists():
+            continue
+        shutil.rmtree(manifest.cache_dir)
+    _evict_in_memory_cache_for_repo(repo_root, active_source_identity=active_source_identity)
 
 
 def _write_json(path: Path, payload: object) -> None:

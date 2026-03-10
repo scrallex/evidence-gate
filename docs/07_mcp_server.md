@@ -1,9 +1,10 @@
 # MCP Server
 
-`Evidence Gate` now ships a first-cut MCP server for coding agents and IDEs.
+`Evidence Gate` ships an MCP server for coding agents and IDEs.
 
-It exposes the same decision contract as the HTTP API so an agent can ask for a
-change-impact decision before it edits a risky file.
+It exposes the same decision contract as the HTTP API so an agent can gather
+citations and blast radius before editing a risky file, then request a stricter
+allow-or-block decision when needed.
 
 ## What it exposes
 
@@ -28,6 +29,26 @@ change-impact decision before it edits a risky file.
 ### Prompt
 
 - `evidence_gate_review_change`
+
+`evidence_gate_ingest_repository` accepts:
+
+- `repo_path`
+- `refresh`
+- `external_sources`
+
+Example mixed-source ingest payload:
+
+```json
+{
+  "repo_path": "/absolute/path/to/repo",
+  "external_sources": [
+    {
+      "type": "incidents",
+      "path": "/absolute/path/to/incidents"
+    }
+  ]
+}
+```
 
 ## Local stdio
 
@@ -160,14 +181,20 @@ Example remote or local HTTP entry:
 
 For risky engineering edits:
 
-1. Call `evidence_gate_decide_action` or `evidence_gate_decide_change_impact` before proposing the change.
-2. If the decision is `abstain` or `escalate`, stop calling the change safe.
-3. Surface the missing evidence and cite the strongest evidence spans.
-4. Inspect any returned PR or incident twins before continuing.
+1. Call `evidence_gate_decide_change_impact` first when the user wants blast radius, citations, or planning help.
+2. Call `evidence_gate_decide_action` only when the user wants a strict allow-or-block judgment.
+3. If the decision is `abstain` or `escalate`, do not call the change safe.
+4. Surface the missing evidence and cite the strongest evidence spans.
+5. Inspect any returned PR or incident twins before continuing.
+6. Ingest external incident exports before asking questions that depend on them.
+7. If the agent is evaluating the same repo that hosts the Evidence Gate runtime, keep audit and knowledge-base roots outside that repo.
 
 ## Troubleshooting
 
 - If a local client fails to start the server because `command` is not resolved, use an absolute path to `./scripts/run_mcp_stdio.sh`.
 - If the server starts but the client sees empty audit or knowledge-base roots, set `EVIDENCE_GATE_AUDIT_ROOT` and `EVIDENCE_GATE_KB_ROOT` to absolute paths.
 - If the IDE launches the server outside the repo root, avoid relative paths such as `var/audit`; use absolute paths instead.
+- If you are evaluating the Evidence Gate repo itself, do not reuse repo-local `var/` paths for audit or knowledge-base storage. Use absolute paths outside the checkout, such as `/tmp/evidence-gate-audit` and `/tmp/evidence-gate-kb`.
 - If you want agents to inspect prior system decisions, use `evidence_gate_list_recent_decisions` or read `evidence-gate://audit/decisions.jsonl`.
+
+For Codex-oriented setup guidance, see `docs/09_agent_skills.md`.

@@ -32,8 +32,14 @@ from evidence_gate.decision.models import (
     SourceType,
     TwinCase,
 )
+from evidence_gate.ingest.base import BaseIngestor
+from evidence_gate.ingest.local_repo import LocalRepoIngestor
+from evidence_gate.ingest.markdown_incident import MarkdownIncidentIngestor
 from evidence_gate.retrieval.repository import SearchHit
 from evidence_gate.retrieval.structural import (
+    INCIDENT_SOURCE_KIND,
+    REPOSITORY_SOURCE_KIND,
+    KnowledgeBaseSourceSpec,
     apply_repository_knowledge_base_retention,
     delete_repository_knowledge_base,
     get_repository_knowledge_base_status,
@@ -126,10 +132,14 @@ class DecisionService:
 
     def ingest_repository(self, request: KnowledgeBaseIngestRequest) -> KnowledgeBaseIngestResponse:
         repo_root = self._resolve_repo_root(request.repo_path)
+        source_specs = self._build_ingest_source_specs(repo_root, request)
+        ingestors = self._build_ingestors(source_specs)
         materialization = materialize_repository_knowledge_base(
             repo_root,
             self.settings,
             force_refresh=request.refresh,
+            ingestors=ingestors,
+            source_specs=source_specs,
         )
         return KnowledgeBaseIngestResponse(
             repo_path=str(materialization.repo_root),
@@ -274,6 +284,67 @@ class DecisionService:
 
     def _normalize_repo_path(self, repo_path: str) -> Path:
         return Path(repo_path).expanduser().resolve()
+
+    def _build_ingest_source_specs(
+        self,
+        repo_root: Path,
+        request: KnowledgeBaseIngestRequest,
+    ) -> tuple[KnowledgeBaseSourceSpec, ...]:
+        external_specs = [
+            KnowledgeBaseSourceSpec(
+                kind=self._normalize_source_kind(source.type),
+                root=self._normalize_repo_path(source.path),
+            )
+            for source in request.external_sources
+        ]
+        external_specs.sort(key=lambda source_spec: (source_spec.kind, source_spec.root.as_posix()))
+        return (KnowledgeBaseSourceSpec(kind=REPOSITORY_SOURCE_KIND, root=repo_root), *external_specs)
+
+    def _build_ingestors(
+        self,
+        source_specs: tuple[KnowledgeBaseSourceSpec, ...],
+    ) -> list[BaseIngestor]:
+        ingestors: list[BaseIngestor] = []
+        for source_spec in source_specs:
+            if not source_spec.root.exists():
+                raise ValueError(f"Knowledge base source path does not exist: {source_spec.root}")
+            if not source_spec.root.is_dir():
+                raise ValueError(f"Knowledge base source path must be a directory: {source_spec.root}")
+            if source_spec.kind == REPOSITORY_SOURCE_KIND:
+                ingestors.append(
+                    LocalRepoIngestor(
+                        source_spec.root,
+                        exclude_relative_prefixes=self._artifact_relative_prefixes(source_spec.root),
+                    )
+                )
+                continue
+            if source_spec.kind == INCIDENT_SOURCE_KIND:
+                ingestors.append(MarkdownIncidentIngestor(source_spec.root))
+                continue
+            raise ValueError(f"Unsupported external source type: {source_spec.kind}")
+        return ingestors
+
+    def _normalize_source_kind(self, source_kind: str) -> str:
+        normalized = source_kind.strip().lower()
+        if normalized in {INCIDENT_SOURCE_KIND, "incident"}:
+            return INCIDENT_SOURCE_KIND
+        raise ValueError(f"Unsupported external source type: {source_kind}")
+
+    def _artifact_relative_prefixes(self, repo_root: Path) -> tuple[str, ...]:
+        prefixes: set[str] = set()
+        for artifact_root in (self.settings.audit_root, self.settings.knowledge_root):
+            resolved_root = artifact_root.expanduser()
+            if not resolved_root.is_absolute():
+                resolved_root = Path.cwd() / resolved_root
+            resolved_root = resolved_root.resolve()
+            try:
+                relative = resolved_root.relative_to(repo_root)
+            except ValueError:
+                continue
+            relative_path = relative.as_posix()
+            if relative_path and relative_path != ".":
+                prefixes.add(relative_path)
+        return tuple(sorted(prefixes))
 
     def _search(self, repo_root: Path, query: str, top_k: int) -> list[SearchHit]:
         hits = search_repository(

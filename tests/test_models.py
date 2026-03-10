@@ -9,6 +9,7 @@ from evidence_gate.decision.models import (
     DecisionRecord,
     EvidenceSpan,
     ExternalMetadata,
+    KnowledgeBaseIngestRequest,
     SourceType,
     TwinCase,
 )
@@ -96,3 +97,23 @@ def test_action_decision_response_round_trip() -> None:
     assert restored.allowed is False
     assert restored.status == "block"
     assert restored.decision_record.request_type == "action"
+
+
+def test_knowledge_base_ingest_request_round_trip_with_external_sources() -> None:
+    request = KnowledgeBaseIngestRequest(
+        repo_path="/repo",
+        refresh=True,
+        external_sources=[
+            {
+                "type": "incidents",
+                "path": "/exports/incidents",
+            }
+        ],
+    )
+
+    restored = KnowledgeBaseIngestRequest.model_validate_json(request.model_dump_json())
+
+    assert restored.refresh is True
+    assert len(restored.external_sources) == 1
+    assert restored.external_sources[0].type == "incidents"
+    assert restored.external_sources[0].path == "/exports/incidents"

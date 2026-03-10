@@ -88,11 +88,19 @@ class ActionDecisionRequest(BaseModel):
     )
 
 
+class KnowledgeBaseExternalSource(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    type: str = Field(min_length=1)
+    path: str = Field(min_length=1)
+
+
 class KnowledgeBaseIngestRequest(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     repo_path: str
     refresh: bool = False
+    external_sources: list[KnowledgeBaseExternalSource] = Field(default_factory=list)
 
 
 class KnowledgeBaseIngestResponse(BaseModel):

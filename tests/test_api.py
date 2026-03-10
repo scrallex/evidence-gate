@@ -192,6 +192,55 @@ def test_knowledge_base_ingest_endpoint_builds_reuses_and_refreshes(tmp_path: Pa
     assert refreshed_payload["repo_fingerprint"] == built_payload["repo_fingerprint"]
 
 
+def test_knowledge_base_ingest_endpoint_supports_external_incident_sources(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    repo_root = tmp_path / "sample_repo"
+    incident_root = tmp_path / "external_incidents"
+    audit_root = tmp_path / "audit"
+    kb_root = tmp_path / "knowledge_bases"
+    _write(repo_root / "src" / "auth.py", "def refresh_token():\n    return 'ok'\n")
+    _write(repo_root / "docs" / "auth.md", "# Auth\n\nToken refresh details.\n")
+    _write(
+        incident_root / "incident_1842.md",
+        "# Incident 1842\n\nLegacy sentinel rollback required after the token refresh regression.\n",
+    )
+
+    monkeypatch.setenv("EVIDENCE_GATE_AUDIT_ROOT", str(audit_root))
+    monkeypatch.setenv("EVIDENCE_GATE_KB_ROOT", str(kb_root))
+    get_settings.cache_clear()
+    get_audit_store.cache_clear()
+    get_decision_service.cache_clear()
+
+    client = TestClient(create_app())
+
+    built = client.post(
+        "/v1/knowledge-bases/ingest",
+        json={
+            "repo_path": str(repo_root),
+            "external_sources": [
+                {
+                    "type": "incidents",
+                    "path": str(incident_root),
+                }
+            ],
+        },
+    )
+    assert built.status_code == 200
+
+    decision = client.post(
+        "/v1/decide/query",
+        json={
+            "repo_path": str(repo_root),
+            "query": "Which incident mentioned legacy sentinel rollback?",
+        },
+    )
+    assert decision.status_code == 200
+    payload = decision.json()
+    assert any(twin["source"] == "external_incidents/incident_1842.md" for twin in payload["twin_cases"])
+
+
 def test_knowledge_base_status_and_listing_endpoints(tmp_path: Path, monkeypatch) -> None:
     repo_root = tmp_path / "sample_repo"
     audit_root = tmp_path / "audit"

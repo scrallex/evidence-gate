@@ -8,6 +8,8 @@ from pathlib import Path
 import evidence_gate.retrieval.structural as structural
 from evidence_gate.config import KnowledgeBaseMaintenanceConfig, Settings
 from evidence_gate.retrieval.structural import (
+    INCIDENT_SOURCE_KIND,
+    KnowledgeBaseSourceSpec,
     apply_repository_knowledge_base_retention,
     clear_repository_knowledge_base_cache,
     delete_repository_knowledge_base,
@@ -123,7 +125,7 @@ def test_repository_kb_materialize_force_refresh_rebuilds(tmp_path: Path, monkey
     kb_root = tmp_path / "knowledge_bases"
     _build_sample_repo(repo_root)
     settings = Settings(knowledge_root=kb_root, audit_root=tmp_path / "audit")
-    real_scan = structural.scan_repository
+    real_build_ingestors = structural._build_ingestors_for_source_specs
 
     clear_repository_knowledge_base_cache()
     built = materialize_repository_knowledge_base(repo_root, settings)
@@ -131,23 +133,93 @@ def test_repository_kb_materialize_force_refresh_rebuilds(tmp_path: Path, monkey
 
     clear_repository_knowledge_base_cache()
 
-    def _fail_scan(*args, **kwargs):
-        raise AssertionError("scan_repository should not be called when reusing a cached knowledge base")
+    def _fail_build(*args, **kwargs):
+        raise AssertionError("hybrid ingestors should not be rebuilt when reusing a cached knowledge base")
 
-    monkeypatch.setattr(structural, "scan_repository", _fail_scan)
+    monkeypatch.setattr(structural, "_build_ingestors_for_source_specs", _fail_build)
     reused = materialize_repository_knowledge_base(repo_root, settings)
     assert reused.status == "reused"
 
-    scan_calls = {"count": 0}
-    def _counted_scan(*args, **kwargs):
-        scan_calls["count"] += 1
-        return real_scan(*args, **kwargs)
+    build_calls = {"count": 0}
 
-    monkeypatch.setattr(structural, "scan_repository", _counted_scan)
+    def _counted_build(*args, **kwargs):
+        build_calls["count"] += 1
+        return real_build_ingestors(*args, **kwargs)
+
+    monkeypatch.setattr(structural, "_build_ingestors_for_source_specs", _counted_build)
     refreshed = materialize_repository_knowledge_base(repo_root, settings, force_refresh=True)
 
     assert refreshed.status == "refreshed"
-    assert scan_calls["count"] == 1
+    assert build_calls["count"] == 1
+
+
+def test_repository_kb_cache_reuses_hybrid_ingests_for_repo_only_searches(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    repo_root = tmp_path / "sample_repo"
+    incident_root = tmp_path / "external_incidents"
+    kb_root = tmp_path / "knowledge_bases"
+    _build_sample_repo(repo_root)
+    _write(
+        incident_root / "incident_1842.md",
+        "# Incident 1842\n\nLegacy sentinel rollback required after the token refresh regression.\n",
+    )
+    settings = Settings(knowledge_root=kb_root, audit_root=tmp_path / "audit")
+
+    clear_repository_knowledge_base_cache()
+    materialize_repository_knowledge_base(
+        repo_root,
+        settings,
+        source_specs=[KnowledgeBaseSourceSpec(kind=INCIDENT_SOURCE_KIND, root=incident_root)],
+    )
+
+    clear_repository_knowledge_base_cache()
+
+    def _fail_build(*args, **kwargs):
+        raise AssertionError("hybrid ingestors should not be rebuilt when reusing a cached knowledge base")
+
+    monkeypatch.setattr(structural, "_build_ingestors_for_source_specs", _fail_build)
+
+    hits = search_repository(
+        repo_root,
+        query="legacy sentinel rollback",
+        top_k=5,
+        settings=settings,
+    )
+
+    assert any(hit.path == "external_incidents/incident_1842.md" for hit in hits)
+
+
+def test_repository_kb_status_tracks_external_source_changes(tmp_path: Path) -> None:
+    repo_root = tmp_path / "sample_repo"
+    incident_root = tmp_path / "external_incidents"
+    kb_root = tmp_path / "knowledge_bases"
+    _build_sample_repo(repo_root)
+    _write(
+        incident_root / "incident_1842.md",
+        "# Incident 1842\n\nLegacy sentinel rollback required after the token refresh regression.\n",
+    )
+    settings = Settings(knowledge_root=kb_root, audit_root=tmp_path / "audit")
+
+    clear_repository_knowledge_base_cache()
+    materialize_repository_knowledge_base(
+        repo_root,
+        settings,
+        source_specs=[KnowledgeBaseSourceSpec(kind=INCIDENT_SOURCE_KIND, root=incident_root)],
+    )
+
+    ready = get_repository_knowledge_base_status(repo_root, settings)
+    assert ready.status == "ready"
+
+    (incident_root / "incident_1842.md").write_text(
+        "# Incident 1842\n\nLegacy sentinel rollback expanded to include cache invalidation.\n",
+        encoding="utf-8",
+    )
+
+    stale = get_repository_knowledge_base_status(repo_root, settings)
+    assert stale.status == "stale"
+    assert stale.current_repo_fingerprint != stale.cached_repo_fingerprint
 
 
 def test_repository_kb_status_and_listing_track_freshness(tmp_path: Path) -> None:
