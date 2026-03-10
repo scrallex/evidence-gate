@@ -1,39 +1,51 @@
 # Source Index
 
-Phase 1 imports the highest-value research documents for the product wedge. These are the
-materials that most directly support a commercial `Evidence Gate` offering.
+This directory is a provenance index, not the product pitch.
 
-## Imported
+The public claim for this repo is:
 
-| Rank | Imported file | Original thesis to keep | Product extraction |
-|---|---|---|---|
-| 1 | `01_STM_Core_Whitepaper.pdf` | Text-only structural retrieval plus hazard-gated verification | Structural retrieval with evidence verification is the top external wedge |
-| 2 | `02_reliability_gated_recurrence_polished.pdf` | Simple recurrence with live telemetry | Recurrence is a deployable primitive for precedent strength |
-| 3 | `03_STM_Structural_Manifold_Whitepaper.pdf` | Guardrails, twin retrieval, calibrated alerts | `admit | abstain | escalate` belongs in the product contract |
-| 4 | `04_QFH_Manifold_Foundation.pdf` | Retrodictive signal admission across stacks | Admission logic can be a shared service across agents and workflows |
-| 5 | `05_sep_signal_regime_whitepaper.pdf` | Longitudinal evidence tables and auditable labels | The product needs calibration logs, evaluation sets, and reproducible analytics |
-| 6 | `06_iron_dome_methodology_2025.md` | A gate can be locally correct and systemically wrong | Reliability gating must be fused with the downstream workflow, not bolted on |
-| 7 | `07_sep_signal_regime_whitepaper_2.pdf` | Co-activation bundles and walk-forward analysis | Useful later for compound signals and threshold tuning |
-| 8 | `08_global_manifold_v2.pdf` | Quality improved but throughput collapsed | Abstention must be calibrated to preserve usable flow |
-| 9 | `09_unified_strategy_live.md` | Regime worked better as strategy logic than filter logic | Evidence Gate should be the decision surface, not a sidecar ornament |
-| 10 | `10_reliability_gate_case_study.pdf` | Narrow but concrete audit artifact | Good for demo packaging and review loops |
+`Evidence Gate decides whether an AI system has enough structural evidence and precedent to answer or act.`
 
-## Not Imported Yet
+The first workflow used to demonstrate that claim is engineering change
+intelligence, not trading and not Quantum Field Harmonics as a market-facing
+story.
 
-These remain relevant, but they are secondary for the first product pass:
+## Archive Policy
 
-- `09_Signal_Evidence_Update_2025W46.md`
-- `Investment_Memorandum.pdf`
-- `Combinatorial Information Growth vs Logarithmic Energy Scaling.md`
-- `Laser/whitepaper.pdf`
-- `Laser/gravity_whitepaper.pdf`
+The raw papers, extracted texts, and legacy trading or QFH materials now live
+under `sources/archive/`.
 
-## Working Read
+That archive is still useful for internal provenance and product archaeology,
+but it should be read as background research rather than the offer this repo is
+making to a prospective reviewer.
 
-The source set supports one clear throughline:
+## Curated Lessons To Keep
+
+| Archived source | Product lesson to keep | Why it still matters |
+|---|---|---|
+| `archive/raw/01_STM_Core_Whitepaper.pdf` | Structural retrieval is the wedge | It gives the cleanest external story for repository evidence and structural verification |
+| `archive/raw/02_reliability_gated_recurrence_polished.pdf` | Recurrence is the admission primitive | It contributes the simplest reusable idea: repeated state plus low hazard equals admission |
+| `archive/raw/03_STM_Structural_Manifold_Whitepaper.pdf` | Twin retrieval makes abstention actionable | It supports the `admit | abstain | escalate` contract and prior-case surfacing |
+| `archive/raw/05_sep_signal_regime_whitepaper.pdf` | Evaluation discipline is part of the product | It reinforces calibration, auditability, and evidence tables rather than intuition |
+| `archive/raw/06_iron_dome_methodology_2025.md` | A good gate can still fail if it is bolted on | It explains why Evidence Gate must own the answer or action contract itself |
+| `archive/raw/09_unified_strategy_live.md` | The gate should be the decision surface | It supports moving the reliability logic into the core workflow rather than a sidecar |
+| `archive/raw/10_reliability_gate_case_study.pdf` | Narrow audit artifacts are demo-ready | It is a useful pattern for review loops, receipts, and design-partner walkthroughs |
+
+## Legacy Research Kept For Provenance
+
+These materials remain archived because they are part of the project's research
+history, but they are not the public framing for Evidence Gate:
+
+- `archive/raw/04_QFH_Manifold_Foundation.pdf`
+- `archive/raw/07_sep_signal_regime_whitepaper_2.pdf`
+- `archive/raw/08_global_manifold_v2.pdf`
+- `archive/extracted/`
+
+## Working Throughline
+
+The archived source set still supports one coherent product story:
 
 1. Structural retrieval finds the best evidence spans.
-2. Recurrence or twin matching measures whether the current case has meaningful precedent.
-3. Hazard decides whether the evidence is trustworthy enough to proceed.
-4. The user-visible contract is not "chat". It is a calibrated admission decision with citations,
-   twins, and an explicit abstain or escalate path.
+2. Prior cases and recurrence estimate whether the current request has real precedent.
+3. Verification and hazard gating decide whether the evidence is trustworthy enough.
+4. The visible user contract is a decision: `admit | abstain | escalate`.

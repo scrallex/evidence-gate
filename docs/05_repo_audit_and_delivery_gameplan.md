@@ -60,9 +60,12 @@ That is a meaningful technical preview, not only an idea.
 
 ## Promotion-ready posture
 
-The right public position for this repo is:
+The right public claim for this repo is:
 
-`Evidence Gate is a technical-preview service for engineering change intelligence.`
+`Evidence Gate decides whether an AI system has enough structural evidence and precedent to answer or act.`
+
+The first workflow used to demonstrate that claim is engineering change
+intelligence.
 
 That is strong enough to be credible and restrained enough to be honest.
 
@@ -94,6 +97,10 @@ It is not yet enough for:
 - broad public launch
 - paid pilot without guided setup
 - independent proof of ROI
+
+The repo should also keep the archived QFH and trading papers in a clearly
+secondary position under `sources/archive/` so the public surface does not drift
+back into research-sprawl framing.
 
 ## Delivery gameplan from this point
 
