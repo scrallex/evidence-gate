@@ -65,6 +65,12 @@ Run tests:
 pytest -q
 ```
 
+Run the checked-in FastAPI benchmark:
+
+```bash
+python scripts/run_fastapi_benchmark.py
+```
+
 ## API Surface
 
 - `GET /health`
@@ -78,6 +84,17 @@ pytest -q
 - `POST /v1/decide/query`
 - `POST /v1/decide/change-impact`
 - `GET /v1/decisions/{id}`
+
+## Benchmark Proof
+
+The repo now includes a reproducible benchmark against a real open-source corpus:
+
+- `benchmarks/cases/fastapi_cases.json`: 50 admit/withhold benchmark queries
+- `benchmarks/results/fastapi_structural_vs_baseline.md`: latest checked-in report
+- `scripts/run_fastapi_benchmark.py`: rebuild the corpus and rerun the comparison
+
+The benchmark uses a curated FastAPI slice with code, tests, English docs,
+deployment runbooks, and precedent PR summaries extracted from release notes.
 
 Persisted runtime state lives outside the repo under `~/.evidence-gate/` by
 default and is intentionally not part of the tracked source surface. Use

@@ -1,0 +1,590 @@
+[
+  {
+    "case_id": "fastapi-001",
+    "expected_path_hints": [
+      "fastapi/security/oauth2.py",
+      "tests/test_security_oauth2.py",
+      "docs/en/docs/tutorial/security",
+      "docs_src/security"
+    ],
+    "query": "If we change OAuth2PasswordRequestForm validation behavior, what FastAPI tests, docs, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "oauth2-password-form"
+  },
+  {
+    "case_id": "fastapi-002",
+    "expected_path_hints": [
+      "fastapi/security/oauth2.py",
+      "tests/test_security_oauth2.py",
+      "docs/en/docs/tutorial/security",
+      "docs_src/security"
+    ],
+    "query": "If we tighten OAuth2PasswordRequestFormStrict grant_type handling, what FastAPI tests, docs, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "oauth2-password-form"
+  },
+  {
+    "case_id": "fastapi-003",
+    "expected_path_hints": [
+      "fastapi/security/oauth2.py",
+      "tests/test_security_oauth2.py",
+      "docs/en/docs/tutorial/security",
+      "docs_src/security"
+    ],
+    "query": "If we change OpenID device flow polling interval behavior, what FastAPI tests, docs, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "oauth2-password-form"
+  },
+  {
+    "case_id": "fastapi-004",
+    "expected_path_hints": [
+      "fastapi/security/oauth2.py",
+      "tests/test_security_oauth2.py",
+      "docs/en/docs/tutorial/security",
+      "docs_src/security"
+    ],
+    "query": "If we change OIDC token introspection cache invalidation behavior, what FastAPI tests, docs, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "oauth2-password-form"
+  },
+  {
+    "case_id": "fastapi-005",
+    "expected_path_hints": [
+      "fastapi/websockets.py",
+      "fastapi/routing.py",
+      "tests/test_ws_router.py",
+      "tests/test_ws_dependencies.py",
+      "docs/en/docs/advanced/websockets.md"
+    ],
+    "query": "If we change dependency support in WebSocket routes, what FastAPI tests, docs, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "websocket-routing"
+  },
+  {
+    "case_id": "fastapi-006",
+    "expected_path_hints": [
+      "fastapi/websockets.py",
+      "fastapi/routing.py",
+      "tests/test_ws_router.py",
+      "tests/test_ws_dependencies.py",
+      "docs/en/docs/advanced/websockets.md"
+    ],
+    "query": "If we change WebSocket path parameter routing behavior, what FastAPI tests, docs, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "websocket-routing"
+  },
+  {
+    "case_id": "fastapi-007",
+    "expected_path_hints": [
+      "fastapi/websockets.py",
+      "fastapi/routing.py",
+      "tests/test_ws_router.py",
+      "tests/test_ws_dependencies.py",
+      "docs/en/docs/advanced/websockets.md"
+    ],
+    "query": "If we change Socket.IO namespace authorization behavior, what FastAPI tests, docs, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "websocket-routing"
+  },
+  {
+    "case_id": "fastapi-008",
+    "expected_path_hints": [
+      "fastapi/websockets.py",
+      "fastapi/routing.py",
+      "tests/test_ws_router.py",
+      "tests/test_ws_dependencies.py",
+      "docs/en/docs/advanced/websockets.md"
+    ],
+    "query": "If we change STOMP subscription acknowledgement behavior, what FastAPI tests, docs, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "websocket-routing"
+  },
+  {
+    "case_id": "fastapi-009",
+    "expected_path_hints": [
+      "fastapi/middleware/wsgi.py",
+      "tests/test_tutorial/test_wsgi",
+      "docs/en/docs/advanced/wsgi.md",
+      "docs_src/wsgi"
+    ],
+    "query": "If we change WSGIMiddleware usage and deprecation behavior, what FastAPI docs, examples, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "wsgi-middleware"
+  },
+  {
+    "case_id": "fastapi-010",
+    "expected_path_hints": [
+      "fastapi/middleware/wsgi.py",
+      "tests/test_tutorial/test_wsgi",
+      "docs/en/docs/advanced/wsgi.md",
+      "docs_src/wsgi"
+    ],
+    "query": "If we change the a2wsgi migration path for WSGIMiddleware, what FastAPI docs, examples, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "wsgi-middleware"
+  },
+  {
+    "case_id": "fastapi-011",
+    "expected_path_hints": [
+      "fastapi/middleware/wsgi.py",
+      "tests/test_tutorial/test_wsgi",
+      "docs/en/docs/advanced/wsgi.md",
+      "docs_src/wsgi"
+    ],
+    "query": "If we change Rack adapter lifecycle behavior, what FastAPI docs, examples, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "wsgi-middleware"
+  },
+  {
+    "case_id": "fastapi-012",
+    "expected_path_hints": [
+      "fastapi/middleware/wsgi.py",
+      "tests/test_tutorial/test_wsgi",
+      "docs/en/docs/advanced/wsgi.md",
+      "docs_src/wsgi"
+    ],
+    "query": "If we change CGI gateway adapter behavior, what FastAPI docs, examples, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "wsgi-middleware"
+  },
+  {
+    "case_id": "fastapi-013",
+    "expected_path_hints": [
+      "fastapi/middleware/gzip.py",
+      "docs/en/docs/advanced/middleware.md",
+      "docs_src/advanced_middleware",
+      "tests/test_tutorial/test_advanced_middleware"
+    ],
+    "query": "If we change GZipMiddleware compresslevel handling, what FastAPI docs, examples, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "gzip-middleware"
+  },
+  {
+    "case_id": "fastapi-014",
+    "expected_path_hints": [
+      "fastapi/middleware/gzip.py",
+      "docs/en/docs/advanced/middleware.md",
+      "docs_src/advanced_middleware",
+      "tests/test_tutorial/test_advanced_middleware"
+    ],
+    "query": "If we change GZipMiddleware example configuration, what FastAPI docs, examples, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "gzip-middleware"
+  },
+  {
+    "case_id": "fastapi-015",
+    "expected_path_hints": [
+      "fastapi/middleware/gzip.py",
+      "docs/en/docs/advanced/middleware.md",
+      "docs_src/advanced_middleware",
+      "tests/test_tutorial/test_advanced_middleware"
+    ],
+    "query": "If we change Brotli response compression level handling, what FastAPI docs, examples, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "gzip-middleware"
+  },
+  {
+    "case_id": "fastapi-016",
+    "expected_path_hints": [
+      "fastapi/middleware/gzip.py",
+      "docs/en/docs/advanced/middleware.md",
+      "docs_src/advanced_middleware",
+      "tests/test_tutorial/test_advanced_middleware"
+    ],
+    "query": "If we change zstd response compression behavior, what FastAPI docs, examples, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "gzip-middleware"
+  },
+  {
+    "case_id": "fastapi-017",
+    "expected_path_hints": [
+      "fastapi/background.py",
+      "docs/en/docs/tutorial/background-tasks.md",
+      "docs/en/docs/reference/background.md",
+      "docs_src/background_tasks"
+    ],
+    "query": "If we change BackgroundTasks subclass documentation behavior, what FastAPI docs, examples, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "background-tasks"
+  },
+  {
+    "case_id": "fastapi-018",
+    "expected_path_hints": [
+      "fastapi/background.py",
+      "docs/en/docs/tutorial/background-tasks.md",
+      "docs/en/docs/reference/background.md",
+      "docs_src/background_tasks"
+    ],
+    "query": "If we change BackgroundTasks reference docs and helper behavior, what FastAPI docs, examples, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "background-tasks"
+  },
+  {
+    "case_id": "fastapi-019",
+    "expected_path_hints": [
+      "fastapi/background.py",
+      "docs/en/docs/tutorial/background-tasks.md",
+      "docs/en/docs/reference/background.md",
+      "docs_src/background_tasks"
+    ],
+    "query": "If we change Celery beat periodic task scheduling, what FastAPI docs, examples, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "background-tasks"
+  },
+  {
+    "case_id": "fastapi-020",
+    "expected_path_hints": [
+      "fastapi/background.py",
+      "docs/en/docs/tutorial/background-tasks.md",
+      "docs/en/docs/reference/background.md",
+      "docs_src/background_tasks"
+    ],
+    "query": "If we change RQ job retry backoff scheduling, what FastAPI docs, examples, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "background-tasks"
+  },
+  {
+    "case_id": "fastapi-021",
+    "expected_path_hints": [
+      "fastapi/openapi/utils.py",
+      "tests/test_security_scopes.py",
+      "tests/test_top_level_security_scheme_in_openapi.py",
+      "docs/en/docs/advanced/security/oauth2-scopes.md"
+    ],
+    "query": "If we change OpenAPI security scheme scope deduplication, what FastAPI tests, docs, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "openapi-security-schemes"
+  },
+  {
+    "case_id": "fastapi-022",
+    "expected_path_hints": [
+      "fastapi/openapi/utils.py",
+      "tests/test_security_scopes.py",
+      "tests/test_top_level_security_scheme_in_openapi.py",
+      "docs/en/docs/advanced/security/oauth2-scopes.md"
+    ],
+    "query": "If we change top-level OpenAPI security scheme generation, what FastAPI tests, docs, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "openapi-security-schemes"
+  },
+  {
+    "case_id": "fastapi-023",
+    "expected_path_hints": [
+      "fastapi/openapi/utils.py",
+      "tests/test_security_scopes.py",
+      "tests/test_top_level_security_scheme_in_openapi.py",
+      "docs/en/docs/advanced/security/oauth2-scopes.md"
+    ],
+    "query": "If we change mutual TLS authentication metadata generation, what FastAPI tests, docs, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "openapi-security-schemes"
+  },
+  {
+    "case_id": "fastapi-024",
+    "expected_path_hints": [
+      "fastapi/openapi/utils.py",
+      "tests/test_security_scopes.py",
+      "tests/test_top_level_security_scheme_in_openapi.py",
+      "docs/en/docs/advanced/security/oauth2-scopes.md"
+    ],
+    "query": "If we change OAuth2 device authorization metadata generation, what FastAPI tests, docs, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "openapi-security-schemes"
+  },
+  {
+    "case_id": "fastapi-025",
+    "expected_path_hints": [
+      "fastapi/openapi/utils.py",
+      "tests/test_duplicate_models_openapi.py",
+      "docs/en/docs/how-to/separate-openapi-schemas.md",
+      "docs_src/separate_openapi_schemas"
+    ],
+    "query": "If we change OpenAPI anyOf reference handling for Union responses, what FastAPI tests, docs, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "openapi-anyof-union"
+  },
+  {
+    "case_id": "fastapi-026",
+    "expected_path_hints": [
+      "fastapi/openapi/utils.py",
+      "tests/test_duplicate_models_openapi.py",
+      "docs/en/docs/how-to/separate-openapi-schemas.md",
+      "docs_src/separate_openapi_schemas"
+    ],
+    "query": "If we change app-level response model anyOf deduplication, what FastAPI tests, docs, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "openapi-anyof-union"
+  },
+  {
+    "case_id": "fastapi-027",
+    "expected_path_hints": [
+      "fastapi/openapi/utils.py",
+      "tests/test_duplicate_models_openapi.py",
+      "docs/en/docs/how-to/separate-openapi-schemas.md",
+      "docs_src/separate_openapi_schemas"
+    ],
+    "query": "If we change GraphQL union fragment masking, what FastAPI tests, docs, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "openapi-anyof-union"
+  },
+  {
+    "case_id": "fastapi-028",
+    "expected_path_hints": [
+      "fastapi/openapi/utils.py",
+      "tests/test_duplicate_models_openapi.py",
+      "docs/en/docs/how-to/separate-openapi-schemas.md",
+      "docs_src/separate_openapi_schemas"
+    ],
+    "query": "If we change Avro union schema evolution handling, what FastAPI tests, docs, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "openapi-anyof-union"
+  },
+  {
+    "case_id": "fastapi-029",
+    "expected_path_hints": [
+      "docs/en/docs/advanced/openapi-callbacks.md",
+      "docs_src/openapi_callbacks",
+      "tests/test_tutorial/test_openapi_callbacks"
+    ],
+    "query": "If we change OpenAPI callback registration behavior, what FastAPI docs, examples, tests, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "openapi-callbacks"
+  },
+  {
+    "case_id": "fastapi-030",
+    "expected_path_hints": [
+      "docs/en/docs/advanced/openapi-callbacks.md",
+      "docs_src/openapi_callbacks",
+      "tests/test_tutorial/test_openapi_callbacks"
+    ],
+    "query": "If we change callback parameter handling in OpenAPI docs, what FastAPI docs, examples, tests, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "openapi-callbacks"
+  },
+  {
+    "case_id": "fastapi-031",
+    "expected_path_hints": [
+      "docs/en/docs/advanced/openapi-callbacks.md",
+      "docs_src/openapi_callbacks",
+      "tests/test_tutorial/test_openapi_callbacks"
+    ],
+    "query": "If we change AsyncAPI callback broker bindings, what FastAPI docs, examples, tests, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "openapi-callbacks"
+  },
+  {
+    "case_id": "fastapi-032",
+    "expected_path_hints": [
+      "docs/en/docs/advanced/openapi-callbacks.md",
+      "docs_src/openapi_callbacks",
+      "tests/test_tutorial/test_openapi_callbacks"
+    ],
+    "query": "If we change webhook retry broker callback semantics, what FastAPI docs, examples, tests, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "openapi-callbacks"
+  },
+  {
+    "case_id": "fastapi-033",
+    "expected_path_hints": [
+      "docs/en/docs/advanced/openapi-webhooks.md",
+      "docs_src/openapi_webhooks",
+      "tests/test_tutorial/test_openapi_webhooks"
+    ],
+    "query": "If we change OpenAPI webhook documentation behavior, what FastAPI docs, examples, tests, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "openapi-webhooks"
+  },
+  {
+    "case_id": "fastapi-034",
+    "expected_path_hints": [
+      "docs/en/docs/advanced/openapi-webhooks.md",
+      "docs_src/openapi_webhooks",
+      "tests/test_tutorial/test_openapi_webhooks"
+    ],
+    "query": "If we change webhook schema examples in FastAPI, what docs, examples, tests, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "openapi-webhooks"
+  },
+  {
+    "case_id": "fastapi-035",
+    "expected_path_hints": [
+      "docs/en/docs/advanced/openapi-webhooks.md",
+      "docs_src/openapi_webhooks",
+      "tests/test_tutorial/test_openapi_webhooks"
+    ],
+    "query": "If we change Twilio signature rotation daemon behavior, what FastAPI docs, examples, tests, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "openapi-webhooks"
+  },
+  {
+    "case_id": "fastapi-036",
+    "expected_path_hints": [
+      "docs/en/docs/advanced/openapi-webhooks.md",
+      "docs_src/openapi_webhooks",
+      "tests/test_tutorial/test_openapi_webhooks"
+    ],
+    "query": "If we change Stripe webhook delivery retry backoff, what FastAPI docs, examples, tests, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "openapi-webhooks"
+  },
+  {
+    "case_id": "fastapi-037",
+    "expected_path_hints": [
+      "docs/en/docs/advanced/sub-applications.md",
+      "docs_src/sub_applications",
+      "tests/test_tutorial/test_sub_applications"
+    ],
+    "query": "If we change sub-applications mount behavior, what FastAPI docs, examples, tests, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "sub-applications"
+  },
+  {
+    "case_id": "fastapi-038",
+    "expected_path_hints": [
+      "docs/en/docs/advanced/sub-applications.md",
+      "docs_src/sub_applications",
+      "tests/test_tutorial/test_sub_applications"
+    ],
+    "query": "If we change sub-applications OpenAPI prefix handling, what FastAPI docs, examples, tests, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "sub-applications"
+  },
+  {
+    "case_id": "fastapi-039",
+    "expected_path_hints": [
+      "docs/en/docs/advanced/sub-applications.md",
+      "docs_src/sub_applications",
+      "tests/test_tutorial/test_sub_applications"
+    ],
+    "query": "If we change Django admin subsite mounting behavior, what FastAPI docs, examples, tests, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "sub-applications"
+  },
+  {
+    "case_id": "fastapi-040",
+    "expected_path_hints": [
+      "docs/en/docs/advanced/sub-applications.md",
+      "docs_src/sub_applications",
+      "tests/test_tutorial/test_sub_applications"
+    ],
+    "query": "If we change Rails engine mount prefix behavior, what FastAPI docs, examples, tests, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "sub-applications"
+  },
+  {
+    "case_id": "fastapi-041",
+    "expected_path_hints": [
+      "docs/en/docs/advanced/behind-a-proxy.md",
+      "docs_src/behind_a_proxy",
+      "tests/test_tutorial/test_behind_a_proxy",
+      "runbooks/behind-a-proxy-runbook.md"
+    ],
+    "query": "If we change root_path handling behind a proxy, what FastAPI docs, examples, runbooks, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "behind-a-proxy"
+  },
+  {
+    "case_id": "fastapi-042",
+    "expected_path_hints": [
+      "docs/en/docs/advanced/behind-a-proxy.md",
+      "docs_src/behind_a_proxy",
+      "tests/test_tutorial/test_behind_a_proxy",
+      "runbooks/behind-a-proxy-runbook.md"
+    ],
+    "query": "If we change additional servers generation behind a proxy, what FastAPI docs, examples, runbooks, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "behind-a-proxy"
+  },
+  {
+    "case_id": "fastapi-043",
+    "expected_path_hints": [
+      "docs/en/docs/advanced/behind-a-proxy.md",
+      "docs_src/behind_a_proxy",
+      "tests/test_tutorial/test_behind_a_proxy",
+      "runbooks/behind-a-proxy-runbook.md"
+    ],
+    "query": "If we change ingress-nginx rewrite-target annotation behavior, what FastAPI docs, examples, runbooks, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "behind-a-proxy"
+  },
+  {
+    "case_id": "fastapi-044",
+    "expected_path_hints": [
+      "docs/en/docs/advanced/behind-a-proxy.md",
+      "docs_src/behind_a_proxy",
+      "tests/test_tutorial/test_behind_a_proxy",
+      "runbooks/behind-a-proxy-runbook.md"
+    ],
+    "query": "If we change Envoy x-forwarded-prefix reconciliation behavior, what FastAPI docs, examples, runbooks, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "behind-a-proxy"
+  },
+  {
+    "case_id": "fastapi-045",
+    "expected_path_hints": [
+      "docs/en/docs/tutorial/sql-databases.md",
+      "docs_src/sql_databases",
+      "tests/test_tutorial/test_sql_databases"
+    ],
+    "query": "If we change the SQLModel tutorial flow for SQL databases, what FastAPI docs, examples, tests, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "sqlmodel-tutorial"
+  },
+  {
+    "case_id": "fastapi-046",
+    "expected_path_hints": [
+      "docs/en/docs/tutorial/sql-databases.md",
+      "docs_src/sql_databases",
+      "tests/test_tutorial/test_sql_databases"
+    ],
+    "query": "If we change read_with_orm_mode support for SQLModel relationships, what FastAPI docs, examples, tests, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "sqlmodel-tutorial"
+  },
+  {
+    "case_id": "fastapi-047",
+    "expected_path_hints": [
+      "docs/en/docs/tutorial/sql-databases.md",
+      "docs_src/sql_databases",
+      "tests/test_tutorial/test_sql_databases"
+    ],
+    "query": "If we change Prisma relation loading behavior, what FastAPI docs, examples, tests, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "sqlmodel-tutorial"
+  },
+  {
+    "case_id": "fastapi-048",
+    "expected_path_hints": [
+      "docs/en/docs/tutorial/sql-databases.md",
+      "docs_src/sql_databases",
+      "tests/test_tutorial/test_sql_databases"
+    ],
+    "query": "If we change Django ORM select_related caching, what FastAPI docs, examples, tests, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "sqlmodel-tutorial"
+  },
+  {
+    "case_id": "fastapi-049",
+    "expected_path_hints": [
+      "fastapi/openapi/utils.py",
+      "tests/test_openapi_separate_input_output_schemas.py",
+      "docs/en/docs/how-to/separate-openapi-schemas.md",
+      "docs_src/separate_openapi_schemas"
+    ],
+    "query": "If we change separate_input_output_schemas behavior in OpenAPI generation, what FastAPI tests, docs, and precedent PRs are implicated?",
+    "should_admit": true,
+    "topic": "separate-input-output-schemas"
+  },
+  {
+    "case_id": "fastapi-050",
+    "expected_path_hints": [
+      "fastapi/openapi/utils.py",
+      "tests/test_openapi_separate_input_output_schemas.py",
+      "docs/en/docs/how-to/separate-openapi-schemas.md",
+      "docs_src/separate_openapi_schemas"
+    ],
+    "query": "If we change GraphQL input and output schema stitching behavior, what FastAPI tests, docs, and precedent PRs are implicated?",
+    "should_admit": false,
+    "topic": "separate-input-output-schemas"
+  }
+]
