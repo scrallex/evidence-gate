@@ -11,6 +11,9 @@ from evidence_gate.decision.models import (
     KnowledgeBaseIngestRequest,
     KnowledgeBaseIngestResponse,
     KnowledgeBaseListResponse,
+    KnowledgeBaseMaintenanceRunRequest,
+    KnowledgeBaseMaintenanceRunResponse,
+    KnowledgeBaseMaintenanceStatusResponse,
     KnowledgeBasePruneRequest,
     KnowledgeBasePruneResponse,
     KnowledgeBaseRemovalResponse,
@@ -98,3 +101,18 @@ def prune_knowledge_bases(
     service: DecisionService = Depends(get_decision_service),
 ) -> KnowledgeBasePruneResponse:
     return service.prune_repository_ingests(request)
+
+
+@router.get("/v1/knowledge-bases/maintenance/status", response_model=KnowledgeBaseMaintenanceStatusResponse)
+def get_knowledge_base_maintenance_status(
+    service: DecisionService = Depends(get_decision_service),
+) -> KnowledgeBaseMaintenanceStatusResponse:
+    return service.get_maintenance_status()
+
+
+@router.post("/v1/knowledge-bases/maintenance/run", response_model=KnowledgeBaseMaintenanceRunResponse)
+def run_knowledge_base_maintenance(
+    request: KnowledgeBaseMaintenanceRunRequest,
+    service: DecisionService = Depends(get_decision_service),
+) -> KnowledgeBaseMaintenanceRunResponse:
+    return service.run_knowledge_base_maintenance(request)

@@ -80,8 +80,20 @@ class RepositoryKnowledgeBaseRemoval:
     cache_dir: Path
     action: str
     previous_status: str | None
+    reason: str | None
     document_count: int
     span_count: int
+
+
+@dataclass(slots=True)
+class RepositoryKnowledgeBaseMaintenanceRun:
+    ran_at: datetime
+    dry_run: bool
+    total_knowledge_bases: int
+    removals: list[RepositoryKnowledgeBaseRemoval]
+    stale_count: int
+    expired_count: int
+    overflow_count: int
 
 
 @dataclass(slots=True)
@@ -242,6 +254,7 @@ def delete_repository_knowledge_base(
     settings: Settings,
     *,
     dry_run: bool = False,
+    reason: str | None = None,
 ) -> RepositoryKnowledgeBaseRemoval:
     repo_root = repo_root.resolve()
     cache_dir = _cache_dir_for_repo(repo_root, settings)
@@ -265,6 +278,7 @@ def delete_repository_knowledge_base(
             cache_dir=cache_dir,
             action="missing",
             previous_status=previous_status,
+            reason=reason,
             document_count=document_count,
             span_count=span_count,
         )
@@ -281,6 +295,7 @@ def delete_repository_knowledge_base(
         cache_dir=cache_dir,
         action=action,
         previous_status=previous_status,
+        reason=reason,
         document_count=document_count,
         span_count=span_count,
     )
@@ -301,9 +316,64 @@ def prune_repository_knowledge_bases(
                 status.repo_root,
                 settings,
                 dry_run=dry_run,
+                reason="stale" if status.status == "stale" else None,
             )
         )
     return removals
+
+
+def apply_repository_knowledge_base_retention(
+    settings: Settings,
+    *,
+    dry_run: bool = False,
+) -> RepositoryKnowledgeBaseMaintenanceRun:
+    statuses = list_repository_knowledge_bases(settings)
+    now = datetime.now(timezone.utc)
+    reasons_by_repo: dict[str, tuple[str, RepositoryKnowledgeBaseStatus]] = {}
+    maintenance = settings.maintenance
+
+    for status in statuses:
+        if status.status == "stale":
+            reasons_by_repo[str(status.repo_root)] = ("stale", status)
+            continue
+        if (
+            maintenance.max_age_hours is not None
+            and status.built_at is not None
+            and (now - status.built_at).total_seconds() >= maintenance.max_age_hours * 3600
+        ):
+            reasons_by_repo.setdefault(str(status.repo_root), ("expired", status))
+
+    if maintenance.max_cache_entries is not None and len(statuses) > maintenance.max_cache_entries:
+        ranked_statuses = sorted(
+            statuses,
+            key=lambda status: status.built_at or datetime.min.replace(tzinfo=timezone.utc),
+            reverse=True,
+        )
+        for status in ranked_statuses[maintenance.max_cache_entries :]:
+            reasons_by_repo.setdefault(str(status.repo_root), ("overflow", status))
+
+    removals: list[RepositoryKnowledgeBaseRemoval] = []
+    reason_counts: Counter[str] = Counter()
+    for reason, status in sorted(reasons_by_repo.values(), key=lambda item: item[1].repo_root.as_posix()):
+        removals.append(
+            delete_repository_knowledge_base(
+                status.repo_root,
+                settings,
+                dry_run=dry_run,
+                reason=reason,
+            )
+        )
+        reason_counts[reason] += 1
+
+    return RepositoryKnowledgeBaseMaintenanceRun(
+        ran_at=now,
+        dry_run=dry_run,
+        total_knowledge_bases=len(statuses),
+        removals=removals,
+        stale_count=reason_counts.get("stale", 0),
+        expired_count=reason_counts.get("expired", 0),
+        overflow_count=reason_counts.get("overflow", 0),
+    )
 
 
 def search_repository(

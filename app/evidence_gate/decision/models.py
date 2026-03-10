@@ -108,6 +108,7 @@ class KnowledgeBaseRemovalResponse(BaseModel):
     knowledge_base_path: str
     action: Literal["deleted", "missing", "would_delete"]
     previous_status: Literal["ready", "stale", "missing"] | None = None
+    reason: Literal["stale", "expired", "overflow"] | None = None
     document_count: int = Field(ge=0)
     span_count: int = Field(ge=0)
 
@@ -122,6 +123,29 @@ class KnowledgeBasePruneResponse(BaseModel):
     dry_run: bool
     removed_count: int = Field(ge=0)
     results: list[KnowledgeBaseRemovalResponse] = Field(default_factory=list)
+
+
+class KnowledgeBaseMaintenanceRunRequest(BaseModel):
+    dry_run: bool = False
+
+
+class KnowledgeBaseMaintenanceRunResponse(BaseModel):
+    ran_at: datetime
+    dry_run: bool
+    total_knowledge_bases: int = Field(ge=0)
+    removed_count: int = Field(ge=0)
+    stale_count: int = Field(ge=0)
+    expired_count: int = Field(ge=0)
+    overflow_count: int = Field(ge=0)
+    results: list[KnowledgeBaseRemovalResponse] = Field(default_factory=list)
+
+
+class KnowledgeBaseMaintenanceStatusResponse(BaseModel):
+    enabled: bool
+    prune_on_startup: bool
+    max_age_hours: int | None = Field(default=None, ge=1)
+    max_cache_entries: int | None = Field(default=None, ge=1)
+    last_run: KnowledgeBaseMaintenanceRunResponse | None = None
 
 
 class DecisionRecord(BaseModel):

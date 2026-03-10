@@ -252,3 +252,61 @@ def test_knowledge_base_delete_and_prune_endpoints(tmp_path: Path, monkeypatch) 
     delete_missing = client.delete("/v1/knowledge-bases", params={"repo_path": str(ready_repo)})
     assert delete_missing.status_code == 200
     assert delete_missing.json()["action"] == "missing"
+
+
+def test_knowledge_base_maintenance_run_and_status_endpoints(tmp_path: Path, monkeypatch) -> None:
+    older_repo = tmp_path / "older_repo"
+    newer_repo = tmp_path / "newer_repo"
+    audit_root = tmp_path / "audit"
+    kb_root = tmp_path / "knowledge_bases"
+    _build_sample_repo(older_repo)
+    _build_sample_repo(newer_repo)
+
+    monkeypatch.setenv("EVIDENCE_GATE_AUDIT_ROOT", str(audit_root))
+    monkeypatch.setenv("EVIDENCE_GATE_KB_ROOT", str(kb_root))
+    monkeypatch.setenv("EVIDENCE_GATE_KB_PRUNE_ON_STARTUP", "false")
+    monkeypatch.setenv("EVIDENCE_GATE_KB_MAX_CACHE_ENTRIES", "1")
+    get_settings.cache_clear()
+    get_audit_store.cache_clear()
+    get_decision_service.cache_clear()
+
+    client = TestClient(create_app())
+
+    status_before = client.get("/v1/knowledge-bases/maintenance/status")
+    assert status_before.status_code == 200
+    status_before_payload = status_before.json()
+    assert status_before_payload["prune_on_startup"] is False
+    assert status_before_payload["max_cache_entries"] == 1
+    assert status_before_payload["last_run"] is None
+
+    built_older = client.post("/v1/knowledge-bases/ingest", json={"repo_path": str(older_repo)})
+    built_newer = client.post("/v1/knowledge-bases/ingest", json={"repo_path": str(newer_repo)})
+    assert built_older.status_code == 200
+    assert built_newer.status_code == 200
+
+    dry_run = client.post(
+        "/v1/knowledge-bases/maintenance/run",
+        json={"dry_run": True},
+    )
+    assert dry_run.status_code == 200
+    dry_run_payload = dry_run.json()
+    assert dry_run_payload["removed_count"] == 1
+    assert dry_run_payload["overflow_count"] == 1
+    assert dry_run_payload["results"][0]["action"] == "would_delete"
+    assert dry_run_payload["results"][0]["reason"] == "overflow"
+
+    executed = client.post(
+        "/v1/knowledge-bases/maintenance/run",
+        json={"dry_run": False},
+    )
+    assert executed.status_code == 200
+    executed_payload = executed.json()
+    assert executed_payload["removed_count"] == 1
+    assert executed_payload["results"][0]["action"] == "deleted"
+    assert executed_payload["results"][0]["reason"] == "overflow"
+
+    status_after = client.get("/v1/knowledge-bases/maintenance/status")
+    assert status_after.status_code == 200
+    status_after_payload = status_after.json()
+    assert status_after_payload["last_run"]["removed_count"] == 1
+    assert status_after_payload["last_run"]["overflow_count"] == 1

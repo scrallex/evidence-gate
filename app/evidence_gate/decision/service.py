@@ -19,6 +19,9 @@ from evidence_gate.decision.models import (
     KnowledgeBaseIngestRequest,
     KnowledgeBaseIngestResponse,
     KnowledgeBaseListResponse,
+    KnowledgeBaseMaintenanceRunRequest,
+    KnowledgeBaseMaintenanceRunResponse,
+    KnowledgeBaseMaintenanceStatusResponse,
     KnowledgeBasePruneRequest,
     KnowledgeBasePruneResponse,
     KnowledgeBaseRemovalResponse,
@@ -29,6 +32,7 @@ from evidence_gate.decision.models import (
 )
 from evidence_gate.retrieval.repository import SearchHit
 from evidence_gate.retrieval.structural import (
+    apply_repository_knowledge_base_retention,
     delete_repository_knowledge_base,
     get_repository_knowledge_base_status,
     list_repository_knowledge_bases,
@@ -44,6 +48,7 @@ class DecisionService:
     def __init__(self, settings: Settings, audit_store: FileAuditStore):
         self.settings = settings
         self.audit_store = audit_store
+        self._last_maintenance_run: KnowledgeBaseMaintenanceRunResponse | None = None
 
     def decide_query(self, request: QueryDecisionRequest) -> DecisionRecord:
         repo_root = self._resolve_repo_root(request.repo_path)
@@ -145,6 +150,7 @@ class DecisionService:
             knowledge_base_path=str(removal.cache_dir),
             action=removal.action,
             previous_status=removal.previous_status,
+            reason=removal.reason,
             document_count=removal.document_count,
             span_count=removal.span_count,
         )
@@ -165,12 +171,56 @@ class DecisionService:
                     knowledge_base_path=str(removal.cache_dir),
                     action=removal.action,
                     previous_status=removal.previous_status,
+                    reason=removal.reason,
                     document_count=removal.document_count,
                     span_count=removal.span_count,
                 )
                 for removal in removals
             ],
         )
+
+    def get_maintenance_status(self) -> KnowledgeBaseMaintenanceStatusResponse:
+        policy = self.settings.maintenance
+        return KnowledgeBaseMaintenanceStatusResponse(
+            enabled=policy.enabled,
+            prune_on_startup=policy.prune_on_startup,
+            max_age_hours=policy.max_age_hours,
+            max_cache_entries=policy.max_cache_entries,
+            last_run=self._last_maintenance_run,
+        )
+
+    def run_knowledge_base_maintenance(
+        self,
+        request: KnowledgeBaseMaintenanceRunRequest | None = None,
+    ) -> KnowledgeBaseMaintenanceRunResponse:
+        run_request = request or KnowledgeBaseMaintenanceRunRequest()
+        maintenance_run = apply_repository_knowledge_base_retention(
+            self.settings,
+            dry_run=run_request.dry_run,
+        )
+        response = KnowledgeBaseMaintenanceRunResponse(
+            ran_at=maintenance_run.ran_at,
+            dry_run=maintenance_run.dry_run,
+            total_knowledge_bases=maintenance_run.total_knowledge_bases,
+            removed_count=len(maintenance_run.removals),
+            stale_count=maintenance_run.stale_count,
+            expired_count=maintenance_run.expired_count,
+            overflow_count=maintenance_run.overflow_count,
+            results=[
+                KnowledgeBaseRemovalResponse(
+                    repo_path=str(removal.repo_root),
+                    knowledge_base_path=str(removal.cache_dir),
+                    action=removal.action,
+                    previous_status=removal.previous_status,
+                    reason=removal.reason,
+                    document_count=removal.document_count,
+                    span_count=removal.span_count,
+                )
+                for removal in maintenance_run.removals
+            ],
+        )
+        self._last_maintenance_run = response
+        return response
 
     def get_decision(self, decision_id: str) -> DecisionRecord | None:
         return self.audit_store.get(decision_id)

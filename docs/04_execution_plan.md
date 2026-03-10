@@ -1,115 +1,122 @@
 # Execution Plan
 
-## Tangible product target
+## Product target
 
-Ship a working `Evidence Gate` service for engineering change intelligence. The first customer
-experience should answer a concrete question about a real codebase and return:
+Ship a credible `Evidence Gate` technical preview for engineering change
+intelligence. The reviewer should be able to point the service at a real codebase
+and get back:
 
-- cited files and spans
+- cited evidence spans
 - blast radius
-- similar prior PRs or incidents
+- prior PR or incident twins
 - `admit | abstain | escalate`
+- an auditable decision record
 
-If that experience works, the broader product story is credible. If it does not, nothing else in
-the research matters commercially.
+## What is already done
 
-## Phase 0: done in this workspace
+### Phase 0: product collapse
 
-- consolidate the highest-value research sources
-- define the product wedge
-- map the repo assets that can be reused
+- consolidated the strongest SEP research threads into one product story
+- narrowed the first workflow to engineering change intelligence
+- defined the canonical decision contract
 
-## Phase 1: collapse to one service
+### Phase 1: service alpha
 
-Target outcome:
-one backend that combines structural retrieval, code intelligence, and verification.
+- built a FastAPI application surface in this repo
+- implemented structural retrieval plus truth-pack verification
+- added blast radius, audit logging, and persisted repo knowledge bases
+- added knowledge-base ingest, status, deletion, prune, and maintenance endpoints
+- added regression tests for the current API and retrieval behavior
 
-Build steps:
+## What remains
 
-1. Create a new application surface named `evidence-gate` instead of extending trading code.
-2. Reuse ingestion and retrieval logic from `structural-manifold-compression/`.
-3. Reuse blast radius and MCP patterns from `structural-manifold-compression/SEP-mcp/`.
-4. Reuse truth-pack verification and twin flows from `score/`.
-5. Standardize on one decision schema and one audit log format.
+### Phase 2: prove value on one real corpus
 
-Exit criteria:
+Goal:
+show repeatable usefulness on a real engineering repository.
 
-- one process can ingest a repo plus docs
-- one API returns the decision contract
-- one log record is written for every decision
+Tasks:
 
-## Phase 2: first benchmark and demo
-
-Target outcome:
-prove usefulness on one engineering corpus.
-
-Build steps:
-
-1. Assemble a demo corpus from a real repo with docs, PR notes, and incident notes.
-2. Create 25 to 50 benchmark questions around change impact, runbook lookup, and incident reuse.
-3. Label expected citations and acceptable abstentions.
-4. Measure:
-   - citation coverage
-   - hallucination rate
-   - abstention rate
-   - time to useful answer
-5. Tune hazard and recurrence thresholds against that benchmark.
+1. Choose one target codebase with docs, PR history, and incident material.
+2. Build a benchmark set of 25 to 50 real questions.
+3. Label expected citations, acceptable abstentions, and bad failure modes.
+4. Compare Evidence Gate against a plain baseline retrieval or chat workflow.
+5. Tune thresholds from benchmark results instead of intuition.
 
 Exit criteria:
 
-- the system beats a plain baseline chat or weak RAG setup on citation quality
-- abstentions are explainable rather than random
-- the demo is stable enough to show repeatedly
+- the system beats the baseline on citation quality and relevance
+- abstentions are legible and not random
+- the demo can be repeated on demand
 
-## Phase 3: productize the action gate
+### Phase 3: make the repo externally reviewable
 
-Target outcome:
-gate agent actions, not only answers.
+Goal:
+turn the alpha into something a prospective partner can run and inspect quickly.
 
-Build steps:
+Tasks:
 
-1. Add action intents such as `edit_code`, `run_runbook_step`, and `recommend_change`.
-2. Require evidence spans and twin support before actions are admitted.
-3. Escalate weak actions into review packets instead of freeform model output.
-4. Record every decision for calibration and audit.
+1. Add a demo corpus or a reproducible setup guide for a target repo.
+2. Add a concise quickstart with example requests and expected output.
+3. Add basic packaging hygiene:
+   - `.gitignore`
+   - runtime-output handling
+   - clean README
+   - release-readiness doc
+4. Add CI for tests and linting.
+5. Add Docker or a similarly simple one-command local run path.
 
 Exit criteria:
 
-- action gating works with the same contract as Q&A
-- escalation packets are useful to a human reviewer
+- a reviewer can boot the service without repo archaeology
+- generated runtime artifacts are not mixed into source control
+- the repo tells an honest, coherent story
+
+### Phase 4: partner-ready technical preview
+
+Goal:
+make the system useful enough for a prospective design partner to try on their
+own corpus.
+
+Tasks:
+
+1. Add MCP delivery so coding agents can consume the same contract.
+2. Add benchmark reporting and a short evaluation report.
+3. Add maintenance-run persistence to the audit surface.
+4. Add a sample demo script for ingest plus change-impact walkthrough.
+5. Tighten deployment and configuration docs.
+
+Exit criteria:
+
+- a prospective partner can review, run, and extend the system
+- the value proposition is supported by evidence, not only narrative
 
 ## Commercial sequence
 
-### Wedge
-
-Sell the product as a reliability layer for engineering teams using AI on internal corpora.
-
 ### First proof
 
-Show the auth or session change-impact demo on a real repository.
+Show one repository-specific auth or session change-impact demo.
 
-### Expansion
+### First external review
 
-After the first engineering workflow works:
+Send a technical preview package to a prospect that includes:
 
-- agent action gating
-- support operations runbooks
-- ticket and incident reuse
-- broader enterprise knowledge workflows
+- repo link
+- quickstart
+- sample requests
+- benchmark summary
+- known limitations
+
+### Expansion after proof
+
+- action gating
+- MCP-native workflows
+- stronger corpus ingestion
+- broader operational and incident intelligence
 
 ## What to say no to
 
-- broad platform rebuilds before the change-intelligence demo exists
-- custom UI work before API and MCP are useful
-- research branches that do not improve admission, citations, twins, or escalation
-- attempts to revive trading as the product narrative
-
-## Immediate next implementation tasks
-
-1. Create a thin `evidence-gate` service skeleton in-repo.
-2. Define the canonical decision models and audit models.
-3. Build one ingestion path for repo files, docs, PR notes, and incidents.
-4. Wire in blast radius for code questions.
-5. Return citations and twin cases in one response.
-6. Add threshold configuration and decision logging.
-7. Build the first benchmark set and demo script.
+- polishing a UI before the benchmarked demo exists
+- adding broad enterprise claims without one strong workflow
+- marketing language that outruns the current alpha
+- restoring stale planning docs as if they describe the current repo state

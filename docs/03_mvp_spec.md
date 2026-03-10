@@ -6,21 +6,23 @@
 
 ## Category
 
-Reliability layer for LLM answers and agent actions.
+Reliability layer for engineering answers and agent-adjacent change analysis.
 
 ## Target user
 
-Engineering teams using LLMs over internal code, docs, tickets, PRs, and incident history.
+Engineering teams using AI over internal code, docs, runbooks, PRs, and incident
+history.
 
 ## User problem
 
-Most RAG and agent systems retrieve text but do not decide well when evidence is weak, stale, or
-structurally mismatched. They answer anyway, or they take action without enough precedent.
+Most AI systems over internal corpora retrieve text but do not decide well when
+evidence is weak, stale, or structurally mismatched. They answer anyway instead
+of showing the user whether the request is well-supported.
 
 ## Core promise
 
-Before the model answers or acts, Evidence Gate decides whether the request is structurally
-supported.
+Before an answer or recommendation is returned, Evidence Gate decides whether the
+request is structurally supported.
 
 ## Primary workflow
 
@@ -28,8 +30,8 @@ Engineering change intelligence.
 
 Example request:
 
-"If we change auth/session handling, what files, tests, docs, runbooks, and prior incidents are
-impacted?"
+"If we change auth or session handling, what files, tests, docs, runbooks, and
+prior incidents are impacted?"
 
 ## Decision contract
 
@@ -41,7 +43,7 @@ impacted?"
   "confidence": 0.82,
   "evidence_spans": [
     {"source": "docs/auth.md", "score": 0.91},
-    {"source": "src/session.ts", "score": 0.88}
+    {"source": "src/session.py", "score": 0.88}
   ],
   "twin_cases": [
     {"id": "pr_1842", "similarity": 0.86},
@@ -64,37 +66,53 @@ impacted?"
 ## Outcome semantics
 
 - `admit`: evidence and precedent are strong enough to answer or recommend action
-- `abstain`: evidence is insufficient, so the system should refuse to synthesize a confident answer
-- `escalate`: near matches exist, but a human or a stronger review step is needed
+- `abstain`: evidence is insufficient, so the system should refuse a confident answer
+- `escalate`: near matches exist, but a stronger review step is needed
 
 ## MVP scope
 
-- repo and doc ingestion
-- verified Q&A with citations
-- code-change impact workflow
-- twin retrieval across PRs, incidents, and docs
-- configurable thresholds for hazard and admission
-- API and MCP server first
+### Implemented alpha scope
 
-## Initial endpoints
+- repository and document ingestion into a persisted knowledge base
+- structural evidence retrieval with truth-pack verification
+- change-impact and engineering query workflows
+- twin retrieval across PRs and incidents
+- blast radius for code-oriented questions
+- audit logging for decisions
+- lifecycle and maintenance controls for persisted knowledge bases
 
-### `POST /v1/decide/query`
+### Explicitly deferred
 
-Question answering over code and operational documentation.
+- action gating endpoints
+- MCP server surface
+- benchmark corpus and formal evaluation harness
+- packaging beyond local developer usage
+- production auth, multi-tenant controls, and deployment hardening
 
-### `POST /v1/decide/change-impact`
+## Implemented endpoints
 
-Change-intelligence workflow for code modifications and architecture questions.
+- `GET /health`
+- `POST /v1/knowledge-bases/ingest`
+- `GET /v1/knowledge-bases`
+- `GET /v1/knowledge-bases/status`
+- `DELETE /v1/knowledge-bases`
+- `POST /v1/knowledge-bases/prune`
+- `GET /v1/knowledge-bases/maintenance/status`
+- `POST /v1/knowledge-bases/maintenance/run`
+- `POST /v1/decide/query`
+- `POST /v1/decide/change-impact`
+- `GET /v1/decisions/{id}`
 
-### `POST /v1/decide/action`
+## Next contract extension
 
-Gate agent actions such as edit proposals, runbook steps, or operator suggestions.
+The next API addition after the benchmark and demo package should be:
 
-### `GET /v1/decisions/{id}`
+- `POST /v1/decide/action`
 
-Return the full audit record for calibration and review.
+That should reuse the same `admit | abstain | escalate` contract rather than
+introducing a separate action-specific response shape.
 
-## Minimum demo corpus
+## Minimum useful demo corpus
 
 One real engineering repository plus:
 
@@ -105,15 +123,14 @@ One real engineering repository plus:
 
 ## Success metrics
 
-- lower hallucination rate on benchmarked engineering questions
-- calibrated abstention rather than answer-forcing
-- faster engineering investigations
-- fewer irrelevant context tokens sent to the model
-- higher user trust in citations, twins, and escalation behavior
+- stronger citation quality than weak baseline retrieval
+- calibrated abstention instead of answer-forcing
+- faster engineering investigations on change-impact questions
+- higher reviewer trust in citations, twins, and escalation behavior
 
 ## Non-goals
 
-- training a new foundation model
-- leading with compression claims
-- shipping a broad chat UI first
-- pitching trading or physics as the product narrative
+- training a new model
+- leading with compression as the product narrative
+- broad chat UI before the workflow proves value
+- claiming production readiness before benchmarked proof exists

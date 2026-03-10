@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import json
 import shutil
+import time
 from pathlib import Path
 
 import evidence_gate.retrieval.structural as structural
-from evidence_gate.config import Settings
+from evidence_gate.config import KnowledgeBaseMaintenanceConfig, Settings
 from evidence_gate.retrieval.structural import (
+    apply_repository_knowledge_base_retention,
     clear_repository_knowledge_base_cache,
     delete_repository_knowledge_base,
     get_repository_knowledge_base_status,
@@ -225,3 +227,43 @@ def test_repository_kb_prune_stale_only_supports_dry_run(tmp_path: Path) -> None
     assert removed[0].previous_status == "stale"
     assert ready_materialization.cache_dir.exists()
     assert not stale_materialization.cache_dir.exists()
+
+
+def test_repository_kb_retention_removes_overflow_oldest_first(tmp_path: Path) -> None:
+    older_repo = tmp_path / "older_repo"
+    newer_repo = tmp_path / "newer_repo"
+    kb_root = tmp_path / "knowledge_bases"
+    settings = Settings(
+        knowledge_root=kb_root,
+        audit_root=tmp_path / "audit",
+        maintenance=KnowledgeBaseMaintenanceConfig(
+            enabled=True,
+            prune_on_startup=False,
+            max_age_hours=None,
+            max_cache_entries=1,
+        ),
+    )
+
+    _build_sample_repo(older_repo)
+    _build_sample_repo(newer_repo)
+
+    clear_repository_knowledge_base_cache()
+    older_materialization = materialize_repository_knowledge_base(older_repo, settings)
+    time.sleep(0.01)
+    newer_materialization = materialize_repository_knowledge_base(newer_repo, settings)
+
+    dry_run = apply_repository_knowledge_base_retention(settings, dry_run=True)
+    assert dry_run.total_knowledge_bases == 2
+    assert len(dry_run.removals) == 1
+    assert dry_run.removals[0].action == "would_delete"
+    assert dry_run.removals[0].reason == "overflow"
+    assert dry_run.removals[0].repo_root == older_repo.resolve()
+    assert older_materialization.cache_dir.exists()
+    assert newer_materialization.cache_dir.exists()
+
+    executed = apply_repository_knowledge_base_retention(settings, dry_run=False)
+    assert len(executed.removals) == 1
+    assert executed.removals[0].action == "deleted"
+    assert executed.removals[0].reason == "overflow"
+    assert not older_materialization.cache_dir.exists()
+    assert newer_materialization.cache_dir.exists()
