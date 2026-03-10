@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from difflib import SequenceMatcher
 from typing import Iterable
 
-from evidence_gate.decision.models import SourceType
+from evidence_gate.decision.models import ExternalMetadata, SourceType
 from evidence_gate.retrieval.repository import tokenize
 from evidence_gate.structural.sidecar import ManifoldIndex, VerificationResult, verify_snippet
 
@@ -75,6 +75,7 @@ class TruthPackSpan:
     signature: str | None
     qgrams: set[str]
     hash_vector: dict[int, float]
+    metadata: ExternalMetadata | None = None
 
 
 @dataclass(slots=True)

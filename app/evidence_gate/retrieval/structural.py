@@ -11,7 +11,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from evidence_gate.config import Settings
-from evidence_gate.decision.models import SourceType
+from evidence_gate.ingest.base import BaseIngestor
+from evidence_gate.decision.models import ExternalMetadata, SourceType
 from evidence_gate.retrieval.repository import (
     DocumentRecord,
     SearchHit,
@@ -130,6 +131,16 @@ def build_repository_knowledge_base(
 ) -> RepositoryKnowledgeBase:
     prefixes = exclude_relative_prefixes or _artifact_relative_prefixes(repo_root, settings)
     documents = scan_repository(repo_root, exclude_relative_prefixes=prefixes)
+    return _build_repository_knowledge_base_from_documents(documents, settings)
+
+
+def build_knowledge_base_from_ingestors(
+    ingestors: list[BaseIngestor],
+    settings: Settings,
+) -> RepositoryKnowledgeBase:
+    documents: list[DocumentRecord] = []
+    for ingestor in ingestors:
+        documents.extend(ingestor.collect_documents())
     return _build_repository_knowledge_base_from_documents(documents, settings)
 
 
@@ -413,6 +424,7 @@ def search_repository(
                 snippet=snippet[:240],
                 line_number=span.line_number,
                 verified=evaluation.verified,
+                metadata=span.metadata,
             )
         )
 
@@ -734,6 +746,7 @@ def _document_to_payload(document: DocumentRecord) -> dict[str, object]:
         "path": document.path,
         "source_type": document.source_type.value,
         "content": document.content,
+        "metadata": document.metadata.model_dump(mode="json") if document.metadata is not None else None,
     }
 
 
@@ -747,6 +760,11 @@ def _document_from_payload(payload: dict[str, object]) -> DocumentRecord:
         lines=tuple(content.splitlines()),
         token_counts=Counter(tokenize(content)),
         path_token_counts=Counter(tokenize(path.replace("/", " "))),
+        metadata=(
+            None
+            if payload.get("metadata") is None
+            else ExternalMetadata.model_validate(payload["metadata"])
+        ),
     )
 
 
@@ -766,6 +784,7 @@ def _span_to_payload(span: TruthPackSpan) -> dict[str, object]:
         "rupture": span.rupture,
         "hazard": span.hazard,
         "signature": span.signature,
+        "metadata": span.metadata.model_dump(mode="json") if span.metadata is not None else None,
     }
 
 
@@ -788,6 +807,11 @@ def _span_from_payload(payload: dict[str, object]) -> TruthPackSpan:
         signature=str(payload["signature"]) if payload["signature"] is not None else None,
         qgrams=_build_qgrams(search_text),
         hash_vector=_hash_search_vector(search_text),
+        metadata=(
+            None
+            if payload.get("metadata") is None
+            else ExternalMetadata.model_validate(payload["metadata"])
+        ),
     )
 
 
@@ -849,6 +873,7 @@ def _build_truth_pack_spans(documents: list[DocumentRecord], settings: Settings)
                 signature=signature,
                 qgrams=_build_qgrams(search_text),
                 hash_vector=_hash_search_vector(search_text),
+                metadata=document.metadata,
             )
         )
 

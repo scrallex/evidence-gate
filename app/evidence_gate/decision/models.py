@@ -25,6 +25,12 @@ class SourceType(str, Enum):
     OTHER = "other"
 
 
+class ExternalMetadata(BaseModel):
+    author: str | None = None
+    external_url: str | None = None
+    timestamp: datetime | None = None
+
+
 class EvidenceSpan(BaseModel):
     source: str
     source_type: SourceType
@@ -32,6 +38,7 @@ class EvidenceSpan(BaseModel):
     snippet: str
     line_number: int | None = Field(default=None, ge=1)
     verified: bool = True
+    metadata: ExternalMetadata | None = None
 
 
 class TwinCase(BaseModel):
@@ -40,6 +47,7 @@ class TwinCase(BaseModel):
     source_type: SourceType
     similarity: float = Field(ge=0.0, le=1.0)
     summary: str
+    metadata: ExternalMetadata | None = None
 
 
 class BlastRadius(BaseModel):
@@ -66,6 +74,18 @@ class ChangeImpactRequest(BaseModel):
     change_summary: str = Field(min_length=1)
     changed_paths: list[str] = Field(default_factory=list)
     top_k: int = Field(default=5, ge=1, le=20)
+
+
+class ActionDecisionRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    repo_path: str
+    action_summary: str = Field(min_length=1)
+    changed_paths: list[str] = Field(default_factory=list)
+    top_k: int = Field(default=5, ge=1, le=20)
+    block_on: list[DecisionName] = Field(
+        default_factory=lambda: [DecisionName.ABSTAIN, DecisionName.ESCALATE]
+    )
 
 
 class KnowledgeBaseIngestRequest(BaseModel):
@@ -151,7 +171,7 @@ class KnowledgeBaseMaintenanceStatusResponse(BaseModel):
 class DecisionRecord(BaseModel):
     decision_id: str
     created_at: datetime
-    request_type: Literal["query", "change-impact"]
+    request_type: Literal["query", "change-impact", "action"]
     decision: DecisionName
     hazard: float = Field(ge=0.0, le=1.0)
     recurrence: int = Field(ge=0)
@@ -163,3 +183,11 @@ class DecisionRecord(BaseModel):
     answer_or_action: str
     explanation: str
     request_payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class ActionDecisionResponse(BaseModel):
+    allowed: bool
+    status: Literal["allow", "block"]
+    blocking_decisions: list[DecisionName] = Field(default_factory=list)
+    failure_reason: str | None = None
+    decision_record: DecisionRecord

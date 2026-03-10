@@ -12,8 +12,10 @@ from mcp.server.fastmcp.exceptions import ToolError
 from mcp.types import ToolAnnotations
 
 from evidence_gate.__init__ import __version__
-from evidence_gate.api.main import get_decision_service, get_settings
+from evidence_gate.api.main import get_audit_store, get_decision_service, get_settings
 from evidence_gate.decision.models import (
+    ActionDecisionRequest,
+    ActionDecisionResponse,
     ChangeImpactRequest,
     DecisionRecord,
     KnowledgeBaseIngestRequest,
@@ -39,6 +41,10 @@ class MCPHealthResponse(BaseModel):
     status: str
     service: str
     version: str
+
+
+class RecentDecisionsResponse(BaseModel):
+    decisions: list[DecisionRecord]
 
 
 READ_ONLY = ToolAnnotations(readOnlyHint=True, destructiveHint=False, openWorldHint=False)
@@ -159,6 +165,33 @@ def create_mcp_server(
             raise ToolError(str(exc)) from exc
 
     @mcp.tool(
+        name="evidence_gate_decide_action",
+        description=(
+            "Block or allow a proposed action using the stricter action-gating contract built on top "
+            "of change-impact evidence retrieval."
+        ),
+        annotations=NON_DESTRUCTIVE,
+        structured_output=True,
+    )
+    def decide_action(
+        repo_path: str,
+        action_summary: str,
+        changed_paths: list[str] | None = None,
+        top_k: int = 5,
+    ) -> ActionDecisionResponse:
+        try:
+            return get_decision_service().decide_action(
+                ActionDecisionRequest(
+                    repo_path=repo_path,
+                    action_summary=action_summary,
+                    changed_paths=changed_paths or [],
+                    top_k=top_k,
+                )
+            )
+        except ValueError as exc:
+            raise ToolError(str(exc)) from exc
+
+    @mcp.tool(
         name="evidence_gate_get_decision",
         description="Fetch a prior decision record by ID from the audit store.",
         annotations=READ_ONLY,
@@ -169,6 +202,15 @@ def create_mcp_server(
         if record is None:
             raise ToolError(f"Decision not found: {decision_id}")
         return record
+
+    @mcp.tool(
+        name="evidence_gate_list_recent_decisions",
+        description="List recent decision records from the Evidence Gate audit ledger.",
+        annotations=READ_ONLY,
+        structured_output=True,
+    )
+    def list_recent_decisions(limit: int = 20) -> RecentDecisionsResponse:
+        return RecentDecisionsResponse(decisions=get_decision_service().list_recent_decisions(limit))
 
     @mcp.resource(
         "evidence-gate://schemas/decision-record",
@@ -192,6 +234,16 @@ def create_mcp_server(
         if record is None:
             raise ValueError(f"Decision not found: {decision_id}")
         return record.model_dump(mode="json")
+
+    @mcp.resource(
+        "evidence-gate://audit/decisions.jsonl",
+        name="audit_ledger",
+        title="Audit Ledger",
+        description="Raw JSONL audit ledger of persisted Evidence Gate decisions.",
+        mime_type="application/x-ndjson",
+    )
+    def audit_ledger_resource() -> str:
+        return get_audit_store().read_ledger_text()
 
     @mcp.prompt(
         name="evidence_gate_review_change",

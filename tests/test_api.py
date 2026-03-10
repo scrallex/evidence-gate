@@ -100,6 +100,54 @@ def test_change_impact_decision_flow(tmp_path: Path, monkeypatch) -> None:
     assert any(kb_root.rglob("manifest.json"))
 
 
+def test_action_decision_endpoint_returns_200_for_allowed_and_403_for_blocked(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    repo_root = tmp_path / "sample_repo"
+    audit_root = tmp_path / "audit"
+    kb_root = tmp_path / "knowledge_bases"
+    _build_sample_repo(repo_root)
+
+    monkeypatch.setenv("EVIDENCE_GATE_AUDIT_ROOT", str(audit_root))
+    monkeypatch.setenv("EVIDENCE_GATE_KB_ROOT", str(kb_root))
+    get_settings.cache_clear()
+    get_audit_store.cache_clear()
+    get_decision_service.cache_clear()
+
+    client = TestClient(create_app())
+
+    allowed = client.post(
+        "/v1/decide/action",
+        json={
+            "repo_path": str(repo_root),
+            "action_summary": "Before changing auth/session handling, verify the action is safe.",
+            "changed_paths": ["src/session.py"],
+        },
+    )
+    assert allowed.status_code == 200
+    allowed_payload = allowed.json()
+    assert allowed_payload["allowed"] is True
+    assert allowed_payload["status"] == "allow"
+    assert allowed_payload["decision_record"]["decision"] == "admit"
+
+    blocked = client.post(
+        "/v1/decide/action",
+        json={
+            "repo_path": str(repo_root),
+            "action_summary": "Before changing auth/session handling, verify the action is safe.",
+            "changed_paths": ["src/session.py"],
+            "block_on": ["admit"],
+        },
+    )
+    assert blocked.status_code == 403
+    blocked_payload = blocked.json()
+    assert blocked_payload["allowed"] is False
+    assert blocked_payload["status"] == "block"
+    assert blocked_payload["decision_record"]["decision"] == "admit"
+    assert blocked_payload["failure_reason"]
+
+
 def test_knowledge_base_ingest_endpoint_builds_reuses_and_refreshes(tmp_path: Path, monkeypatch) -> None:
     repo_root = tmp_path / "sample_repo"
     audit_root = tmp_path / "audit"

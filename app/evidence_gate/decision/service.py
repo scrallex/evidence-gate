@@ -11,6 +11,8 @@ from evidence_gate.audit.store import FileAuditStore
 from evidence_gate.blast_radius.ast_deps import ASTDependencyAnalyzer
 from evidence_gate.config import Settings
 from evidence_gate.decision.models import (
+    ActionDecisionRequest,
+    ActionDecisionResponse,
     BlastRadius,
     ChangeImpactRequest,
     DecisionName,
@@ -86,6 +88,40 @@ class DecisionService:
             evidence_spans=evidence_spans,
             twin_cases=twin_cases,
             blast_radius=blast_radius,
+        )
+
+    def decide_action(self, request: ActionDecisionRequest) -> ActionDecisionResponse:
+        repo_root = self._resolve_repo_root(request.repo_path)
+        ranked_hits = self._search(repo_root, request.action_summary, request.top_k)
+        evidence_spans, twin_cases = self._split_hits(ranked_hits)
+        focus_paths = request.changed_paths or [
+            evidence.source
+            for evidence in evidence_spans
+            if evidence.source_type == SourceType.CODE
+        ][: self.settings.thresholds.focus_path_limit]
+        blast_radius = self._compute_blast_radius(repo_root, focus_paths)
+        record = self._finalize_record(
+            request_type="action",
+            prompt=request.action_summary,
+            request_payload=request.model_dump(),
+            evidence_spans=evidence_spans,
+            twin_cases=twin_cases,
+            blast_radius=blast_radius,
+        )
+        blocking_decisions = list(dict.fromkeys(request.block_on))
+        allowed = record.decision not in set(blocking_decisions)
+        failure_reason = None
+        if not allowed:
+            failure_reason = (
+                f"Action blocked because Evidence Gate returned {record.decision.value} "
+                f"for the proposed change."
+            )
+        return ActionDecisionResponse(
+            allowed=allowed,
+            status="allow" if allowed else "block",
+            blocking_decisions=blocking_decisions,
+            failure_reason=failure_reason,
+            decision_record=record,
         )
 
     def ingest_repository(self, request: KnowledgeBaseIngestRequest) -> KnowledgeBaseIngestResponse:
@@ -225,6 +261,9 @@ class DecisionService:
     def get_decision(self, decision_id: str) -> DecisionRecord | None:
         return self.audit_store.get(decision_id)
 
+    def list_recent_decisions(self, limit: int = 20) -> list[DecisionRecord]:
+        return self.audit_store.list_recent(limit)
+
     def _resolve_repo_root(self, repo_path: str) -> Path:
         repo_root = self._normalize_repo_path(repo_path)
         if not repo_root.exists():
@@ -262,6 +301,7 @@ class DecisionService:
                         source_type=hit.source_type,
                         similarity=hit.score,
                         summary=hit.snippet,
+                        metadata=hit.metadata,
                     )
                 )
                 continue
@@ -276,6 +316,7 @@ class DecisionService:
                     snippet=hit.snippet,
                     line_number=hit.line_number,
                     verified=hit.verified,
+                    metadata=hit.metadata,
                 )
             )
 
@@ -289,6 +330,7 @@ class DecisionService:
                         snippet=hit.snippet,
                         line_number=hit.line_number,
                         verified=hit.verified,
+                        metadata=hit.metadata,
                     )
                 )
 

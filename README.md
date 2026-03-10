@@ -42,8 +42,8 @@ It is suitable today for:
 - design-partner evaluation with guided setup
 
 It is not yet ready as a self-serve product or production deployment. The main
-gaps are evaluator packaging, action-gating integration, broader partner docs,
-and a polished pilot kit.
+gaps are production hardening, broader CI adoption, partner validation on
+private corpora, and wider enterprise-source ingestion.
 
 ## Quickstart
 
@@ -69,6 +69,18 @@ Run the MCP server over streamable HTTP:
 
 ```bash
 evidence-gate-mcp --transport streamable-http --port 8001
+```
+
+Run the zero-to-value demo sandbox:
+
+```bash
+./scripts/run_demo_sandbox.sh
+```
+
+Run the Docker evaluator stack against a mounted repo:
+
+```bash
+EVIDENCE_GATE_REPO_MOUNT=/absolute/path/to/private-repo docker compose up -d --build
 ```
 
 Build a repository knowledge base:
@@ -115,18 +127,28 @@ python scripts/run_fastapi_benchmark.py
 - `POST /v1/knowledge-bases/maintenance/run`
 - `POST /v1/decide/query`
 - `POST /v1/decide/change-impact`
+- `POST /v1/decide/action`
 - `GET /v1/decisions/{id}`
 
 ## MCP Surface
 
 The repo now ships a first-cut MCP server with:
 
-- tools for repository ingest, knowledge-base status, query decisions, change-impact decisions, and decision lookup
-- a decision-contract schema resource plus per-decision resources
+- tools for repository ingest, knowledge-base status, query decisions, change-impact decisions, action gating, and audit lookup
+- a decision-contract schema resource, per-decision resources, and the raw audit ledger
 - a prompt that tells an agent to gate risky code edits before proceeding
 
 See `docs/07_mcp_server.md` for local `stdio` and remote `streamable-http`
 configuration examples.
+
+## Evaluator Kit
+
+The repo now includes a design-partner evaluator path:
+
+- `Dockerfile`: runs the FastAPI API on `8000` and the MCP streamable-http endpoint on `8001`
+- `docker-compose.yml`: mounts persistent audit and knowledge-base state under `./data`
+- `scripts/run_demo_sandbox.sh`: boots the stack, clones FastAPI, ingests it, and prints copy-paste test commands
+- `docs/08_partner_evaluation_guide.md`: step-by-step instructions for mounting a private repo into the container
 
 ## Benchmark Proof
 
@@ -148,8 +170,8 @@ deployment runbooks, and precedent PR summaries extracted from release notes.
 
 ## Roadmap
 
-- Immediate: Docker-style evaluator kit plus copy-paste agent configs for design partners
-- Medium term: `POST /v1/decide/action` and GitHub or GitLab action-gating
+- Immediate: validate the evaluator kit on partner-shaped repos and harden CI adoption
+- Medium term: tighten delivery-path policies and broaden GitHub or GitLab integration
 - Long term: Jira, PagerDuty or Slack, and Confluence connectors for broader institutional memory
 
 Persisted runtime state lives outside the repo under `~/.evidence-gate/` by
@@ -184,3 +206,4 @@ partner-review materials.
 - `docs/05_repo_audit_and_delivery_gameplan.md`
 - `docs/06_release_readiness_and_partner_path.md`
 - `docs/07_mcp_server.md`
+- `docs/08_partner_evaluation_guide.md`

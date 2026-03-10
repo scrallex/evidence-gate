@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from evidence_gate.api.main import get_decision_service
 from evidence_gate.decision.models import (
+    ActionDecisionRequest,
+    ActionDecisionResponse,
     ChangeImpactRequest,
     DecisionRecord,
     KnowledgeBaseIngestRequest,
@@ -45,6 +47,20 @@ def decide_change_impact(
         return service.decide_change_impact(request)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/v1/decide/action", response_model=ActionDecisionResponse)
+def decide_action(
+    request: ActionDecisionRequest,
+    response: Response,
+    service: DecisionService = Depends(get_decision_service),
+) -> ActionDecisionResponse:
+    try:
+        result = service.decide_action(request)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    response.status_code = status.HTTP_200_OK if result.allowed else status.HTTP_403_FORBIDDEN
+    return result
 
 
 @router.get("/v1/decisions/{decision_id}", response_model=DecisionRecord)

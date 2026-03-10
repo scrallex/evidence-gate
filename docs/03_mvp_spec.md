@@ -91,17 +91,17 @@ admitting only when evidence is structurally supported.
 - repository and document ingestion into a persisted knowledge base
 - structural evidence retrieval with truth-pack verification
 - change-impact and engineering query workflows
+- action-gating workflow with allow or block enforcement on top of the same decision engine
 - twin retrieval across PRs and incidents
 - blast radius for code-oriented questions
 - audit logging for decisions
 - lifecycle and maintenance controls for persisted knowledge bases
 - reproducible benchmark harness and checked-in evaluation report
 - MCP server surface for IDE and agent workflows over `stdio` and `streamable-http`
+- Docker evaluator kit plus demo sandbox script for design-partner setup
 
 ### Explicitly deferred
 
-- action gating endpoint: `POST /v1/decide/action`
-- Docker or similarly simple evaluator kit
 - CI packaging and required-check integrations
 - multi-tenant auth, production controls, and deployment hardening
 - external connectors such as Jira, PagerDuty, Slack, and Confluence
@@ -119,6 +119,7 @@ admitting only when evidence is structurally supported.
 - `POST /v1/knowledge-bases/maintenance/run`
 - `POST /v1/decide/query`
 - `POST /v1/decide/change-impact`
+- `POST /v1/decide/action`
 - `GET /v1/decisions/{id}`
 
 ## Implemented MCP surfaces
@@ -128,19 +129,22 @@ admitting only when evidence is structurally supported.
 - `evidence_gate_get_knowledge_base_status`
 - `evidence_gate_decide_query`
 - `evidence_gate_decide_change_impact`
+- `evidence_gate_decide_action`
 - `evidence_gate_get_decision`
+- `evidence_gate_list_recent_decisions`
 - `evidence-gate://schemas/decision-record`
 - `evidence-gate://decisions/{decision_id}`
+- `evidence-gate://audit/decisions.jsonl`
 - `evidence_gate_review_change`
 
 ## Next contract extension
 
-The next API addition after the evaluator kit should be:
+The next delivery extension after the evaluator kit and action endpoint should be:
 
-- `POST /v1/decide/action`
+- required-check wrappers for GitHub and GitLab
 
 That should reuse the same `admit | abstain | escalate` contract rather than
-introducing a separate action-specific response shape.
+introducing a separate CI-specific response shape.
 
 ## Minimum useful demo corpus
 

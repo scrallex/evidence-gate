@@ -8,7 +8,7 @@ from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
-from evidence_gate.decision.models import SourceType
+from evidence_gate.decision.models import ExternalMetadata, SourceType
 
 WORD_RE = re.compile(r"[A-Za-z0-9_]+")
 STOPWORDS = {
@@ -84,6 +84,7 @@ class DocumentRecord:
     lines: tuple[str, ...]
     token_counts: Counter[str]
     path_token_counts: Counter[str]
+    metadata: ExternalMetadata | None = None
 
 
 @dataclass(slots=True)
@@ -94,6 +95,7 @@ class SearchHit:
     snippet: str
     line_number: int | None
     verified: bool = False
+    metadata: ExternalMetadata | None = None
 
 
 def tokenize(text: str) -> list[str]:
@@ -151,23 +153,12 @@ def scan_repository(
     *,
     exclude_relative_prefixes: tuple[str, ...] = (),
 ) -> list[DocumentRecord]:
-    documents: list[DocumentRecord] = []
-    for path in iter_repository_files(repo_root, exclude_relative_prefixes=exclude_relative_prefixes):
-        content = path.read_text(encoding="utf-8", errors="ignore")
-        if not content.strip():
-            continue
-        rel_path = path.relative_to(repo_root).as_posix()
-        documents.append(
-            DocumentRecord(
-                path=rel_path,
-                source_type=classify_source_type(rel_path),
-                content=content,
-                lines=tuple(content.splitlines()),
-                token_counts=Counter(tokenize(content)),
-                path_token_counts=Counter(tokenize(rel_path.replace("/", " "))),
-            )
-        )
-    return documents
+    from evidence_gate.ingest.local_repo import LocalRepoIngestor
+
+    return LocalRepoIngestor(
+        repo_root,
+        exclude_relative_prefixes=exclude_relative_prefixes,
+    ).collect_documents()
 
 
 def _best_snippet(lines: tuple[str, ...], query_tokens: set[str]) -> tuple[str, int | None]:

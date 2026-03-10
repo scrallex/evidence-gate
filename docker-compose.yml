@@ -1,0 +1,14 @@
+services:
+  evidence-gate:
+    build:
+      context: .
+    container_name: evidence-gate
+    environment:
+      EVIDENCE_GATE_AUDIT_ROOT: /data/audit
+      EVIDENCE_GATE_KB_ROOT: /data/knowledge_bases
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    volumes:
+      - ./data:/data
+      - ${EVIDENCE_GATE_REPO_MOUNT:-./data/repos/fastapi}:/workspace/target

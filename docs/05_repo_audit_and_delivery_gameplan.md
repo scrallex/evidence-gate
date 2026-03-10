@@ -131,8 +131,8 @@ Tasks:
 1. Keep runtime outputs out of source control.
 2. Keep the README and core docs current.
 3. Add CI for tests.
-4. Add Docker or an equivalent one-command local run path.
-5. Add a short demo script or copy-paste walkthrough.
+4. Keep Docker and Compose as the one-command local run path.
+5. Keep the demo script and partner walkthrough current.
 
 ### Track 2: workflow placement
 
@@ -154,7 +154,7 @@ turn the service from advisory intelligence into a delivery-path guardrail.
 
 Tasks:
 
-1. Add `POST /v1/decide/action`.
+1. Validate `POST /v1/decide/action` on real CI workflows.
 2. Add GitHub and GitLab required-check integration.
 3. Fail or escalate when blast radius is high and evidence coverage is weak.
 4. Emit citations and missing-evidence reasons in PR feedback.

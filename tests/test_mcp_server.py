@@ -96,9 +96,22 @@ async def _exercise_mcp_server(repo_root: Path, audit_root: Path, kb_root: Path)
             decision_payload = decision.structuredContent or {}
             decision_id = decision_payload.get("decision_id")
             assert isinstance(decision_id, str)
+            action_decision = await session.call_tool(
+                "evidence_gate_decide_action",
+                {
+                    "repo_path": str(repo_root),
+                    "action_summary": "Before changing auth/session handling, verify the action is safe.",
+                    "changed_paths": ["src/session.py"],
+                },
+            )
+            recent_decisions = await session.call_tool(
+                "evidence_gate_list_recent_decisions",
+                {"limit": 5},
+            )
 
             decision_resource = await session.read_resource(f"evidence-gate://decisions/{decision_id}")
             schema_resource = await session.read_resource("evidence-gate://schemas/decision-record")
+            audit_resource = await session.read_resource("evidence-gate://audit/decisions.jsonl")
             prompt = await session.get_prompt(
                 "evidence_gate_review_change",
                 {
@@ -116,8 +129,11 @@ async def _exercise_mcp_server(repo_root: Path, audit_root: Path, kb_root: Path)
         "ingest": ingest.structuredContent,
         "status": status.structuredContent,
         "decision": decision_payload,
+        "action_decision": action_decision.structuredContent,
+        "recent_decisions": recent_decisions.structuredContent,
         "decision_resource": decision_resource.contents[0].text,
         "schema_resource": schema_resource.contents[0].text,
+        "audit_resource": audit_resource.contents[0].text,
         "prompt_messages": prompt.messages,
     }
 
@@ -133,7 +149,10 @@ def test_mcp_stdio_server_exposes_evidence_gate_workflow(tmp_path: Path) -> None
     assert "evidence_gate_health" in payload["tools"]
     assert "evidence_gate_ingest_repository" in payload["tools"]
     assert "evidence_gate_decide_change_impact" in payload["tools"]
+    assert "evidence_gate_decide_action" in payload["tools"]
+    assert "evidence_gate_list_recent_decisions" in payload["tools"]
     assert "evidence-gate://schemas/decision-record" in payload["resources"]
+    assert "evidence-gate://audit/decisions.jsonl" in payload["resources"]
     assert "evidence-gate://decisions/{decision_id}" in payload["resource_templates"]
     assert "evidence_gate_review_change" in payload["prompts"]
 
@@ -151,12 +170,21 @@ def test_mcp_stdio_server_exposes_evidence_gate_workflow(tmp_path: Path) -> None
     assert any(span["source"] == "docs/auth.md" for span in decision_payload["evidence_spans"])
     assert any(twin["source"] == "prs/pr_1842.md" for twin in decision_payload["twin_cases"])
 
+    action_payload = payload["action_decision"]
+    assert action_payload["allowed"] is True
+    assert action_payload["decision_record"]["decision"] == "admit"
+
+    recent_decisions = payload["recent_decisions"]
+    assert len(recent_decisions["decisions"]) >= 2
+
     decision_resource = json.loads(payload["decision_resource"])
     assert decision_resource["decision_id"] == decision_payload["decision_id"]
 
     schema_resource = json.loads(payload["schema_resource"])
     assert "properties" in schema_resource
     assert "decision" in schema_resource["properties"]
+
+    assert decision_payload["decision_id"] in payload["audit_resource"]
 
     prompt_messages = payload["prompt_messages"]
     assert prompt_messages

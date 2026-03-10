@@ -38,26 +38,27 @@ That is enough for technical diligence and a guided design-partner evaluation.
 
 The key missing pieces are:
 
-### 1. No evaluator kit yet
+### 1. Evaluator kit is still early
 
-The service runs locally, but there is not yet a one-command Docker or similar
-setup for an outside evaluator.
+The repo now includes Docker, Compose, and a demo sandbox script, but it still
+needs more validation against partner-shaped private corpora.
 
-### 2. No polished MCP packaging yet
+### 2. MCP packaging needs hardening
 
 The server now exposes a first-cut MCP surface, but it still needs more
-copy-paste setup examples, broader client validation, and a simpler evaluator
-package for outside teams.
+copy-paste setup examples, broader client validation, and operational guidance
+for path-resolution issues in local IDE clients.
 
-### 3. No action-gating path yet
+### 3. Action-gating path is implemented but not widely integrated
 
-The service can decide on change-impact queries, but it does not yet expose the
-next contract extension for gating actions or pull requests directly.
+The service now exposes `POST /v1/decide/action` plus a GitHub Action wrapper,
+but it still needs field validation on real CI workflows and clearer policy
+defaults for blocking merges.
 
-### 4. No partner adaptation guide
+### 4. Partner adaptation still needs proof on private corpora
 
-A prospect still needs clearer instructions for adapting the workflow to their
-own private repository, docs, runbooks, and precedent history.
+The guide now exists, but the product still needs validation on real private
+repos with partner-specific docs, runbooks, and incident history.
 
 ### 5. No broader enterprise connectors yet
 
@@ -86,9 +87,9 @@ technical-preview evaluator kit
 
 Tasks:
 
-- add Docker or equivalent local packaging
+- validate Docker and Compose on a few partner-shaped environments
 - keep README and benchmark summary tight
-- add a short demo script
+- keep the demo sandbox current
 - add CI for tests
 
 ### Step 2: place it in the agent workflow
@@ -110,8 +111,8 @@ CI action-gating preview
 
 Tasks:
 
-- add `POST /v1/decide/action`
-- add GitHub or GitLab check integration
+- harden `POST /v1/decide/action` policies
+- validate GitHub or GitLab check integration
 - define escalation rules using blast radius plus missing evidence
 - emit auditable machine-readable outputs
 
@@ -130,7 +131,7 @@ Tasks:
 
 The next milestone worth optimizing for is:
 
-`A benchmarked evaluator kit with Docker, a demo walkthrough, and MCP delivery on one real repository.`
+`A partner-validated evaluator kit with Docker, a demo walkthrough, MCP delivery, and a working CI guardrail on one real repository.`
 
 Once that exists, the repo becomes easy to try in the exact environment where
 the product claim matters: before an AI agent answers or acts.

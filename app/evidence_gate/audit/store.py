@@ -30,3 +30,20 @@ class FileAuditStore:
             return None
         return DecisionRecord.model_validate_json(decision_path.read_text(encoding="utf-8"))
 
+    def list_recent(self, limit: int = 20) -> list[DecisionRecord]:
+        if limit <= 0 or not self.ledger_path.exists():
+            return []
+        lines = self.ledger_path.read_text(encoding="utf-8").splitlines()
+        records: list[DecisionRecord] = []
+        for line in reversed(lines):
+            if not line.strip():
+                continue
+            records.append(DecisionRecord.model_validate_json(line))
+            if len(records) >= limit:
+                break
+        return records
+
+    def read_ledger_text(self) -> str:
+        if not self.ledger_path.exists():
+            return ""
+        return self.ledger_path.read_text(encoding="utf-8")

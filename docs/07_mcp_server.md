@@ -15,12 +15,15 @@ change-impact decision before it edits a risky file.
 - `evidence_gate_get_knowledge_base_status`
 - `evidence_gate_decide_query`
 - `evidence_gate_decide_change_impact`
+- `evidence_gate_decide_action`
 - `evidence_gate_get_decision`
+- `evidence_gate_list_recent_decisions`
 
 ### Resources
 
 - `evidence-gate://schemas/decision-record`
 - `evidence-gate://decisions/{decision_id}`
+- `evidence-gate://audit/decisions.jsonl`
 
 ### Prompt
 
@@ -32,6 +35,12 @@ Run the server locally:
 
 ```bash
 evidence-gate-mcp
+```
+
+For local IDEs that struggle with relative env paths, prefer the wrapper script:
+
+```bash
+./scripts/run_mcp_stdio.sh
 ```
 
 Or without the console script:
@@ -75,6 +84,10 @@ Example `mcp.json` entry for a local stdio server:
 }
 ```
 
+If `${workspaceFolder}` resolution is unreliable in your environment, replace
+those values with absolute paths or use `./scripts/run_mcp_stdio.sh` as the
+`command`.
+
 Example remote or local HTTP entry:
 
 ```json
@@ -82,6 +95,23 @@ Example remote or local HTTP entry:
   "mcpServers": {
     "evidence-gate": {
       "url": "http://127.0.0.1:8001/mcp"
+    }
+  }
+}
+```
+
+Absolute-path variant:
+
+```json
+{
+  "mcpServers": {
+    "evidence-gate": {
+      "type": "stdio",
+      "command": "/absolute/path/to/evidence-gate/scripts/run_mcp_stdio.sh",
+      "env": {
+        "EVIDENCE_GATE_AUDIT_ROOT": "/absolute/path/to/evidence-gate/var/audit",
+        "EVIDENCE_GATE_KB_ROOT": "/absolute/path/to/evidence-gate/var/knowledge_bases"
+      }
     }
   }
 }
@@ -104,7 +134,8 @@ Example `cline_mcp_settings.json` entry for a local stdio server:
         "evidence_gate_health",
         "evidence_gate_get_knowledge_base_status",
         "evidence_gate_decide_query",
-        "evidence_gate_decide_change_impact"
+        "evidence_gate_decide_change_impact",
+        "evidence_gate_decide_action"
       ],
       "disabled": false
     }
@@ -129,7 +160,14 @@ Example remote or local HTTP entry:
 
 For risky engineering edits:
 
-1. Call `evidence_gate_decide_change_impact` before proposing the change.
+1. Call `evidence_gate_decide_action` or `evidence_gate_decide_change_impact` before proposing the change.
 2. If the decision is `abstain` or `escalate`, stop calling the change safe.
 3. Surface the missing evidence and cite the strongest evidence spans.
 4. Inspect any returned PR or incident twins before continuing.
+
+## Troubleshooting
+
+- If a local client fails to start the server because `command` is not resolved, use an absolute path to `./scripts/run_mcp_stdio.sh`.
+- If the server starts but the client sees empty audit or knowledge-base roots, set `EVIDENCE_GATE_AUDIT_ROOT` and `EVIDENCE_GATE_KB_ROOT` to absolute paths.
+- If the IDE launches the server outside the repo root, avoid relative paths such as `var/audit`; use absolute paths instead.
+- If you want agents to inspect prior system decisions, use `evidence_gate_list_recent_decisions` or read `evidence-gate://audit/decisions.jsonl`.

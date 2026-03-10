@@ -43,19 +43,26 @@ and get back:
 - added a prompt for pre-change gating before risky edits
 - covered the MCP surface with a real stdio integration test
 
+### Phase 4: evaluator kit and partner setup
+
+- added a Docker image that runs the API on `8000` and MCP streamable-http on `8001`
+- added a Compose stack with persistent audit and knowledge-base storage under `data/`
+- added a demo sandbox script that clones FastAPI, starts the stack, and ingests the corpus
+- added a partner evaluation guide for mounting a private repo into the container
+
 ## What remains
 
-### Phase 4: agent and IDE packaging
+### Phase 5: agent and IDE hardening
 
 Goal:
-make the MCP surface trivial for a design partner to adopt.
+validate the MCP and evaluator surface across real client environments.
 
 Tasks:
 
-1. Add copy-paste examples for Cursor, Cline, or any generic MCP client.
-2. Add a one-command evaluator path such as Docker.
+1. Validate the copy-paste examples for Cursor, Cline, or other generic MCP clients.
+2. Keep the Docker evaluator path current.
 3. Publish a short walkthrough for a real auth or session change-impact demo.
-4. Tighten setup docs so a design partner can run the system on a private repo quickly.
+4. Tighten setup docs from partner feedback.
 5. Consider mounting the same MCP surface alongside the HTTP API for simpler deployment.
 
 Exit criteria:
@@ -64,7 +71,7 @@ Exit criteria:
 - an agent can request a decision and receive the same auditable contract
 - the evaluator package is credible for guided partner review
 
-### Phase 5: CI/CD and action gating
+### Phase 6: CI/CD and action gating
 
 Goal:
 move from answering questions about changes to blocking unsafe changes in the
@@ -72,8 +79,8 @@ delivery path itself.
 
 Tasks:
 
-1. Add `POST /v1/decide/action`.
-2. Add GitHub Action and GitLab CI integration.
+1. Validate the new `POST /v1/decide/action` policy on real CI workflows.
+2. Extend the GitHub Action wrapper and add GitLab CI integration.
 3. Define policy for merge blocking using blast radius plus missing evidence.
 4. Return machine-readable failure reasons and human-readable PR comments.
 5. Extend the audit surface so repeated checks can be reviewed over time.
@@ -84,7 +91,7 @@ Exit criteria:
 - the system can explain missing tests, runbooks, or precedent clearly
 - a repo owner can use the gate as a required or advisory check
 
-### Phase 6: broader enterprise knowledge graph
+### Phase 7: broader enterprise knowledge graph
 
 Goal:
 expand from local repository intelligence into institutional memory across the

@@ -1,0 +1,117 @@
+name: Evidence Gate Guardrail
+description: Start Evidence Gate in CI and gate a proposed action using the /v1/decide/action contract.
+
+inputs:
+  action_summary:
+    description: Human-readable summary of the proposed action or PR.
+    required: true
+  changed_paths:
+    description: JSON array of changed file paths from the PR diff.
+    required: true
+  repo_path:
+    description: Repository path visible to the Evidence Gate service. Defaults to /workspace/target when start_service=true.
+    required: false
+    default: ""
+  api_url:
+    description: Base URL for the Evidence Gate API.
+    required: false
+    default: "http://127.0.0.1:8000"
+  start_service:
+    description: Start the bundled Dockerized Evidence Gate service before evaluating the action.
+    required: false
+    default: "true"
+  fail_on_block:
+    description: Fail the action when Evidence Gate blocks the proposed action.
+    required: false
+    default: "true"
+
+outputs:
+  allowed:
+    description: Whether Evidence Gate allowed the proposed action.
+    value: ${{ steps.guard.outputs.allowed }}
+  status_code:
+    description: HTTP status code returned by the action decision endpoint.
+    value: ${{ steps.guard.outputs.status_code }}
+  decision:
+    description: Evidence Gate decision name.
+    value: ${{ steps.guard.outputs.decision }}
+  decision_id:
+    description: Persisted decision identifier.
+    value: ${{ steps.guard.outputs.decision_id }}
+  response_path:
+    description: Path to the raw JSON response on the runner.
+    value: ${{ steps.guard.outputs.response_path }}
+  comment_path:
+    description: Path to the formatted PR comment markdown on the runner.
+    value: ${{ steps.guard.outputs.comment_path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Start Evidence Gate
+      if: ${{ inputs.start_service == 'true' }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        docker rm -f evidence-gate-action >/dev/null 2>&1 || true
+        mkdir -p "$RUNNER_TEMP/evidence-gate-data"
+        docker build -t evidence-gate-action "$GITHUB_ACTION_PATH"
+        docker run -d \
+          --name evidence-gate-action \
+          -p 8000:8000 \
+          -p 8001:8001 \
+          -e EVIDENCE_GATE_AUDIT_ROOT=/data/audit \
+          -e EVIDENCE_GATE_KB_ROOT=/data/knowledge_bases \
+          -v "$RUNNER_TEMP/evidence-gate-data:/data" \
+          -v "$GITHUB_WORKSPACE:/workspace/target" \
+          evidence-gate-action
+        for attempt in $(seq 1 90); do
+          if curl -fsS http://127.0.0.1:8000/health >/dev/null; then
+            exit 0
+          fi
+          sleep 1
+        done
+        docker logs evidence-gate-action || true
+        exit 1
+
+    - name: Evaluate action
+      id: guard
+      shell: bash
+      env:
+        ACTION_SUMMARY: ${{ inputs.action_summary }}
+        CHANGED_PATHS_JSON: ${{ inputs.changed_paths }}
+        REPO_PATH_INPUT: ${{ inputs.repo_path }}
+        API_URL: ${{ inputs.api_url }}
+        START_SERVICE: ${{ inputs.start_service }}
+        FAIL_ON_BLOCK: ${{ inputs.fail_on_block }}
+      run: |
+        set -euo pipefail
+        REPO_PATH="$REPO_PATH_INPUT"
+        if [ -z "$REPO_PATH" ] && [ "$START_SERVICE" = "true" ]; then
+          REPO_PATH="/workspace/target"
+        fi
+        if [ -z "$REPO_PATH" ]; then
+          echo "repo_path is required when start_service=false" >&2
+          exit 1
+        fi
+
+        EXTRA_ARGS=()
+        if [ "$FAIL_ON_BLOCK" = "true" ]; then
+          EXTRA_ARGS+=(--fail-on-block)
+        fi
+
+        python "$GITHUB_ACTION_PATH/scripts/run_action_guardrail.py" \
+          --api-url "$API_URL" \
+          --repo-path "$REPO_PATH" \
+          --action-summary "$ACTION_SUMMARY" \
+          --changed-paths-json "$CHANGED_PATHS_JSON" \
+          --output "$RUNNER_TEMP/evidence-gate-action.json" \
+          --comment-output "$RUNNER_TEMP/evidence-gate-comment.md" \
+          --github-output "$GITHUB_OUTPUT" \
+          "${EXTRA_ARGS[@]}"
+
+    - name: Stop Evidence Gate
+      if: ${{ always() && inputs.start_service == 'true' }}
+      shell: bash
+      run: |
+        docker rm -f evidence-gate-action >/dev/null 2>&1 || true
