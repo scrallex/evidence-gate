@@ -1,0 +1,47 @@
+{
+  "artifacts": {
+    "documents": "documents.json",
+    "sidecar": "sidecar.json",
+    "spans": "spans.json"
+  },
+  "built_at": "2026-03-10T03:30:59.872856+00:00",
+  "document_count": 6,
+  "file_count": 6,
+  "format_version": 1,
+  "repo_fingerprint": "ab67ad5b1252dcc8731f1e6b3c0aec23",
+  "repo_root": "/tmp/pytest-of-ajn/pytest-37/test_structural_search_surface0/sample_repo",
+  "settings_signature": "59897cf51739b7610d8b49d184cfebdf",
+  "snapshot": [
+    {
+      "mtime_ns": 1773113459868450139,
+      "path": "docs/auth.md",
+      "size": 84
+    },
+    {
+      "mtime_ns": 1773113459868490248,
+      "path": "prs/pr_1842.md",
+      "size": 76
+    },
+    {
+      "mtime_ns": 1773113459868470691,
+      "path": "runbooks/session_rollback.md",
+      "size": 80
+    },
+    {
+      "mtime_ns": 1773113459868401952,
+      "path": "src/auth.py",
+      "size": 37
+    },
+    {
+      "mtime_ns": 1773113459868362941,
+      "path": "src/session.py",
+      "size": 84
+    },
+    {
+      "mtime_ns": 1773113459868425338,
+      "path": "tests/test_auth.py",
+      "size": 100
+    }
+  ],
+  "span_count": 17
+}

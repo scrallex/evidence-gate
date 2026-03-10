@@ -1,0 +1,32 @@
+[
+  {
+    "content": "# Auth\n\nChanging auth or session handling impacts token refresh and rollback flows.\n",
+    "path": "docs/auth.md",
+    "source_type": "doc"
+  },
+  {
+    "content": "# PR 1842\n\nAdjusted token refresh behavior during the auth session rollout.\n",
+    "path": "prs/pr_1842.md",
+    "source_type": "pr"
+  },
+  {
+    "content": "# Session Rollback\n\nIf token refresh fails, use the session rollback procedure.\n",
+    "path": "runbooks/session_rollback.md",
+    "source_type": "runbook"
+  },
+  {
+    "content": "def refresh_token():\n    return 'ok'\n",
+    "path": "src/auth.py",
+    "source_type": "code"
+  },
+  {
+    "content": "from src.auth import refresh_token\n\ndef session_guard():\n    return refresh_token()\n",
+    "path": "src/session.py",
+    "source_type": "code"
+  },
+  {
+    "content": "from src.session import session_guard\n\ndef test_session_guard():\n    assert session_guard() == 'ok'\n",
+    "path": "tests/test_auth.py",
+    "source_type": "test"
+  }
+]

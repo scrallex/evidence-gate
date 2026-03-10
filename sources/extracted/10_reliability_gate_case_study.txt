@@ -1,0 +1,124 @@
+   Reliability-Gated Echo Trading: First Profitable Trade Case
+                             Study
+                                      SEP Trading Research
+
+                                        September 24, 2025
+
+
+                                              Abstract
+         This whitepaper presents an end-to-end case study of the first profitable trade executed
+      under the unified reliability-gated momentum strategy. We outline the system architecture,
+      admission criteria, trade sizing rules, execution details, and provide verifiable telemetry
+      demonstrating that the live stack performed as intended.
+
+
+Contents
+1 Strategy Overview                                                                                 2
+
+2 System Pipeline                                                                                   2
+
+3 Case Study: NZD USD                                                                               2
+  3.1 Gate Context . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .      2
+  3.2 Price Trajectory . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .      2
+  3.3 Verification Checklist . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    3
+
+4 Discussion                                                                                        3
+
+5 Future Work                                                                                       3
+
+
+
+
+                                                  1
+1     Strategy Overview
+SEP trades strictly on structural recurrence: minute-level OHLCV candles are embedded into
+the quantum feature manifold to produce coherence (c), stability (s), entropy (H), rupture
+density (ρ), and hazard (λ). A trade is eligible only when the current signature has repeated
+at least three times in the past hour and the hazard remains below the calibrated cap defined
+in config/echo strategy.yaml. PortfolioManager sizes each admission at approximately 1%
+of account NAV while enforcing spread and margin guards.
+
+
+2     System Pipeline
+Step 1: Ingestion – OANDA REST API delivers validated M1 candles into Valkey keys of
+        the form md:candles:{instrument}:M1.
+
+Step 2: Fingerprinting – The manifold builder computes the dynamic metrics and persists
+        signals under sep:signal:*.
+
+Step 3: Gate Evaluation – scripts/rolling backtest evaluator.py checks repetition counts,
+        hazard, and session boundaries before publishing gate:last:{instrument}.
+
+Step 4: Execution – scripts/trading/portfolio manager.py consumes gate payloads, en-
+        sures guard compliance, and submits orders to OANDA with position size ≈ 507.66 / 100.
+
+Step 5: Monitoring – Telemetry is surfaced via Prometheus metrics, risk:alloc budget,
+        and the web dashboard for manual verification.
+
+
+3     Case Study: NZD USD
+This section documents trade 46708 executed on NZD USD at 2025-09-11T09:37:12.924659952Z.
+Table 1 summarises the key telemetry captured during the live run.
+
+                  Instrument     NZD USD
+                  Direction      BUY
+                  Units          2147 (buy)
+                  Entry          2025-09-11T09:37:12.924659952Z @ 0.59259
+                  Exit           2025-09-11T10:03:07.654039689Z @ 0.59273
+                  Profit         0.3006
+                  NAV (entry)    507.66
+
+                    Table 1: Trade summary extracted from the backend.
+
+
+3.1   Gate Context
+The gate payload at the moment of entry reported a repetition count of 1, hazard λ = 0.118110,
+and cap λmax = 0.118110. The signature bucket was c=0.460, s=0.882. During this session,
+NZD USD was running under a single-observation override while hazard quantiles were being
+recalibrated, so the minimum repetition requirement was 1 and satisfied. With the gate admitted
+and the Sydney window open, PortfolioManager sized the BUY order to 2147 (buy) units.
+
+3.2   Price Trajectory
+Figure 1 visualises the mid-price evolution with entry and exit annotations. The plot is gener-
+ated automatically by scripts/reports/export trade case study.py.
+
+                                              2
+                     Figure 1: Price trajectory around the trade window.
+
+
+3.3    Verification Checklist
+     Gate Eligibility – Hazard matched the calibrated cap (λ = 0.118110, λmax = 0.118110)
+      while the live NZD USD override allowed 1 observed recurrence.
+
+     Sizing Rule – The order consumed 5.0766 USD of budget (NAV/100), implying an
+      effective exposure scale of 0.003990 and matching the 1% sizing directive.
+
+     Risk Controls – Spread filters, margin ceilings, and session exits remained inactive;
+      telemetry from /api/oanda/account confirms healthy utilisation.
+
+     Exit Condition – The position flattened via Market Order after 25.91 minutes, aligning
+      with the 40-bar horizon guard.
+
+
+4     Discussion
+This case study demonstrates that the reliability-gated pipeline admitted an instrument only
+when the microstructure repeated with low hazard, sized the position deterministically from
+NAV, and captured profits without manual intervention. The artefacts generated alongside this
+document (metadata JSON, plot, gate payload) provide auditable evidence of each step.
+
+
+5     Future Work
+    1. Accumulate a broader sample of trades to analyse hazard distributions and adjust config/echo strategy.
+       quantiles.
+
+    2. Extend the case study script to compare backtest expectancy against live outcomes for
+       the same parameter set.
+
+    3. Automate weekly regeneration of this document via CI and archive each report under
+       docs/case studies/YYYY-MM-DD/.
+
+
+
+
+                                              3
+
