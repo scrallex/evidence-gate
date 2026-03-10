@@ -57,6 +57,12 @@ def parse_args() -> argparse.Namespace:
         help="Maximum number of unique SWE-bench repositories to include.",
     )
     parser.add_argument(
+        "--generalization-cases-per-repo",
+        type=int,
+        default=4,
+        help="Maximum number of curated multi-corpus cases to run per repository.",
+    )
+    parser.add_argument(
         "--top-k",
         type=int,
         default=12,
@@ -73,18 +79,22 @@ def main() -> int:
         report_path=args.report,
         swebench_instances=args.swebench_instances,
         swebench_repos=args.swebench_repos,
+        generalization_cases_per_repo=args.generalization_cases_per_repo,
         top_k=args.top_k,
         swebench_dataset=args.swebench_dataset,
     )
     poisoned = payload["poisoned_corpus"]["summary"]
     multi_source = payload["multi_source_incident"]["summary"]
     swebench = payload["swebench_replay"]["summary"]
+    generalization = payload["multi_corpus_generalization"]["summary"]
     print(
         "Value-proof benchmarks complete: "
         f"poisoned structural false-admit={poisoned['structural_false_admit_rate']:.2%}, "
         f"poisoned baseline false-admit={poisoned['baseline_false_admit_rate']:.2%}, "
         f"multi-source block delta={multi_source['incremental_block_rate']:.2%}, "
-        f"swebench decoy false-allow={swebench['decoy_false_allow_rate']:.2%}"
+        f"swebench healed gold allow={swebench['healed_gold_allow_rate']:.2%}, "
+        f"swebench decoy false-allow={swebench['decoy_false_allow_rate']:.2%}, "
+        f"generalization decoy false-allow={generalization['decoy_false_allow_rate']:.2%}"
     )
     print(f"Results: {args.results_json}")
     print(f"Report: {args.report}")

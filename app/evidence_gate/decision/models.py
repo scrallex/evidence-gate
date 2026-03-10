@@ -80,6 +80,7 @@ class ChangeImpactRequest(BaseModel):
 class ActionSafetyPolicy(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
+    corpus_profile: Literal["enterprise", "open_source"] = "enterprise"
     max_blast_radius_files: int | None = Field(default=None, ge=0)
     max_hazard: float | None = Field(default=None, ge=0.0, le=1.0)
     min_confidence: float | None = Field(default=None, ge=0.0, le=1.0)

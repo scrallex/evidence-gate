@@ -92,11 +92,13 @@ admitting only when evidence is structurally supported.
 - structural evidence retrieval with truth-pack verification
 - change-impact and engineering query workflows
 - action-gating workflow with allow or block enforcement on top of the same decision engine
+- corpus-calibrated action policy support for open-source versus enterprise evaluation
 - twin retrieval across PRs and incidents
 - blast radius for code-oriented questions
 - audit logging for decisions
 - lifecycle and maintenance controls for persisted knowledge bases
 - reproducible benchmark harness and checked-in evaluation report
+- healing-loop benchmark support that turns `missing_evidence` into the next agent attempt
 - MCP server surface for IDE and agent workflows over `stdio` and `streamable-http`
 - Docker evaluator kit plus demo sandbox script for design-partner setup
 
@@ -105,7 +107,7 @@ admitting only when evidence is structurally supported.
 - CI packaging and required-check integrations
 - multi-tenant auth, production controls, and deployment hardening
 - hosted sync to Jira, PagerDuty, Slack, and Confluence APIs beyond mounted export ingestion
-- multi-corpus evaluation beyond the checked-in FastAPI slice
+- broad multi-corpus evaluation beyond the checked-in FastAPI plus Redis/React/Vite pilot slices
 
 ## Implemented endpoints
 

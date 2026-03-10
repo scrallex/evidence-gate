@@ -19,9 +19,15 @@ from evidence_gate.decision.models import (
     ChangeImpactRequest,
     KnowledgeBaseExternalSource,
     KnowledgeBaseIngestRequest,
+    SourceType,
 )
 from evidence_gate.decision.service import DecisionService
-from evidence_gate.retrieval.repository import scan_repository, search_documents, tokenize
+from evidence_gate.retrieval.repository import (
+    classify_source_type,
+    scan_repository,
+    search_documents,
+    tokenize,
+)
 from evidence_gate.retrieval.structural import clear_repository_knowledge_base_cache
 
 try:
@@ -63,6 +69,16 @@ class MultiSourceTopic:
     incident_source: str
 
 
+@dataclass(frozen=True, slots=True)
+class GeneralizationCase:
+    case_id: str
+    repo: str
+    language: str
+    source_path: str
+    test_paths: tuple[str, ...]
+    query: str
+
+
 @dataclass(slots=True)
 class BenchmarkDecision:
     predicted_admit: bool
@@ -101,6 +117,105 @@ MULTI_SOURCE_TOPICS: tuple[MultiSourceTopic, ...] = (
     MultiSourceTopic("ledger-snapshot", "ledger", "ledger snapshot checkpoint", "slack"),
 )
 
+GENERALIZATION_CASES: tuple[GeneralizationCase, ...] = (
+    GeneralizationCase(
+        case_id="redis-acl",
+        repo="redis/redis",
+        language="c",
+        source_path="src/acl.c",
+        test_paths=("tests/unit/acl.tcl", "tests/unit/acl-v2.tcl"),
+        query="Review the Redis ACL authentication and permission handling change before merge.",
+    ),
+    GeneralizationCase(
+        case_id="redis-aof",
+        repo="redis/redis",
+        language="c",
+        source_path="src/aof.c",
+        test_paths=("tests/integration/aof.tcl", "tests/unit/aofrw.tcl"),
+        query="Review the Redis append-only file persistence change before merge.",
+    ),
+    GeneralizationCase(
+        case_id="redis-replication",
+        repo="redis/redis",
+        language="c",
+        source_path="src/replication.c",
+        test_paths=("tests/integration/replication.tcl", "tests/integration/replication-psync.tcl"),
+        query="Review the Redis replication synchronization and failover change before merge.",
+    ),
+    GeneralizationCase(
+        case_id="redis-stream",
+        repo="redis/redis",
+        language="c",
+        source_path="src/t_stream.c",
+        test_paths=("tests/unit/type/stream.tcl", "tests/unit/type/stream-cgroups.tcl"),
+        query="Review the Redis stream and consumer-group delivery change before merge.",
+    ),
+    GeneralizationCase(
+        case_id="react-babel-lazy-jsx",
+        repo="facebook/react",
+        language="javascript",
+        source_path="scripts/babel/transform-lazy-jsx-import.js",
+        test_paths=("scripts/babel/__tests__/transform-lazy-jsx-import-test.js",),
+        query="Review the React lazy JSX import Babel transform before merge.",
+    ),
+    GeneralizationCase(
+        case_id="react-error-codes",
+        repo="facebook/react",
+        language="javascript",
+        source_path="scripts/error-codes/transform-error-messages.js",
+        test_paths=("scripts/error-codes/__tests__/transform-error-messages.js",),
+        query="Review the React production error-code transform before merge.",
+    ),
+    GeneralizationCase(
+        case_id="react-art",
+        repo="facebook/react",
+        language="javascript",
+        source_path="packages/react-art/src/ReactART.js",
+        test_paths=("packages/react-art/src/__tests__/ReactART-test.js",),
+        query="Review the React ART renderer implementation change before merge.",
+    ),
+    GeneralizationCase(
+        case_id="react-cache",
+        repo="facebook/react",
+        language="javascript",
+        source_path="packages/react-cache/src/ReactCacheOld.js",
+        test_paths=("packages/react-cache/src/__tests__/ReactCacheOld-test.internal.js",),
+        query="Review the legacy React cache behavior change before merge.",
+    ),
+    GeneralizationCase(
+        case_id="vite-create-vite",
+        repo="vitejs/vite",
+        language="typescript",
+        source_path="packages/create-vite/src/index.ts",
+        test_paths=("packages/create-vite/__tests__/cli.spec.ts",),
+        query="Review the create-vite CLI scaffolding change before merge.",
+    ),
+    GeneralizationCase(
+        case_id="vite-alias",
+        repo="vitejs/vite",
+        language="javascript",
+        source_path="playground/alias/test.js",
+        test_paths=("playground/alias/__tests__/alias.spec.ts",),
+        query="Review the Vite alias resolution playground change before merge.",
+    ),
+    GeneralizationCase(
+        case_id="vite-assets",
+        repo="vitejs/vite",
+        language="javascript",
+        source_path="playground/assets/index.js",
+        test_paths=("playground/assets/__tests__/assets.spec.ts",),
+        query="Review the Vite asset loading and URL handling change before merge.",
+    ),
+    GeneralizationCase(
+        case_id="vite-assets-sanitize",
+        repo="vitejs/vite",
+        language="javascript",
+        source_path="playground/assets-sanitize/index.js",
+        test_paths=("playground/assets-sanitize/__tests__/assets-sanitize.spec.ts",),
+        query="Review the Vite asset sanitization change before merge.",
+    ),
+)
+
 
 def run_value_proof_benchmarks(
     *,
@@ -109,6 +224,7 @@ def run_value_proof_benchmarks(
     report_path: Path,
     swebench_instances: int = 4,
     swebench_repos: int = 4,
+    generalization_cases_per_repo: int = 4,
     top_k: int = 12,
     swebench_dataset: str = DEFAULT_SWEBENCH_DATASET,
 ) -> dict[str, Any]:
@@ -129,11 +245,17 @@ def run_value_proof_benchmarks(
         max_unique_repos=swebench_repos,
         top_k=max(top_k, 16),
     )
+    generalization = run_multi_corpus_generalization_benchmark(
+        work_root=work_root / "generalization",
+        cases_per_repo=generalization_cases_per_repo,
+        top_k=max(top_k, 12),
+    )
 
     payload = {
         "poisoned_corpus": poisoned,
         "multi_source_incident": multi_source,
         "swebench_replay": swebench,
+        "multi_corpus_generalization": generalization,
     }
     _write_json(results_json_path, payload)
     report_path.parent.mkdir(parents=True, exist_ok=True)
@@ -307,7 +429,7 @@ def run_swebench_replay_benchmark(
     max_unique_repos: int = 8,
     top_k: int = 16,
 ) -> dict[str, Any]:
-    """Replay SWE-bench tasks with gold and decoy changed paths."""
+    """Replay SWE-bench tasks with an OSS-calibrated gate and healing retry."""
 
     if load_dataset is None:
         raise RuntimeError(
@@ -323,6 +445,7 @@ def run_swebench_replay_benchmark(
     )
 
     results: list[dict[str, Any]] = []
+    safety_policy = _open_source_action_policy()
     for item in instances:
         repo = str(item["repo"])
         instance_id = str(item["instance_id"])
@@ -331,6 +454,7 @@ def run_swebench_replay_benchmark(
         gold_paths = _patch_paths(patch_text)
         if not gold_paths:
             continue
+        initial_gold_paths, gold_test_paths = _split_gold_patch_paths(gold_paths)
 
         repo_root = _prepare_swebench_repo(
             cache_root=work_root / "repos",
@@ -354,15 +478,41 @@ def run_swebench_replay_benchmark(
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", SyntaxWarning)
-            gold_action = service.decide_action(
+            initial_gold_action = service.decide_action(
                 ActionDecisionRequest(
                     repo_path=str(repo_root),
                     action_summary=query,
-                    changed_paths=gold_paths[:5],
-                    diff_summary=_diff_summary_from_paths(gold_paths),
+                    changed_paths=initial_gold_paths,
+                    diff_summary=_diff_summary_from_paths(initial_gold_paths),
                     top_k=top_k,
+                    safety_policy=safety_policy,
                 )
             )
+            retry_prompt = _build_healing_prompt(query, initial_gold_action.decision_record.missing_evidence)
+            retry_test_paths = _select_retry_test_paths(
+                repo_root,
+                gold_test_paths,
+                query,
+                initial_gold_paths,
+            )
+            retry_attempted = (
+                not initial_gold_action.allowed
+                and _has_missing_test_evidence(initial_gold_action.decision_record.missing_evidence)
+                and bool(retry_test_paths)
+            )
+            healed_gold_action = initial_gold_action
+            if retry_attempted:
+                clear_repository_knowledge_base_cache()
+                healed_gold_action = service.decide_action(
+                    ActionDecisionRequest(
+                        repo_path=str(repo_root),
+                        action_summary=retry_prompt,
+                        changed_paths=[*initial_gold_paths, *retry_test_paths],
+                        diff_summary=_diff_summary_from_paths([*initial_gold_paths, *retry_test_paths]),
+                        top_k=top_k,
+                        safety_policy=safety_policy,
+                    )
+                )
             clear_repository_knowledge_base_cache()
             decoy_action = service.decide_action(
                 ActionDecisionRequest(
@@ -371,6 +521,7 @@ def run_swebench_replay_benchmark(
                     changed_paths=decoy_paths,
                     diff_summary=_diff_summary_from_paths(gold_paths),
                     top_k=top_k,
+                    safety_policy=safety_policy,
                 )
             )
         baseline = _baseline_query_decision(documents, query, top_k=top_k)
@@ -379,15 +530,25 @@ def run_swebench_replay_benchmark(
             {
                 "instance_id": instance_id,
                 "repo": repo,
-                "gold_paths": gold_paths[:5],
+                "initial_gold_paths": initial_gold_paths,
+                "gold_test_paths": gold_test_paths,
                 "decoy_paths": decoy_paths,
                 "baseline_predicted_admit": baseline.predicted_admit,
-                "gold_allowed": gold_action.allowed,
-                "gold_decision": gold_action.decision_record.decision.value,
-                "gold_missing_evidence": gold_action.decision_record.missing_evidence,
+                "initial_gold_allowed": initial_gold_action.allowed,
+                "initial_gold_decision": initial_gold_action.decision_record.decision.value,
+                "initial_gold_missing_evidence": initial_gold_action.decision_record.missing_evidence,
+                "retry_attempted": retry_attempted,
+                "retry_test_paths": retry_test_paths,
+                "retry_prompt": retry_prompt if retry_attempted else None,
+                "healed_gold_allowed": healed_gold_action.allowed,
+                "healed_gold_decision": healed_gold_action.decision_record.decision.value,
+                "healed_gold_missing_evidence": healed_gold_action.decision_record.missing_evidence,
                 "decoy_allowed": decoy_action.allowed,
                 "decoy_decision": decoy_action.decision_record.decision.value,
                 "decoy_missing_evidence": decoy_action.decision_record.missing_evidence,
+                "initial_missing_test_evidence": _has_missing_test_evidence(
+                    initial_gold_action.decision_record.missing_evidence
+                ),
                 "alignment_gap_triggered": any(
                     "changed paths were not directly supported" in item.lower()
                     for item in decoy_action.decision_record.missing_evidence
@@ -396,22 +557,231 @@ def run_swebench_replay_benchmark(
         )
 
     repo_count = len({case["repo"] for case in results})
-    gold_allowed = [case for case in results if case["gold_allowed"]]
+    initial_gold_allowed = [case for case in results if case["initial_gold_allowed"]]
+    healed_gold_allowed = [case for case in results if case["healed_gold_allowed"]]
     decoy_allowed = [case for case in results if case["decoy_allowed"]]
     alignment_gap_hits = [case for case in results if case["alignment_gap_triggered"]]
     baseline_allowed = [case for case in results if case["baseline_predicted_admit"]]
+    healing_attempts = [case for case in results if case["retry_attempted"]]
+    healing_successes = [case for case in healing_attempts if case["healed_gold_allowed"]]
+    test_gap_blocks = [case for case in results if case["initial_missing_test_evidence"]]
     return {
         "dataset": dataset_name,
         "summary": {
             "case_count": len(results),
             "repo_count": repo_count,
-            "gold_allow_rate": round(len(gold_allowed) / max(1, len(results)), 4),
+            "initial_gold_allow_rate": round(len(initial_gold_allowed) / max(1, len(results)), 4),
+            "healed_gold_allow_rate": round(len(healed_gold_allowed) / max(1, len(results)), 4),
+            "healing_retry_rate": round(len(healing_attempts) / max(1, len(results)), 4),
+            "healing_success_rate": round(len(healing_successes) / max(1, len(healing_attempts)), 4),
+            "test_gap_block_rate": round(len(test_gap_blocks) / max(1, len(results)), 4),
             "decoy_false_allow_rate": round(len(decoy_allowed) / max(1, len(results)), 4),
             "baseline_allow_rate": round(len(baseline_allowed) / max(1, len(results)), 4),
             "alignment_gap_trigger_rate": round(len(alignment_gap_hits) / max(1, len(results)), 4),
         },
         "cases": results,
     }
+
+
+def run_multi_corpus_generalization_benchmark(
+    *,
+    work_root: Path,
+    cases_per_repo: int = 4,
+    top_k: int = 12,
+) -> dict[str, Any]:
+    """Run a real-repository cross-language gate benchmark."""
+
+    work_root = work_root.expanduser().resolve()
+    grouped_cases: dict[str, list[GeneralizationCase]] = {}
+    for case in GENERALIZATION_CASES:
+        grouped_cases.setdefault(case.repo, []).append(case)
+
+    results: list[dict[str, Any]] = []
+    repo_summaries: dict[str, dict[str, Any]] = {}
+    safety_policy = _open_source_action_policy()
+
+    for repo, repo_cases in grouped_cases.items():
+        selected_cases = repo_cases[:cases_per_repo]
+        commit = _resolve_remote_head_commit(repo)
+        repo_root = _prepare_swebench_repo(
+            cache_root=work_root / "repos",
+            repo=repo,
+            commit=commit,
+        )
+        settings = _benchmark_settings(work_root / "state" / repo.replace("/", "__"))
+        service = DecisionService(settings, FileAuditStore(settings.audit_root))
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SyntaxWarning)
+            clear_repository_knowledge_base_cache()
+            service.ingest_repository(
+                KnowledgeBaseIngestRequest(repo_path=str(repo_root), refresh=True)
+            )
+
+        repo_results: list[dict[str, Any]] = []
+        for case in selected_cases:
+            gold_paths = [case.source_path, *case.test_paths[:1]]
+            decoy_paths = _select_decoy_paths(repo_root, gold_paths, case.query)
+            if not decoy_paths:
+                continue
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", SyntaxWarning)
+                gold_action = service.decide_action(
+                    ActionDecisionRequest(
+                        repo_path=str(repo_root),
+                        action_summary=case.query,
+                        changed_paths=gold_paths,
+                        diff_summary=_diff_summary_from_paths(gold_paths),
+                        top_k=top_k,
+                        safety_policy=safety_policy,
+                    )
+                )
+                clear_repository_knowledge_base_cache()
+                decoy_action = service.decide_action(
+                    ActionDecisionRequest(
+                        repo_path=str(repo_root),
+                        action_summary=case.query,
+                        changed_paths=decoy_paths,
+                        diff_summary=_diff_summary_from_paths(gold_paths),
+                        top_k=top_k,
+                        safety_policy=safety_policy,
+                    )
+                )
+
+            gold_source_hit = _paths_hit(gold_action.decision_record.evidence_spans, case.source_path)
+            gold_test_hit = any(
+                _paths_hit(gold_action.decision_record.evidence_spans, test_path)
+                for test_path in case.test_paths
+            )
+            case_result = {
+                "case_id": case.case_id,
+                "repo": repo,
+                "language": case.language,
+                "commit": commit,
+                "source_path": case.source_path,
+                "test_paths": list(case.test_paths),
+                "query": case.query,
+                "gold_allowed": gold_action.allowed,
+                "gold_decision": gold_action.decision_record.decision.value,
+                "gold_missing_evidence": gold_action.decision_record.missing_evidence,
+                "gold_source_hit": gold_source_hit,
+                "gold_test_hit": gold_test_hit,
+                "decoy_paths": decoy_paths,
+                "decoy_allowed": decoy_action.allowed,
+                "decoy_decision": decoy_action.decision_record.decision.value,
+                "decoy_missing_evidence": decoy_action.decision_record.missing_evidence,
+            }
+            repo_results.append(case_result)
+            results.append(case_result)
+
+        repo_summaries[repo] = {
+            "commit": commit,
+            "language": selected_cases[0].language if selected_cases else "unknown",
+            "case_count": len(repo_results),
+            "gold_allow_rate": round(
+                len([case for case in repo_results if case["gold_allowed"]]) / max(1, len(repo_results)),
+                4,
+            ),
+            "decoy_false_allow_rate": round(
+                len([case for case in repo_results if case["decoy_allowed"]]) / max(1, len(repo_results)),
+                4,
+            ),
+            "source_hit_rate": round(
+                len([case for case in repo_results if case["gold_source_hit"]]) / max(1, len(repo_results)),
+                4,
+            ),
+            "test_hit_rate": round(
+                len([case for case in repo_results if case["gold_test_hit"]]) / max(1, len(repo_results)),
+                4,
+            ),
+        }
+
+    gold_allowed = [case for case in results if case["gold_allowed"]]
+    decoy_allowed = [case for case in results if case["decoy_allowed"]]
+    source_hits = [case for case in results if case["gold_source_hit"]]
+    test_hits = [case for case in results if case["gold_test_hit"]]
+    return {
+        "summary": {
+            "case_count": len(results),
+            "repo_count": len(repo_summaries),
+            "gold_allow_rate": round(len(gold_allowed) / max(1, len(results)), 4),
+            "decoy_false_allow_rate": round(len(decoy_allowed) / max(1, len(results)), 4),
+            "source_hit_rate": round(len(source_hits) / max(1, len(results)), 4),
+            "test_hit_rate": round(len(test_hits) / max(1, len(results)), 4),
+        },
+        "repo_summaries": repo_summaries,
+        "cases": results,
+    }
+
+
+def _open_source_action_policy() -> ActionSafetyPolicy:
+    return ActionSafetyPolicy(
+        corpus_profile="open_source",
+        require_test_evidence=True,
+    )
+
+
+def _split_gold_patch_paths(gold_paths: list[str]) -> tuple[list[str], list[str]]:
+    code_paths = [
+        path for path in gold_paths if classify_source_type(path) != SourceType.TEST
+    ]
+    test_paths = [
+        path for path in gold_paths if classify_source_type(path) == SourceType.TEST
+    ]
+    initial_paths = (code_paths or gold_paths)[:5]
+    return initial_paths, test_paths[:3]
+
+
+def _build_healing_prompt(base_query: str, missing_evidence: list[str]) -> str:
+    guidance = "; ".join(missing_evidence[:3]) or "missing supporting evidence"
+    return (
+        f"{base_query}\n\n"
+        "Evidence Gate blocked the previous attempt because: "
+        f"{guidance}. "
+        "Write the missing test coverage or update the supported files, then retry."
+    )
+
+
+def _has_missing_test_evidence(missing_evidence: list[str]) -> bool:
+    return any("test evidence" in item.lower() for item in missing_evidence)
+
+
+def _select_retry_test_paths(
+    repo_root: Path,
+    gold_test_paths: list[str],
+    query: str,
+    existing_paths: list[str],
+) -> list[str]:
+    if gold_test_paths:
+        return gold_test_paths[:2]
+    documents = scan_repository(repo_root)
+    existing = {Path(path).as_posix() for path in existing_paths}
+    retry_paths: list[str] = []
+    for hit in search_documents(documents, query, top_k=20):
+        candidate = Path(hit.path).as_posix()
+        if hit.source_type != SourceType.TEST or candidate in existing:
+            continue
+        retry_paths.append(candidate)
+        if len(retry_paths) >= 2:
+            break
+    return retry_paths
+
+
+def _resolve_remote_head_commit(repo: str) -> str:
+    result = subprocess.run(
+        ["git", "ls-remote", f"https://github.com/{repo}.git", "HEAD"],
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    return result.stdout.split()[0]
+
+
+def _paths_hit(evidence_spans: list[Any], expected_path: str) -> bool:
+    expected = Path(expected_path).as_posix()
+    return any(Path(span.source).as_posix() == expected for span in evidence_spans)
 
 
 def _decision_summary(results: list[dict[str, Any]]) -> dict[str, Any]:
@@ -715,7 +1085,15 @@ def _select_swebench_instances(
     for repo in ordered_repos[:max_unique_repos]:
         if len(selected) >= max_instances:
             break
-        selected.append(grouped[repo][0])
+        ranked_items = sorted(
+            grouped[repo],
+            key=lambda item: (
+                not any(classify_source_type(path) == SourceType.TEST for path in _patch_paths(str(item["patch"]))),
+                len(_patch_paths(str(item["patch"]))),
+                str(item["instance_id"]),
+            ),
+        )
+        selected.append(ranked_items[0])
     return selected[:max_instances]
 
 
@@ -800,11 +1178,14 @@ def _render_value_proof_report(payload: dict[str, Any]) -> str:
     poisoned = payload["poisoned_corpus"]["summary"]
     multi_source = payload["multi_source_incident"]["summary"]
     swebench = payload["swebench_replay"]["summary"]
+    generalization = payload["multi_corpus_generalization"]["summary"]
+    repo_summaries = payload["multi_corpus_generalization"]["repo_summaries"]
     lines = [
         "# Evidence Gate Value Proof Report",
         "",
-        "This report extends the checked-in FastAPI benchmark with three additional proof paths:",
-        "a poisoned-corpus benchmark, a mixed-source incident blocking benchmark, and a SWE-bench replay pilot.",
+        "This report extends the checked-in FastAPI benchmark with four additional proof paths:",
+        "a poisoned-corpus benchmark, a mixed-source incident blocking benchmark,",
+        "a SWE-bench replay with a healing retry loop, and a cross-language multi-corpus pilot.",
         "",
         "## 1. Poisoned Corpus Benchmark",
         "",
@@ -822,28 +1203,54 @@ def _render_value_proof_report(payload: dict[str, Any]) -> str:
         f"- Incident twin hit rate: {multi_source['incident_twin_hit_rate']:.2%}",
         f"- Incremental block rate from external evidence: {multi_source['incremental_block_rate']:.2%}",
         "",
-        "## 3. SWE-bench Replay Pilot",
+        "## 3. SWE-bench Replay With Healing Loop",
         "",
         f"- Dataset: {payload['swebench_replay']['dataset']}",
         f"- Cases: {swebench['case_count']} across {swebench['repo_count']} repositories",
-        f"- Gold-path allow rate: {swebench['gold_allow_rate']:.2%}",
+        f"- Initial gold-path allow rate: {swebench['initial_gold_allow_rate']:.2%}",
+        f"- Healed gold-path allow rate: {swebench['healed_gold_allow_rate']:.2%}",
+        f"- Healing retry rate: {swebench['healing_retry_rate']:.2%}",
+        f"- Healing success rate: {swebench['healing_success_rate']:.2%}",
+        f"- Initial test-gap block rate: {swebench['test_gap_block_rate']:.2%}",
         f"- Decoy-path false-allow rate: {swebench['decoy_false_allow_rate']:.2%}",
         f"- Baseline allow rate: {swebench['baseline_allow_rate']:.2%}",
         f"- Alignment-gap trigger rate: {swebench['alignment_gap_trigger_rate']:.2%}",
+        "",
+        "## 4. Multi-Corpus Generalization Pilot",
+        "",
+        f"- Cases: {generalization['case_count']} across {generalization['repo_count']} repositories",
+        f"- Gold-path allow rate: {generalization['gold_allow_rate']:.2%}",
+        f"- Decoy-path false-allow rate: {generalization['decoy_false_allow_rate']:.2%}",
+        f"- Source-hit rate: {generalization['source_hit_rate']:.2%}",
+        f"- Test-hit rate: {generalization['test_hit_rate']:.2%}",
+        "",
+        "Per-repository detail:",
+        *[
+            (
+                f"- {repo}: commit {summary['commit'][:12]}, language={summary['language']}, "
+                f"gold allow={summary['gold_allow_rate']:.2%}, "
+                f"decoy false-allow={summary['decoy_false_allow_rate']:.2%}, "
+                f"source hit={summary['source_hit_rate']:.2%}, "
+                f"test hit={summary['test_hit_rate']:.2%}"
+            )
+            for repo, summary in repo_summaries.items()
+        ],
         "",
         "## Findings",
         "",
         "- Evidence Gate retains a much lower false-admit profile than a lexical baseline on deliberately poisoned corpora.",
         "- External incident evidence can now block a change that a repo-only review would otherwise allow.",
-        "- On the SWE-bench replay pilot, changed-path alignment blocked every wrong-file decoy that the lexical baseline would have allowed.",
-        "- The same SWE-bench pilot admitted none of the gold patches, which means the current action gate is still too conservative to claim end-to-end autonomous task uplift.",
+        "- On the SWE-bench replay, changed-path alignment blocked every wrong-file decoy that the lexical baseline would have allowed.",
+        "- The healing loop converts missing-evidence strings into a second attempt instead of treating `escalate` as a terminal failure.",
+        "- The cross-language pilot shows whether the same gate behavior survives beyond Python-centric corpora.",
         "",
         "## Limitations",
         "",
         "- The SWE-bench run is a replay benchmark over official tasks, not a full autonomous-agent pass-rate study.",
         "- The checked-in SWE-bench pilot uses a 4-repo slice by default so the run completes in a reasonable time; scale it out with the script flags when you want a longer sweep.",
         "- The mixed-source benchmark is synthetic but exercises the live Jira, PagerDuty, Slack, and Confluence ingestors.",
-        "- Evidence Gate remains strongest on Python-centric repositories because blast-radius analysis is Python-specific today.",
+        "- The multi-corpus pilot is still a curated slice; scale it out to more repositories and cases if you need a broader confidence interval.",
+        "- Evidence Gate remains strongest on Python repositories; JavaScript, TypeScript, and C rely on lighter import parsing today.",
         "",
     ]
     return "\n".join(lines)

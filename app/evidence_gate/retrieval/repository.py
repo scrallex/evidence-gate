@@ -66,6 +66,7 @@ TEXT_EXTENSIONS = {
     ".rb",
     ".rst",
     ".sh",
+    ".tcl",
     ".toml",
     ".ts",
     ".tsx",

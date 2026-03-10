@@ -188,7 +188,7 @@ The repo now includes a reproducible benchmark against a real open-source corpus
 - `benchmarks/cases/fastapi_cases.json`: 50 admit/withhold benchmark queries
 - `benchmarks/results/fastapi_structural_vs_baseline.md`: latest checked-in report
 - `scripts/run_fastapi_benchmark.py`: rebuild the corpus and rerun the comparison
-- `benchmarks/results/value_proof_benchmarks.md`: poisoned-corpus, mixed-source, and SWE-bench replay findings
+- `benchmarks/results/value_proof_benchmarks.md`: poisoned-corpus, mixed-source, SWE-bench healing-loop, and multi-corpus findings
 - `scripts/run_value_proof_benchmarks.py`: rerun the extended proof suite
 
 Current checked-in result:
@@ -201,14 +201,18 @@ Current checked-in result:
 The benchmark uses a curated FastAPI slice with code, tests, English docs,
 deployment runbooks, and precedent PR summaries extracted from release notes.
 
-The broader proof suite adds three more signals:
+The broader proof suite now adds four more signals:
 
 - poisoned corpus: 12.50% structural false-admit versus 87.50% for the lexical baseline
 - mixed-source incident blocking: 80.00% incremental block rate when external incident evidence is available
-- SWE-bench replay pilot: 0.00% wrong-file false-allow rate, but also 0.00% gold-path allow rate on the current action policy
+- SWE-bench replay with healing loop: 25.00% initial gold-path allow, 75.00% healed gold-path allow, and 0.00% wrong-file false-allow
+- multi-corpus generalization pilot: 12 curated cases across Redis, React, and Vite with 0.00% wrong-file false-allow but only 25.00% gold-path allow
 
 The current evidence therefore supports a strong false-admit and safety claim,
-but not yet a claim of higher autonomous task completion.
+plus an initial autonomous-uplift claim when the agent consumes `missing_evidence`
+and retries. It does not yet support a broad claim of cross-language autonomous
+throughput because React and Vite still under-retrieve test evidence in the
+current pilot.
 
 ## Roadmap
 

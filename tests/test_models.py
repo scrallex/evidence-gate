@@ -111,6 +111,7 @@ def test_action_and_change_requests_round_trip_with_diff_summary_and_safety_poli
         changed_paths=["services/billing.py"],
         diff_summary="Removed duplicate-charge safeguards from the billing authorization flow.",
         safety_policy=ActionSafetyPolicy(
+            corpus_profile="open_source",
             max_blast_radius_files=3,
             min_confidence=0.65,
             require_test_evidence=True,
@@ -123,6 +124,7 @@ def test_action_and_change_requests_round_trip_with_diff_summary_and_safety_poli
     assert restored_action.diff_summary is not None
     assert "duplicate-charge safeguards" in restored_action.diff_summary
     assert restored_action.safety_policy is not None
+    assert restored_action.safety_policy.corpus_profile == "open_source"
     assert restored_action.safety_policy.max_blast_radius_files == 3
     assert restored_action.safety_policy.require_incident_precedent is True
     assert restored_action.safety_policy.escalate_on_incident_match is True

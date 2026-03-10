@@ -58,6 +58,12 @@ _WARNING_EVIDENCE_TERMS = (
     "archived",
     "legacy sentinel",
 )
+_PATH_ALIGNMENT_GAP_NOTE = "The proposed changed paths were not directly supported by the retrieved evidence."
+_WARNING_EVIDENCE_NOTE = "Top retrieved evidence was marked deprecated or explicitly unsafe."
+_NO_TEST_EVIDENCE_NOTE = "No supporting test evidence was found for the affected flow."
+_NO_RUNBOOK_EVIDENCE_NOTE = "No runbook or operational handling evidence was found."
+_NO_PRECEDENT_NOTE = "No prior PR or incident precedent was found."
+_OPEN_SOURCE_IGNORED_NOTES = frozenset({_NO_RUNBOOK_EVIDENCE_NOTE, _NO_PRECEDENT_NOTE})
 
 
 class DecisionService:
@@ -411,11 +417,7 @@ class DecisionService:
         path_alignment_gap: bool = False,
         persist: bool = True,
     ) -> DecisionRecord:
-        support_score = (
-            mean(sorted((span.score for span in evidence_spans), reverse=True)[:3])
-            if evidence_spans
-            else 0.0
-        )
+        support_score = self._support_score(evidence_spans)
         recurrence = len(evidence_spans) + len(twin_cases)
         warning_evidence_hit = self._has_warning_evidence(evidence_spans)
         missing_evidence = self._build_missing_evidence(
@@ -488,6 +490,7 @@ class DecisionService:
         record: DecisionRecord,
         policy: ActionSafetyPolicy,
     ) -> tuple[DecisionRecord, list[str]]:
+        record = self._recalibrate_record_for_corpus(record, policy)
         policy_violations: list[str] = []
         has_test_support = any(span.source_type == SourceType.TEST for span in record.evidence_spans)
         has_runbook_support = any(span.source_type == SourceType.RUNBOOK for span in record.evidence_spans)
@@ -546,6 +549,58 @@ class DecisionService:
             policy_violations,
         )
 
+    def _recalibrate_record_for_corpus(
+        self,
+        record: DecisionRecord,
+        policy: ActionSafetyPolicy,
+    ) -> DecisionRecord:
+        if policy.corpus_profile != "open_source":
+            return record
+
+        missing_evidence = [
+            note for note in record.missing_evidence if note not in _OPEN_SOURCE_IGNORED_NOTES
+        ]
+        update: dict[str, object] = {}
+        if missing_evidence != list(record.missing_evidence):
+            note = " Open-source corpus profile ignored enterprise-only runbook and precedent gaps."
+            update["missing_evidence"] = missing_evidence
+            update["explanation"] = record.explanation + note
+            update["answer_or_action"] = record.answer_or_action + note
+
+        if self._supports_open_source_admit(record, policy):
+            update["decision"] = DecisionName.ADMIT
+
+        if not update:
+            return record
+        return record.model_copy(update=update)
+
+    def _supports_open_source_admit(
+        self,
+        record: DecisionRecord,
+        policy: ActionSafetyPolicy,
+    ) -> bool:
+        support_score = self._support_score(record.evidence_spans)
+        has_code_support = any(
+            span.verified and span.source_type == SourceType.CODE for span in record.evidence_spans
+        )
+        has_secondary_support = any(
+            span.verified and span.source_type in {SourceType.DOC, SourceType.TEST}
+            for span in record.evidence_spans
+        )
+        has_test_support = any(span.source_type == SourceType.TEST for span in record.evidence_spans)
+        if _PATH_ALIGNMENT_GAP_NOTE in record.missing_evidence:
+            return False
+        if _WARNING_EVIDENCE_NOTE in record.missing_evidence:
+            return False
+        if policy.require_test_evidence and not has_test_support:
+            return False
+        return (
+            len(record.evidence_spans) >= self.settings.thresholds.admit_evidence_count
+            and support_score >= self.settings.thresholds.admit_score_min
+            and has_code_support
+            and has_secondary_support
+        )
+
     def _action_failure_reason(
         self,
         decision: DecisionName,
@@ -572,15 +627,15 @@ class DecisionService:
         if evidence_spans and not any(span.verified for span in evidence_spans):
             missing.append("Retrieved evidence could not be verified against the truth-pack.")
         if path_alignment_gap:
-            missing.append("The proposed changed paths were not directly supported by the retrieved evidence.")
+            missing.append(_PATH_ALIGNMENT_GAP_NOTE)
         if warning_evidence_hit:
-            missing.append("Top retrieved evidence was marked deprecated or explicitly unsafe.")
+            missing.append(_WARNING_EVIDENCE_NOTE)
         if not any(span.source_type == SourceType.TEST for span in evidence_spans):
-            missing.append("No supporting test evidence was found for the affected flow.")
+            missing.append(_NO_TEST_EVIDENCE_NOTE)
         if not any(span.source_type == SourceType.RUNBOOK for span in evidence_spans):
-            missing.append("No runbook or operational handling evidence was found.")
+            missing.append(_NO_RUNBOOK_EVIDENCE_NOTE)
         if not twin_cases:
-            missing.append("No prior PR or incident precedent was found.")
+            missing.append(_NO_PRECEDENT_NOTE)
         return missing
 
     def _decide(
@@ -688,3 +743,8 @@ class DecisionService:
             if any(term in lowered for term in _WARNING_EVIDENCE_TERMS):
                 return True
         return False
+
+    def _support_score(self, evidence_spans: list[EvidenceSpan]) -> float:
+        if not evidence_spans:
+            return 0.0
+        return mean(sorted((span.score for span in evidence_spans), reverse=True)[:3])

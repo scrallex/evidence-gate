@@ -86,6 +86,26 @@ def _build_billing_repo(root: Path) -> None:
     )
 
 
+def _build_open_source_repo(root: Path) -> None:
+    _write(
+        root / "lib" / "cache.js",
+        "export function loadCache(key) {\n"
+        "  return `value:${key}`;\n"
+        "}\n",
+    )
+    _write(
+        root / "tests" / "cache.test.js",
+        "import {loadCache} from '../lib/cache.js';\n\n"
+        "test('loadCache returns the keyed value', () => {\n"
+        "  expect(loadCache('abc')).toBe('value:abc');\n"
+        "});\n",
+    )
+    _write(
+        root / "docs" / "cache.md",
+        "# Cache\n\nCache changes require matching test updates in the open-source workflow.\n",
+    )
+
+
 def test_health_endpoint() -> None:
     get_settings.cache_clear()
     get_audit_store.cache_clear()
@@ -183,6 +203,54 @@ def test_action_decision_endpoint_returns_200_for_allowed_and_403_for_blocked(
     assert blocked_payload["status"] == "block"
     assert blocked_payload["decision_record"]["decision"] == "admit"
     assert blocked_payload["failure_reason"]
+
+
+def test_action_decision_endpoint_open_source_policy_ignores_enterprise_only_gaps(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    repo_root = tmp_path / "oss_repo"
+    audit_root = tmp_path / "audit"
+    kb_root = tmp_path / "knowledge_bases"
+    _build_open_source_repo(repo_root)
+
+    monkeypatch.setenv("EVIDENCE_GATE_AUDIT_ROOT", str(audit_root))
+    monkeypatch.setenv("EVIDENCE_GATE_KB_ROOT", str(kb_root))
+    get_settings.cache_clear()
+    get_audit_store.cache_clear()
+    get_decision_service.cache_clear()
+
+    client = TestClient(create_app())
+
+    blocked = client.post(
+        "/v1/decide/action",
+        json={
+            "repo_path": str(repo_root),
+            "action_summary": "Review the cache behavior change before merge.",
+            "changed_paths": ["lib/cache.js"],
+        },
+    )
+    assert blocked.status_code == 403
+    assert blocked.json()["decision_record"]["decision"] == "escalate"
+
+    allowed = client.post(
+        "/v1/decide/action",
+        json={
+            "repo_path": str(repo_root),
+            "action_summary": "Review the cache behavior change before merge.",
+            "changed_paths": ["lib/cache.js"],
+            "safety_policy": {
+                "corpus_profile": "open_source",
+                "require_test_evidence": True,
+            },
+        },
+    )
+    assert allowed.status_code == 200
+    payload = allowed.json()
+    assert payload["allowed"] is True
+    assert payload["decision_record"]["decision"] == "admit"
+    assert "No runbook or operational handling evidence was found." not in payload["decision_record"]["missing_evidence"]
+    assert "No prior PR or incident precedent was found." not in payload["decision_record"]["missing_evidence"]
 
 
 def test_knowledge_base_ingest_endpoint_builds_reuses_and_refreshes(tmp_path: Path, monkeypatch) -> None:

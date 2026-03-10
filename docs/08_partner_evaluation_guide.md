@@ -123,6 +123,27 @@ Expected behavior:
 - HTTP `200`: Evidence Gate allowed the action
 - HTTP `403`: Evidence Gate blocked the action and returned a structured reason
 
+For open-source corpora or agent benchmarks, calibrate the safety policy to the
+corpus instead of requiring enterprise artifacts:
+
+```bash
+curl -X POST http://127.0.0.1:8000/v1/decide/action \
+  -H "content-type: application/json" \
+  -d '{
+    "repo_path": "/workspace/target",
+    "action_summary": "Before merging the patch, verify the change is safe.",
+    "changed_paths": ["src/cache.js"],
+    "safety_policy": {
+      "corpus_profile": "open_source",
+      "require_test_evidence": true
+    }
+  }'
+```
+
+If this open-source gate still returns HTTP `403`, treat
+`decision_record.missing_evidence` as repair instructions for the next agent
+attempt instead of ending the run immediately.
+
 ## 5. Connect an MCP client
 
 Use the streamable-http endpoint:
@@ -218,6 +239,11 @@ The action exposes:
 - `decision_id`
 - `response_path`
 - `comment_path`
+
+For autonomous-agent evaluations, prefer `fail_on_block: "false"` on the first
+pass. Read the blocked response, inject the `missing_evidence` strings back into
+the agent prompt, and only fail the workflow if the follow-up attempt is still
+blocked.
 - `ingest_status`
 - `repo_fingerprint`
 

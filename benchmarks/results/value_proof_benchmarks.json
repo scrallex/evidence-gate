@@ -1,4 +1,377 @@
 {
+  "multi_corpus_generalization": {
+    "cases": [
+      {
+        "case_id": "redis-acl",
+        "commit": "753c9f616f71493ac9fbeb1531a77bba493d0b12",
+        "decoy_allowed": false,
+        "decoy_decision": "escalate",
+        "decoy_missing_evidence": [
+          "The proposed changed paths were not directly supported by the retrieved evidence."
+        ],
+        "decoy_paths": [
+          ".codespell/requirements.txt"
+        ],
+        "gold_allowed": true,
+        "gold_decision": "admit",
+        "gold_missing_evidence": [],
+        "gold_source_hit": false,
+        "gold_test_hit": true,
+        "language": "c",
+        "query": "Review the Redis ACL authentication and permission handling change before merge.",
+        "repo": "redis/redis",
+        "source_path": "src/acl.c",
+        "test_paths": [
+          "tests/unit/acl.tcl",
+          "tests/unit/acl-v2.tcl"
+        ]
+      },
+      {
+        "case_id": "redis-aof",
+        "commit": "753c9f616f71493ac9fbeb1531a77bba493d0b12",
+        "decoy_allowed": false,
+        "decoy_decision": "escalate",
+        "decoy_missing_evidence": [
+          "The proposed changed paths were not directly supported by the retrieved evidence."
+        ],
+        "decoy_paths": [
+          ".codespell/requirements.txt"
+        ],
+        "gold_allowed": true,
+        "gold_decision": "admit",
+        "gold_missing_evidence": [],
+        "gold_source_hit": false,
+        "gold_test_hit": true,
+        "language": "c",
+        "query": "Review the Redis append-only file persistence change before merge.",
+        "repo": "redis/redis",
+        "source_path": "src/aof.c",
+        "test_paths": [
+          "tests/integration/aof.tcl",
+          "tests/unit/aofrw.tcl"
+        ]
+      },
+      {
+        "case_id": "redis-replication",
+        "commit": "753c9f616f71493ac9fbeb1531a77bba493d0b12",
+        "decoy_allowed": false,
+        "decoy_decision": "escalate",
+        "decoy_missing_evidence": [
+          "The proposed changed paths were not directly supported by the retrieved evidence."
+        ],
+        "decoy_paths": [
+          ".codespell/requirements.txt"
+        ],
+        "gold_allowed": false,
+        "gold_decision": "escalate",
+        "gold_missing_evidence": [],
+        "gold_source_hit": false,
+        "gold_test_hit": true,
+        "language": "c",
+        "query": "Review the Redis replication synchronization and failover change before merge.",
+        "repo": "redis/redis",
+        "source_path": "src/replication.c",
+        "test_paths": [
+          "tests/integration/replication.tcl",
+          "tests/integration/replication-psync.tcl"
+        ]
+      },
+      {
+        "case_id": "redis-stream",
+        "commit": "753c9f616f71493ac9fbeb1531a77bba493d0b12",
+        "decoy_allowed": false,
+        "decoy_decision": "escalate",
+        "decoy_missing_evidence": [
+          "The proposed changed paths were not directly supported by the retrieved evidence."
+        ],
+        "decoy_paths": [
+          ".codespell/requirements.txt"
+        ],
+        "gold_allowed": true,
+        "gold_decision": "admit",
+        "gold_missing_evidence": [],
+        "gold_source_hit": true,
+        "gold_test_hit": true,
+        "language": "c",
+        "query": "Review the Redis stream and consumer-group delivery change before merge.",
+        "repo": "redis/redis",
+        "source_path": "src/t_stream.c",
+        "test_paths": [
+          "tests/unit/type/stream.tcl",
+          "tests/unit/type/stream-cgroups.tcl"
+        ]
+      },
+      {
+        "case_id": "react-babel-lazy-jsx",
+        "commit": "014138df87869b174956f90a33fd6cf66e160114",
+        "decoy_allowed": false,
+        "decoy_decision": "escalate",
+        "decoy_missing_evidence": [
+          "The proposed changed paths were not directly supported by the retrieved evidence.",
+          "No supporting test evidence was found for the affected flow.",
+          "Safety policy violation: Policy requires supporting test evidence."
+        ],
+        "decoy_paths": [
+          ".claude/instructions.md"
+        ],
+        "gold_allowed": false,
+        "gold_decision": "escalate",
+        "gold_missing_evidence": [
+          "No supporting test evidence was found for the affected flow.",
+          "Safety policy violation: Policy requires supporting test evidence."
+        ],
+        "gold_source_hit": false,
+        "gold_test_hit": false,
+        "language": "javascript",
+        "query": "Review the React lazy JSX import Babel transform before merge.",
+        "repo": "facebook/react",
+        "source_path": "scripts/babel/transform-lazy-jsx-import.js",
+        "test_paths": [
+          "scripts/babel/__tests__/transform-lazy-jsx-import-test.js"
+        ]
+      },
+      {
+        "case_id": "react-error-codes",
+        "commit": "014138df87869b174956f90a33fd6cf66e160114",
+        "decoy_allowed": false,
+        "decoy_decision": "escalate",
+        "decoy_missing_evidence": [
+          "The proposed changed paths were not directly supported by the retrieved evidence.",
+          "No supporting test evidence was found for the affected flow.",
+          "Safety policy violation: Policy requires supporting test evidence."
+        ],
+        "decoy_paths": [
+          ".claude/instructions.md"
+        ],
+        "gold_allowed": false,
+        "gold_decision": "escalate",
+        "gold_missing_evidence": [
+          "No supporting test evidence was found for the affected flow.",
+          "Safety policy violation: Policy requires supporting test evidence."
+        ],
+        "gold_source_hit": false,
+        "gold_test_hit": true,
+        "language": "javascript",
+        "query": "Review the React production error-code transform before merge.",
+        "repo": "facebook/react",
+        "source_path": "scripts/error-codes/transform-error-messages.js",
+        "test_paths": [
+          "scripts/error-codes/__tests__/transform-error-messages.js"
+        ]
+      },
+      {
+        "case_id": "react-art",
+        "commit": "014138df87869b174956f90a33fd6cf66e160114",
+        "decoy_allowed": false,
+        "decoy_decision": "escalate",
+        "decoy_missing_evidence": [
+          "The proposed changed paths were not directly supported by the retrieved evidence.",
+          "No supporting test evidence was found for the affected flow.",
+          "Safety policy violation: Policy requires supporting test evidence."
+        ],
+        "decoy_paths": [
+          ".claude/instructions.md"
+        ],
+        "gold_allowed": false,
+        "gold_decision": "escalate",
+        "gold_missing_evidence": [
+          "No supporting test evidence was found for the affected flow.",
+          "Safety policy violation: Policy requires supporting test evidence."
+        ],
+        "gold_source_hit": false,
+        "gold_test_hit": false,
+        "language": "javascript",
+        "query": "Review the React ART renderer implementation change before merge.",
+        "repo": "facebook/react",
+        "source_path": "packages/react-art/src/ReactART.js",
+        "test_paths": [
+          "packages/react-art/src/__tests__/ReactART-test.js"
+        ]
+      },
+      {
+        "case_id": "react-cache",
+        "commit": "014138df87869b174956f90a33fd6cf66e160114",
+        "decoy_allowed": false,
+        "decoy_decision": "escalate",
+        "decoy_missing_evidence": [
+          "The proposed changed paths were not directly supported by the retrieved evidence.",
+          "No supporting test evidence was found for the affected flow.",
+          "Safety policy violation: Policy requires supporting test evidence."
+        ],
+        "decoy_paths": [
+          ".claude/instructions.md"
+        ],
+        "gold_allowed": false,
+        "gold_decision": "escalate",
+        "gold_missing_evidence": [
+          "No supporting test evidence was found for the affected flow.",
+          "Safety policy violation: Policy requires supporting test evidence."
+        ],
+        "gold_source_hit": true,
+        "gold_test_hit": false,
+        "language": "javascript",
+        "query": "Review the legacy React cache behavior change before merge.",
+        "repo": "facebook/react",
+        "source_path": "packages/react-cache/src/ReactCacheOld.js",
+        "test_paths": [
+          "packages/react-cache/src/__tests__/ReactCacheOld-test.internal.js"
+        ]
+      },
+      {
+        "case_id": "vite-create-vite",
+        "commit": "b9187e04e816aa4f9cc0555c4e4df3f56a899061",
+        "decoy_allowed": false,
+        "decoy_decision": "escalate",
+        "decoy_missing_evidence": [
+          "The proposed changed paths were not directly supported by the retrieved evidence.",
+          "No supporting test evidence was found for the affected flow.",
+          "Safety policy violation: Policy requires supporting test evidence."
+        ],
+        "decoy_paths": [
+          ".github/ISSUE_TEMPLATE/bug_report.yml"
+        ],
+        "gold_allowed": false,
+        "gold_decision": "escalate",
+        "gold_missing_evidence": [
+          "No supporting test evidence was found for the affected flow.",
+          "Safety policy violation: Policy requires supporting test evidence."
+        ],
+        "gold_source_hit": true,
+        "gold_test_hit": false,
+        "language": "typescript",
+        "query": "Review the create-vite CLI scaffolding change before merge.",
+        "repo": "vitejs/vite",
+        "source_path": "packages/create-vite/src/index.ts",
+        "test_paths": [
+          "packages/create-vite/__tests__/cli.spec.ts"
+        ]
+      },
+      {
+        "case_id": "vite-alias",
+        "commit": "b9187e04e816aa4f9cc0555c4e4df3f56a899061",
+        "decoy_allowed": false,
+        "decoy_decision": "escalate",
+        "decoy_missing_evidence": [
+          "The proposed changed paths were not directly supported by the retrieved evidence.",
+          "No supporting test evidence was found for the affected flow.",
+          "Safety policy violation: Policy requires supporting test evidence."
+        ],
+        "decoy_paths": [
+          ".github/ISSUE_TEMPLATE/bug_report.yml"
+        ],
+        "gold_allowed": false,
+        "gold_decision": "escalate",
+        "gold_missing_evidence": [
+          "No supporting test evidence was found for the affected flow.",
+          "Safety policy violation: Policy requires supporting test evidence."
+        ],
+        "gold_source_hit": true,
+        "gold_test_hit": true,
+        "language": "javascript",
+        "query": "Review the Vite alias resolution playground change before merge.",
+        "repo": "vitejs/vite",
+        "source_path": "playground/alias/test.js",
+        "test_paths": [
+          "playground/alias/__tests__/alias.spec.ts"
+        ]
+      },
+      {
+        "case_id": "vite-assets",
+        "commit": "b9187e04e816aa4f9cc0555c4e4df3f56a899061",
+        "decoy_allowed": false,
+        "decoy_decision": "escalate",
+        "decoy_missing_evidence": [
+          "The proposed changed paths were not directly supported by the retrieved evidence.",
+          "No supporting test evidence was found for the affected flow.",
+          "Safety policy violation: Policy requires supporting test evidence."
+        ],
+        "decoy_paths": [
+          ".github/ISSUE_TEMPLATE/bug_report.yml"
+        ],
+        "gold_allowed": false,
+        "gold_decision": "escalate",
+        "gold_missing_evidence": [
+          "No supporting test evidence was found for the affected flow.",
+          "Safety policy violation: Policy requires supporting test evidence."
+        ],
+        "gold_source_hit": false,
+        "gold_test_hit": true,
+        "language": "javascript",
+        "query": "Review the Vite asset loading and URL handling change before merge.",
+        "repo": "vitejs/vite",
+        "source_path": "playground/assets/index.js",
+        "test_paths": [
+          "playground/assets/__tests__/assets.spec.ts"
+        ]
+      },
+      {
+        "case_id": "vite-assets-sanitize",
+        "commit": "b9187e04e816aa4f9cc0555c4e4df3f56a899061",
+        "decoy_allowed": false,
+        "decoy_decision": "escalate",
+        "decoy_missing_evidence": [
+          "The proposed changed paths were not directly supported by the retrieved evidence.",
+          "No supporting test evidence was found for the affected flow.",
+          "Safety policy violation: Policy requires supporting test evidence."
+        ],
+        "decoy_paths": [
+          ".github/ISSUE_TEMPLATE/bug_report.yml"
+        ],
+        "gold_allowed": false,
+        "gold_decision": "escalate",
+        "gold_missing_evidence": [
+          "No supporting test evidence was found for the affected flow.",
+          "Safety policy violation: Policy requires supporting test evidence."
+        ],
+        "gold_source_hit": false,
+        "gold_test_hit": true,
+        "language": "javascript",
+        "query": "Review the Vite asset sanitization change before merge.",
+        "repo": "vitejs/vite",
+        "source_path": "playground/assets-sanitize/index.js",
+        "test_paths": [
+          "playground/assets-sanitize/__tests__/assets-sanitize.spec.ts"
+        ]
+      }
+    ],
+    "repo_summaries": {
+      "facebook/react": {
+        "case_count": 4,
+        "commit": "014138df87869b174956f90a33fd6cf66e160114",
+        "decoy_false_allow_rate": 0.0,
+        "gold_allow_rate": 0.0,
+        "language": "javascript",
+        "source_hit_rate": 0.25,
+        "test_hit_rate": 0.25
+      },
+      "redis/redis": {
+        "case_count": 4,
+        "commit": "753c9f616f71493ac9fbeb1531a77bba493d0b12",
+        "decoy_false_allow_rate": 0.0,
+        "gold_allow_rate": 0.75,
+        "language": "c",
+        "source_hit_rate": 0.25,
+        "test_hit_rate": 1.0
+      },
+      "vitejs/vite": {
+        "case_count": 4,
+        "commit": "b9187e04e816aa4f9cc0555c4e4df3f56a899061",
+        "decoy_false_allow_rate": 0.0,
+        "gold_allow_rate": 0.0,
+        "language": "typescript",
+        "source_hit_rate": 0.5,
+        "test_hit_rate": 0.75
+      }
+    },
+    "summary": {
+      "case_count": 12,
+      "decoy_false_allow_rate": 0.0,
+      "gold_allow_rate": 0.25,
+      "repo_count": 3,
+      "source_hit_rate": 0.3333,
+      "test_hit_rate": 0.6667
+    }
+  },
   "multi_source_incident": {
     "cases": [
       {
@@ -3371,24 +3744,32 @@
         "decoy_missing_evidence": [
           "The proposed changed paths were not directly supported by the retrieved evidence.",
           "No supporting test evidence was found for the affected flow.",
-          "No runbook or operational handling evidence was found.",
-          "No prior PR or incident precedent was found."
+          "Safety policy violation: Policy requires supporting test evidence."
         ],
         "decoy_paths": [
           ".github/ISSUE_TEMPLATE/bug-report.md"
         ],
-        "gold_allowed": false,
-        "gold_decision": "escalate",
-        "gold_missing_evidence": [
+        "gold_test_paths": [],
+        "healed_gold_allowed": true,
+        "healed_gold_decision": "admit",
+        "healed_gold_missing_evidence": [],
+        "initial_gold_allowed": false,
+        "initial_gold_decision": "escalate",
+        "initial_gold_missing_evidence": [
           "No supporting test evidence was found for the affected flow.",
-          "No runbook or operational handling evidence was found.",
-          "No prior PR or incident precedent was found."
+          "Safety policy violation: Policy requires supporting test evidence."
         ],
-        "gold_paths": [
+        "initial_gold_paths": [
           "src/flask/blueprints.py"
         ],
+        "initial_missing_test_evidence": true,
         "instance_id": "pallets__flask-4045",
-        "repo": "pallets/flask"
+        "repo": "pallets/flask",
+        "retry_attempted": true,
+        "retry_prompt": "Raise error when blueprint name contains a dot\nThis is required since every dot is now significant since blueprints can be nested. An error was already added for endpoint names in 1.0, but should have been added for this as well.\n\nEvidence Gate blocked the previous attempt because: No supporting test evidence was found for the affected flow.; Safety policy violation: Policy requires supporting test evidence.. Write the missing test coverage or update the supported files, then retry.",
+        "retry_test_paths": [
+          "tests/test_cli.py"
+        ]
       },
       {
         "alignment_gap_triggered": true,
@@ -3396,24 +3777,27 @@
         "decoy_allowed": false,
         "decoy_decision": "escalate",
         "decoy_missing_evidence": [
-          "The proposed changed paths were not directly supported by the retrieved evidence.",
-          "No runbook or operational handling evidence was found.",
-          "No prior PR or incident precedent was found."
+          "The proposed changed paths were not directly supported by the retrieved evidence."
         ],
         "decoy_paths": [
           ".github/CONTRIBUTING.md"
         ],
-        "gold_allowed": false,
-        "gold_decision": "escalate",
-        "gold_missing_evidence": [
-          "No runbook or operational handling evidence was found.",
-          "No prior PR or incident precedent was found."
-        ],
-        "gold_paths": [
+        "gold_test_paths": [],
+        "healed_gold_allowed": true,
+        "healed_gold_decision": "admit",
+        "healed_gold_missing_evidence": [],
+        "initial_gold_allowed": true,
+        "initial_gold_decision": "admit",
+        "initial_gold_missing_evidence": [],
+        "initial_gold_paths": [
           "seaborn/_oldcore.py"
         ],
+        "initial_missing_test_evidence": false,
         "instance_id": "mwaskom__seaborn-2848",
-        "repo": "mwaskom/seaborn"
+        "repo": "mwaskom/seaborn",
+        "retry_attempted": false,
+        "retry_prompt": null,
+        "retry_test_paths": []
       },
       {
         "alignment_gap_triggered": true,
@@ -3423,24 +3807,32 @@
         "decoy_missing_evidence": [
           "The proposed changed paths were not directly supported by the retrieved evidence.",
           "No supporting test evidence was found for the affected flow.",
-          "No runbook or operational handling evidence was found.",
-          "No prior PR or incident precedent was found."
+          "Safety policy violation: Policy requires supporting test evidence."
         ],
         "decoy_paths": [
           "AUTHORS.rst"
         ],
-        "gold_allowed": false,
-        "gold_decision": "escalate",
-        "gold_missing_evidence": [
+        "gold_test_paths": [],
+        "healed_gold_allowed": true,
+        "healed_gold_decision": "admit",
+        "healed_gold_missing_evidence": [],
+        "initial_gold_allowed": false,
+        "initial_gold_decision": "escalate",
+        "initial_gold_missing_evidence": [
           "No supporting test evidence was found for the affected flow.",
-          "No runbook or operational handling evidence was found.",
-          "No prior PR or incident precedent was found."
+          "Safety policy violation: Policy requires supporting test evidence."
         ],
-        "gold_paths": [
+        "initial_gold_paths": [
           "requests/sessions.py"
         ],
+        "initial_missing_test_evidence": true,
         "instance_id": "psf__requests-1963",
-        "repo": "psf/requests"
+        "repo": "psf/requests",
+        "retry_attempted": true,
+        "retry_prompt": "`Session.resolve_redirects` copies the original request for all subsequent requests, can cause incorrect method selection\nConsider the following redirection chain:\n\nEvidence Gate blocked the previous attempt because: No supporting test evidence was found for the affected flow.; Safety policy violation: Policy requires supporting test evidence.. Write the missing test coverage or update the supported files, then retry.",
+        "retry_test_paths": [
+          "test_requests.py"
+        ]
       },
       {
         "alignment_gap_triggered": true,
@@ -3450,24 +3842,34 @@
         "decoy_missing_evidence": [
           "The proposed changed paths were not directly supported by the retrieved evidence.",
           "No supporting test evidence was found for the affected flow.",
-          "No runbook or operational handling evidence was found.",
-          "No prior PR or incident precedent was found."
+          "Safety policy violation: Policy requires supporting test evidence."
         ],
         "decoy_paths": [
           ".github/CONTRIBUTING.md"
         ],
-        "gold_allowed": false,
-        "gold_decision": "escalate",
-        "gold_missing_evidence": [
-          "No supporting test evidence was found for the affected flow.",
-          "No runbook or operational handling evidence was found.",
-          "No prior PR or incident precedent was found."
+        "gold_test_paths": [],
+        "healed_gold_allowed": false,
+        "healed_gold_decision": "escalate",
+        "healed_gold_missing_evidence": [
+          "The proposed changed paths were not directly supported by the retrieved evidence."
         ],
-        "gold_paths": [
+        "initial_gold_allowed": false,
+        "initial_gold_decision": "escalate",
+        "initial_gold_missing_evidence": [
+          "No supporting test evidence was found for the affected flow.",
+          "Safety policy violation: Policy requires supporting test evidence."
+        ],
+        "initial_gold_paths": [
           "pylint/checkers/misc.py"
         ],
+        "initial_missing_test_evidence": true,
         "instance_id": "pylint-dev__pylint-5859",
-        "repo": "pylint-dev/pylint"
+        "repo": "pylint-dev/pylint",
+        "retry_attempted": true,
+        "retry_prompt": "\"--notes\" option ignores note tags that are entirely punctuation\n### Bug description\n\nEvidence Gate blocked the previous attempt because: No supporting test evidence was found for the affected flow.; Safety policy violation: Policy requires supporting test evidence.. Write the missing test coverage or update the supported files, then retry.",
+        "retry_test_paths": [
+          "tests/checkers/unittest_variables.py"
+        ]
       }
     ],
     "dataset": "princeton-nlp/SWE-bench_Lite",
@@ -3476,8 +3878,12 @@
       "baseline_allow_rate": 1.0,
       "case_count": 4,
       "decoy_false_allow_rate": 0.0,
-      "gold_allow_rate": 0.0,
-      "repo_count": 4
+      "healed_gold_allow_rate": 0.75,
+      "healing_retry_rate": 0.75,
+      "healing_success_rate": 0.6667,
+      "initial_gold_allow_rate": 0.25,
+      "repo_count": 4,
+      "test_gap_block_rate": 0.75
     }
   }
 }
