@@ -1,13 +1,15 @@
 # Evidence Gate
 
-`Evidence Gate` decides whether an AI system has enough structural evidence and
-precedent to answer or act.
+`Evidence Gate: The Reliability Layer for AI Agents.`
 
-This repo is the alpha implementation of that reliability layer, currently
-focused on engineering change intelligence. It ingests a target repository into
-a structural knowledge base, retrieves cited evidence spans and prior cases,
-computes blast radius, and returns an `admit | abstain | escalate` decision
-before a model or agent proceeds.
+It decides whether an AI system has enough structural evidence and precedent to
+answer or act.
+
+This repo is the alpha implementation of that reliability layer. Its first
+benchmarked workflow is engineering change intelligence: ingest a target
+repository into a structural knowledge base, retrieve cited evidence spans and
+prior cases, compute blast radius, and return an `admit | abstain | escalate`
+decision before a model or agent proceeds.
 
 ## What It Does Today
 
@@ -29,7 +31,8 @@ It is suitable today for:
 - guided demos on a target repository
 
 It is not yet ready as a self-serve product or production deployment. The main
-gaps are benchmarked proof, packaging, MCP delivery, and a polished pilot kit.
+gaps are broader multi-corpus proof, packaging, MCP delivery, and a polished
+pilot kit.
 
 ## Quickstart
 
@@ -114,11 +117,11 @@ Key environment controls:
 - `app/`: FastAPI service, retrieval, verification, blast radius, and audit code
 - `tests/`: API and retrieval regression coverage
 - `docs/`: product thesis, MVP contract, execution plan, and release-readiness path
-- `sources/`: source index plus archived background research and provenance
+- `sources/`: minimal provenance notes only
 
-Raw research papers and extracted legacy source material now live under
-`sources/archive/` and are intentionally kept out of the repo's market-facing
-story.
+Legacy exploratory research is intentionally not shipped in this public repo.
+The public surface stays focused on the implementation, benchmark proof, and
+partner-review materials.
 
 ## Start Here
 

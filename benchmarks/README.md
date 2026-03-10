@@ -1,6 +1,7 @@
 # Benchmarks
 
-This directory contains the public proof surface for `Evidence Gate`.
+This directory contains the public proof surface for `Evidence Gate: The
+Reliability Layer for AI Agents`.
 
 Current benchmark:
 

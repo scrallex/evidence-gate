@@ -81,9 +81,12 @@ The first product cut should unify the three useful surfaces above into one serv
 
 ## Real deliverable that fits the repo
 
-The best near-term deliverable is not a general enterprise memory system. It is:
+The best near-term deliverable is not a general enterprise memory system. The
+product story should stay:
 
-`Evidence Gate for engineering change intelligence`
+`Evidence Gate: The Reliability Layer for AI Agents`
 
-That maps directly onto codebase analysis, runbook lookup, incident retrieval, and agent action
-gating, all of which already have partial implementation in this repository.
+The first benchmarked workflow under that story is engineering change
+intelligence. That maps directly onto codebase analysis, runbook lookup,
+incident retrieval, and agent action gating, all of which already have partial
+implementation in this repository.

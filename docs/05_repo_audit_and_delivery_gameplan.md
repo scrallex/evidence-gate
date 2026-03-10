@@ -47,8 +47,9 @@ That is a meaningful technical preview, not only an idea.
 2. Runtime knowledge bases under `var/knowledge_bases/` should be treated as
    cache artifacts, not repo assets.
 3. Python bytecode and test caches should not be tracked.
-4. The GitHub landing page should lead with the current alpha and its limits.
-5. Planning docs should not contradict the implemented service.
+4. Exploratory research archives should not be shipped in the public repo.
+5. The GitHub landing page should lead with the current alpha and its limits.
+6. Planning docs should not contradict the implemented service.
 
 ### What a professional presentation requires
 
@@ -62,7 +63,7 @@ That is a meaningful technical preview, not only an idea.
 
 The right public claim for this repo is:
 
-`Evidence Gate decides whether an AI system has enough structural evidence and precedent to answer or act.`
+`Evidence Gate: The Reliability Layer for AI Agents.`
 
 The first workflow used to demonstrate that claim is engineering change
 intelligence.
@@ -98,9 +99,9 @@ It is not yet enough for:
 - paid pilot without guided setup
 - independent proof of ROI
 
-The repo should also keep the archived QFH and trading papers in a clearly
-secondary position under `sources/archive/` so the public surface does not drift
-back into research-sprawl framing.
+The repo should not ship archived QFH or trading papers in the public tree at
+all. If historical provenance needs to be retained, keep it in a private
+archive so the GitHub surface stays implementation-first.
 
 ## Delivery gameplan from this point
 

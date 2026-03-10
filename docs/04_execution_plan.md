@@ -2,9 +2,10 @@
 
 ## Product target
 
-Ship a credible `Evidence Gate` technical preview for engineering change
-intelligence. The reviewer should be able to point the service at a real codebase
-and get back:
+Ship a credible technical preview for `Evidence Gate: The Reliability Layer for
+AI Agents`. The first benchmarked workflow remains engineering change
+intelligence. The reviewer should be able to point the service at a real
+codebase and get back:
 
 - cited evidence spans
 - blast radius

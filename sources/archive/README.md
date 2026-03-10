@@ -1,19 +1,13 @@
-# Archived Research
+# Archive Boundary
 
-This directory contains legacy SEP research papers, extracted text, and prior
-methodology notes that informed the current `Evidence Gate` thesis.
+The legacy research archive is intentionally not included in this public repo.
 
-It exists for provenance, internal reference, and product archaeology.
+If prior whitepapers, extracted text, trading notes, or QFH material need to be
+retained for provenance, keep them in private storage.
 
-It is not the market-facing story for this repository.
+The public GitHub surface should stay focused on:
 
-The current public positioning lives in:
-
-- `README.md`
-- `docs/01_product_thesis.md`
-- `sources/SOURCE_INDEX.md`
-
-Archive layout:
-
-- `raw/`: original PDFs and source markdown
-- `extracted/`: text extractions and working copies derived from those sources
+- the implementation
+- benchmark proof
+- API and product docs
+- partner-review materials

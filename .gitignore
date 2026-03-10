@@ -25,3 +25,7 @@ dist/
 var/audit/
 var/knowledge_bases/
 !var/.gitkeep
+
+# Private or exploratory research archives
+sources/archive/raw/
+sources/archive/extracted/
