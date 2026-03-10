@@ -1,9 +1,13 @@
 # Evidence Gate
 
-`Evidence Gate` is a technical-preview service for engineering change intelligence.
-It decides whether a code or operational question is sufficiently supported by
-repository evidence, prior cases, and structural verification before returning a
-recommendation.
+`Evidence Gate` decides whether an AI system has enough structural evidence and
+precedent to answer or act.
+
+This repo is the alpha implementation of that reliability layer, currently
+focused on engineering change intelligence. It ingests a target repository into
+a structural knowledge base, retrieves cited evidence spans and prior cases,
+computes blast radius, and returns an `admit | abstain | escalate` decision
+before a model or agent proceeds.
 
 ## What It Does Today
 
@@ -93,7 +97,11 @@ Key environment controls:
 - `app/`: FastAPI service, retrieval, verification, blast radius, and audit code
 - `tests/`: API and retrieval regression coverage
 - `docs/`: product thesis, MVP contract, execution plan, and release-readiness path
-- `sources/`: source index and bundled background material
+- `sources/`: source index plus archived background research and provenance
+
+Raw research papers and extracted legacy source material now live under
+`sources/archive/` and are intentionally kept out of the repo's market-facing
+story.
 
 ## Start Here
 
