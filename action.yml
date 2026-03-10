@@ -45,6 +45,10 @@ outputs:
     description: Path to the formatted PR comment markdown on the runner.
     value: ${{ steps.guard.outputs.comment_path }}
 
+branding:
+  icon: check-circle
+  color: green
+
 runs:
   using: composite
   steps:
