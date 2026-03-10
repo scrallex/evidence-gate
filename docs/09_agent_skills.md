@@ -60,7 +60,7 @@ The skill should tell Codex to:
 - prefer MCP when it is already connected
 - ingest the repository before decision calls when the knowledge base may be
   missing or stale
-- pass `external_sources` when local incident exports matter to the task
+- pass `external_sources` when local incident, ticket, chat, or architecture exports matter to the task
 - use change-impact by default for advisory review
 - reserve action gating for explicit safety or approval asks
 - avoid repo-local audit or knowledge-base paths when evaluating the same repo

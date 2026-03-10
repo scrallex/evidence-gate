@@ -73,7 +73,20 @@ class ChangeImpactRequest(BaseModel):
     repo_path: str
     change_summary: str = Field(min_length=1)
     changed_paths: list[str] = Field(default_factory=list)
+    diff_summary: str | None = None
     top_k: int = Field(default=5, ge=1, le=20)
+
+
+class ActionSafetyPolicy(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    max_blast_radius_files: int | None = Field(default=None, ge=0)
+    max_hazard: float | None = Field(default=None, ge=0.0, le=1.0)
+    min_confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    require_test_evidence: bool = False
+    require_runbook_evidence: bool = False
+    require_precedent: bool = False
+    require_incident_precedent: bool = False
 
 
 class ActionDecisionRequest(BaseModel):
@@ -82,10 +95,12 @@ class ActionDecisionRequest(BaseModel):
     repo_path: str
     action_summary: str = Field(min_length=1)
     changed_paths: list[str] = Field(default_factory=list)
+    diff_summary: str | None = None
     top_k: int = Field(default=5, ge=1, le=20)
     block_on: list[DecisionName] = Field(
         default_factory=lambda: [DecisionName.ABSTAIN, DecisionName.ESCALATE]
     )
+    safety_policy: ActionSafetyPolicy | None = None
 
 
 class KnowledgeBaseExternalSource(BaseModel):
@@ -198,4 +213,5 @@ class ActionDecisionResponse(BaseModel):
     status: Literal["allow", "block"]
     blocking_decisions: list[DecisionName] = Field(default_factory=list)
     failure_reason: str | None = None
+    policy_violations: list[str] = Field(default_factory=list)
     decision_record: DecisionRecord

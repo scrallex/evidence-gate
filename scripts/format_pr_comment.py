@@ -24,6 +24,7 @@ def build_comment(payload: dict[str, Any]) -> str:
     evidence_spans = record.get("evidence_spans", [])
     twin_cases = record.get("twin_cases", [])
     missing_evidence = record.get("missing_evidence", [])
+    policy_violations = action_payload.get("policy_violations", [])
     decision = str(record.get("decision", "unknown")).capitalize()
     title_status = "Allow" if action_payload.get("allowed") else "Block"
 
@@ -38,6 +39,9 @@ def build_comment(payload: dict[str, Any]) -> str:
     )
     if action_payload.get("failure_reason"):
         lines.append(f"- Failure reason: {action_payload['failure_reason']}")
+
+    if policy_violations:
+        lines.append("- Policy violations: " + "; ".join(str(item) for item in policy_violations[:4]))
 
     if missing_evidence:
         lines.append("- Missing evidence: " + "; ".join(str(item) for item in missing_evidence[:3]))

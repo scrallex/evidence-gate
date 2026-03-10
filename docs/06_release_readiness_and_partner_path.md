@@ -58,12 +58,13 @@ defaults for blocking merges.
 ### 4. Partner adaptation still needs proof on private corpora
 
 The guide now exists, but the product still needs validation on real private
-repos with partner-specific docs, runbooks, and incident history.
+repos with partner-specific docs, runbooks, and exported institutional history.
 
-### 5. No broader enterprise connectors yet
+### 5. Broader enterprise connectors now exist, but they are export-based
 
-The current system is repository-local. The long-term institutional-memory
-story needs connectors for Jira, PagerDuty or Slack, and Confluence.
+The current system can ingest mounted Jira, PagerDuty, Slack, and Confluence
+exports. The remaining gap is operational polish: partner-ready export recipes,
+policy tuning on multi-source corpora, and eventually hosted sync.
 
 ## What would make this genuinely worthwhile to send broadly
 
@@ -123,7 +124,7 @@ multi-source reliability layer
 
 Tasks:
 
-- add Jira, incident, and architecture-doc connectors
+- operationalize Jira, incident, and architecture-doc connectors in partner setups
 - link code changes to operational history
 - re-benchmark on multi-source corpora
 

@@ -117,6 +117,19 @@ async def _exercise_mcp_server(
                     "changed_paths": ["src/session.py"],
                 },
             )
+            blocked_action_decision = await session.call_tool(
+                "evidence_gate_decide_action",
+                {
+                    "repo_path": str(repo_root),
+                    "action_summary": "Before changing auth/session handling, verify the action is safe.",
+                    "changed_paths": ["src/session.py"],
+                    "diff_summary": "Legacy sentinel rollback required after token refresh regression.",
+                    "safety_policy": {
+                        "max_blast_radius_files": 1,
+                        "require_incident_precedent": True,
+                    },
+                },
+            )
             recent_decisions = await session.call_tool(
                 "evidence_gate_list_recent_decisions",
                 {"limit": 5},
@@ -150,6 +163,7 @@ async def _exercise_mcp_server(
         "status": status.structuredContent,
         "decision": decision_payload,
         "action_decision": action_decision.structuredContent,
+        "blocked_action_decision": blocked_action_decision.structuredContent,
         "recent_decisions": recent_decisions.structuredContent,
         "external_query": external_query.structuredContent,
         "decision_resource": decision_resource.contents[0].text,
@@ -200,8 +214,18 @@ def test_mcp_stdio_server_exposes_evidence_gate_workflow(tmp_path: Path) -> None
     assert action_payload["allowed"] is True
     assert action_payload["decision_record"]["decision"] == "admit"
 
+    blocked_action_payload = payload["blocked_action_decision"]
+    assert blocked_action_payload["allowed"] is False
+    assert blocked_action_payload["status"] == "block"
+    assert blocked_action_payload["decision_record"]["decision"] == "escalate"
+    assert blocked_action_payload["policy_violations"]
+    assert any(
+        twin["source"] == "external_incidents/incident_1842.md"
+        for twin in blocked_action_payload["decision_record"]["twin_cases"]
+    )
+
     recent_decisions = payload["recent_decisions"]
-    assert len(recent_decisions["decisions"]) >= 2
+    assert len(recent_decisions["decisions"]) >= 3
 
     external_query_payload = payload["external_query"]
     assert any(

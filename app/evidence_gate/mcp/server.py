@@ -158,6 +158,7 @@ def create_mcp_server(
         repo_path: str,
         change_summary: str,
         changed_paths: list[str] | None = None,
+        diff_summary: str | None = None,
         top_k: int = 5,
     ) -> DecisionRecord:
         try:
@@ -166,6 +167,7 @@ def create_mcp_server(
                     repo_path=repo_path,
                     change_summary=change_summary,
                     changed_paths=changed_paths or [],
+                    diff_summary=diff_summary,
                     top_k=top_k,
                 )
             )
@@ -185,6 +187,8 @@ def create_mcp_server(
         repo_path: str,
         action_summary: str,
         changed_paths: list[str] | None = None,
+        diff_summary: str | None = None,
+        safety_policy: dict[str, object] | None = None,
         top_k: int = 5,
     ) -> ActionDecisionResponse:
         try:
@@ -193,6 +197,8 @@ def create_mcp_server(
                     repo_path=repo_path,
                     action_summary=action_summary,
                     changed_paths=changed_paths or [],
+                    diff_summary=diff_summary,
+                    safety_policy=safety_policy,
                     top_k=top_k,
                 )
             )

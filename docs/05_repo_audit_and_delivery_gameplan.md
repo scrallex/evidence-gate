@@ -167,10 +167,10 @@ connect code-change decisions to the surrounding institutional record.
 
 Tasks:
 
-1. Add Jira, PagerDuty or Slack, and Confluence connectors.
+1. Operationalize the Jira, PagerDuty or Slack, and Confluence export connectors in partner datasets.
 2. Link AST-derived blast radius to external incident history.
 3. Re-rank twins across code, docs, tickets, and postmortems.
-4. Re-benchmark on partner-shaped corpora once connectors exist.
+4. Re-benchmark on partner-shaped corpora now that the export connectors exist.
 
 ## Practical conclusion
 

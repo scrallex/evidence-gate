@@ -14,13 +14,14 @@ proceeds.
 
 ## What It Does Today
 
-- ingests repository content plus optional local external incident exports into
-  a persisted structural knowledge base
+- ingests repository content plus optional local exports from incidents, Jira,
+  PagerDuty, Slack, and Confluence into a persisted structural knowledge base
 - answers change-impact and engineering evidence queries
 - returns cited evidence spans, prior PR or incident twins, blast radius, and an
   `admit | abstain | escalate` decision
 - writes decision audit records and manages knowledge-base lifecycle and retention
-- exposes the same decision contract through an MCP server for agent and IDE workflows
+- exposes the same decision contract through an MCP server and a composite
+  GitHub Action for agent, IDE, and CI workflows
 
 ## Why It Matters
 
@@ -41,10 +42,11 @@ It is suitable today for:
 - architecture discussion
 - guided demos on a target repository
 - design-partner evaluation with guided setup
+- CI guardrail previews on a target repository with explicit safety thresholds
 
 It is not yet ready as a self-serve product or production deployment. The main
 gaps are production hardening, broader CI adoption, partner validation on
-private corpora, and wider connector coverage beyond local incident exports.
+private corpora, prebuilt CI packaging, and hosted sync beyond mounted export data.
 
 ## Quickstart
 
@@ -92,7 +94,7 @@ curl -X POST http://127.0.0.1:8000/v1/knowledge-bases/ingest \
   -d '{"repo_path": "/path/to/repo"}'
 ```
 
-Build a mixed-source knowledge base with local incident exports:
+Build a mixed-source knowledge base with local external exports:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/v1/knowledge-bases/ingest \
@@ -100,7 +102,9 @@ curl -X POST http://127.0.0.1:8000/v1/knowledge-bases/ingest \
   -d '{
     "repo_path": "/path/to/repo",
     "external_sources": [
-      {"type": "incidents", "path": "/path/to/incidents"}
+      {"type": "pagerduty", "path": "/path/to/pagerduty"},
+      {"type": "jira", "path": "/path/to/jira"},
+      {"type": "confluence", "path": "/path/to/confluence"}
     ]
   }'
 ```
@@ -166,10 +170,10 @@ The repo now includes a design-partner evaluator path:
 - `scripts/run_demo_sandbox.sh`: boots the stack, clones FastAPI, ingests it, and prints copy-paste test commands
 - `docs/08_partner_evaluation_guide.md`: step-by-step instructions for mounting a private repo into the container
 
-The composite GitHub Action currently evaluates the checked-out repository
-surface. If you need external incident corpora in CI, pre-ingest them through
-the API or point the action at an already-running Evidence Gate service that
-can see those paths.
+The composite GitHub Action can ingest the checked-out repository plus any
+mounted export directories you pass through `external_sources`. If those
+corpora live outside the checkout, mount them into the runner or point the
+action at an already-running Evidence Gate service that can see those paths.
 
 ## Benchmark Proof
 
@@ -192,8 +196,8 @@ deployment runbooks, and precedent PR summaries extracted from release notes.
 ## Roadmap
 
 - Immediate: validate the evaluator kit on partner-shaped repos and harden CI adoption
-- Medium term: tighten delivery-path policies and broaden GitHub or GitLab integration
-- Long term: Jira, PagerDuty or Slack, and Confluence connectors for broader institutional memory
+- Medium term: publish prebuilt CI images, tighten delivery-path policies, and broaden GitHub or GitLab integration
+- Long term: hosted source sync, broader multi-source benchmarks, and production deployment hardening
 
 Persisted runtime state lives outside the repo under `~/.evidence-gate/` by
 default and is intentionally not part of the tracked source surface. Use

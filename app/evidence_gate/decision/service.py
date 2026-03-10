@@ -13,6 +13,7 @@ from evidence_gate.config import Settings
 from evidence_gate.decision.models import (
     ActionDecisionRequest,
     ActionDecisionResponse,
+    ActionSafetyPolicy,
     BlastRadius,
     ChangeImpactRequest,
     DecisionName,
@@ -32,13 +33,14 @@ from evidence_gate.decision.models import (
     SourceType,
     TwinCase,
 )
-from evidence_gate.ingest.base import BaseIngestor
-from evidence_gate.ingest.local_repo import LocalRepoIngestor
-from evidence_gate.ingest.markdown_incident import MarkdownIncidentIngestor
 from evidence_gate.retrieval.repository import SearchHit
 from evidence_gate.retrieval.structural import (
+    CONFLUENCE_SOURCE_KIND,
     INCIDENT_SOURCE_KIND,
+    JIRA_SOURCE_KIND,
+    PAGERDUTY_SOURCE_KIND,
     REPOSITORY_SOURCE_KIND,
+    SLACK_SOURCE_KIND,
     KnowledgeBaseSourceSpec,
     apply_repository_knowledge_base_retention,
     delete_repository_knowledge_base,
@@ -79,7 +81,8 @@ class DecisionService:
 
     def decide_change_impact(self, request: ChangeImpactRequest) -> DecisionRecord:
         repo_root = self._resolve_repo_root(request.repo_path)
-        ranked_hits = self._search(repo_root, request.change_summary, request.top_k)
+        query = self._decision_query(request.change_summary, request.diff_summary)
+        ranked_hits = self._search(repo_root, query, request.top_k)
         evidence_spans, twin_cases = self._split_hits(ranked_hits)
         focus_paths = request.changed_paths or [
             evidence.source
@@ -89,7 +92,7 @@ class DecisionService:
         blast_radius = self._compute_blast_radius(repo_root, focus_paths)
         return self._finalize_record(
             request_type="change-impact",
-            prompt=request.change_summary,
+            prompt=query,
             request_payload=request.model_dump(),
             evidence_spans=evidence_spans,
             twin_cases=twin_cases,
@@ -98,7 +101,8 @@ class DecisionService:
 
     def decide_action(self, request: ActionDecisionRequest) -> ActionDecisionResponse:
         repo_root = self._resolve_repo_root(request.repo_path)
-        ranked_hits = self._search(repo_root, request.action_summary, request.top_k)
+        query = self._decision_query(request.action_summary, request.diff_summary)
+        ranked_hits = self._search(repo_root, query, request.top_k)
         evidence_spans, twin_cases = self._split_hits(ranked_hits)
         focus_paths = request.changed_paths or [
             evidence.source
@@ -108,37 +112,38 @@ class DecisionService:
         blast_radius = self._compute_blast_radius(repo_root, focus_paths)
         record = self._finalize_record(
             request_type="action",
-            prompt=request.action_summary,
+            prompt=query,
             request_payload=request.model_dump(),
             evidence_spans=evidence_spans,
             twin_cases=twin_cases,
             blast_radius=blast_radius,
+            persist=False,
         )
+        policy_violations: list[str] = []
+        if request.safety_policy is not None:
+            record, policy_violations = self._apply_action_safety_policy(record, request.safety_policy)
+        self.audit_store.save(record)
         blocking_decisions = list(dict.fromkeys(request.block_on))
         allowed = record.decision not in set(blocking_decisions)
         failure_reason = None
         if not allowed:
-            failure_reason = (
-                f"Action blocked because Evidence Gate returned {record.decision.value} "
-                f"for the proposed change."
-            )
+            failure_reason = self._action_failure_reason(record.decision, policy_violations)
         return ActionDecisionResponse(
             allowed=allowed,
             status="allow" if allowed else "block",
             blocking_decisions=blocking_decisions,
             failure_reason=failure_reason,
+            policy_violations=policy_violations,
             decision_record=record,
         )
 
     def ingest_repository(self, request: KnowledgeBaseIngestRequest) -> KnowledgeBaseIngestResponse:
         repo_root = self._resolve_repo_root(request.repo_path)
         source_specs = self._build_ingest_source_specs(repo_root, request)
-        ingestors = self._build_ingestors(source_specs)
         materialization = materialize_repository_knowledge_base(
             repo_root,
             self.settings,
             force_refresh=request.refresh,
-            ingestors=ingestors,
             source_specs=source_specs,
         )
         return KnowledgeBaseIngestResponse(
@@ -300,51 +305,19 @@ class DecisionService:
         external_specs.sort(key=lambda source_spec: (source_spec.kind, source_spec.root.as_posix()))
         return (KnowledgeBaseSourceSpec(kind=REPOSITORY_SOURCE_KIND, root=repo_root), *external_specs)
 
-    def _build_ingestors(
-        self,
-        source_specs: tuple[KnowledgeBaseSourceSpec, ...],
-    ) -> list[BaseIngestor]:
-        ingestors: list[BaseIngestor] = []
-        for source_spec in source_specs:
-            if not source_spec.root.exists():
-                raise ValueError(f"Knowledge base source path does not exist: {source_spec.root}")
-            if not source_spec.root.is_dir():
-                raise ValueError(f"Knowledge base source path must be a directory: {source_spec.root}")
-            if source_spec.kind == REPOSITORY_SOURCE_KIND:
-                ingestors.append(
-                    LocalRepoIngestor(
-                        source_spec.root,
-                        exclude_relative_prefixes=self._artifact_relative_prefixes(source_spec.root),
-                    )
-                )
-                continue
-            if source_spec.kind == INCIDENT_SOURCE_KIND:
-                ingestors.append(MarkdownIncidentIngestor(source_spec.root))
-                continue
-            raise ValueError(f"Unsupported external source type: {source_spec.kind}")
-        return ingestors
-
     def _normalize_source_kind(self, source_kind: str) -> str:
         normalized = source_kind.strip().lower()
         if normalized in {INCIDENT_SOURCE_KIND, "incident"}:
             return INCIDENT_SOURCE_KIND
+        if normalized in {JIRA_SOURCE_KIND, "ticket", "tickets", "epic", "epics"}:
+            return JIRA_SOURCE_KIND
+        if normalized in {PAGERDUTY_SOURCE_KIND, "pager-duty", "pager_duty"}:
+            return PAGERDUTY_SOURCE_KIND
+        if normalized == SLACK_SOURCE_KIND:
+            return SLACK_SOURCE_KIND
+        if normalized in {CONFLUENCE_SOURCE_KIND, "architecture-docs", "architecture_docs", "wiki"}:
+            return CONFLUENCE_SOURCE_KIND
         raise ValueError(f"Unsupported external source type: {source_kind}")
-
-    def _artifact_relative_prefixes(self, repo_root: Path) -> tuple[str, ...]:
-        prefixes: set[str] = set()
-        for artifact_root in (self.settings.audit_root, self.settings.knowledge_root):
-            resolved_root = artifact_root.expanduser()
-            if not resolved_root.is_absolute():
-                resolved_root = Path.cwd() / resolved_root
-            resolved_root = resolved_root.resolve()
-            try:
-                relative = resolved_root.relative_to(repo_root)
-            except ValueError:
-                continue
-            relative_path = relative.as_posix()
-            if relative_path and relative_path != ".":
-                prefixes.add(relative_path)
-        return tuple(sorted(prefixes))
 
     def _search(self, repo_root: Path, query: str, top_k: int) -> list[SearchHit]:
         hits = search_repository(
@@ -423,8 +396,8 @@ class DecisionService:
         evidence_spans: list[EvidenceSpan],
         twin_cases: list[TwinCase],
         blast_radius: BlastRadius,
+        persist: bool = True,
     ) -> DecisionRecord:
-        average_score = mean(span.score for span in evidence_spans) if evidence_spans else 0.0
         support_score = (
             mean(sorted((span.score for span in evidence_spans), reverse=True)[:3])
             if evidence_spans
@@ -475,8 +448,87 @@ class DecisionService:
             explanation=explanation,
             request_payload=request_payload,
         )
-        self.audit_store.save(record)
+        if persist:
+            self.audit_store.save(record)
         return record
+
+    def _decision_query(self, summary: str, diff_summary: str | None) -> str:
+        if not diff_summary:
+            return summary
+        return f"{summary}\n\nDiff summary:\n{diff_summary}"
+
+    def _apply_action_safety_policy(
+        self,
+        record: DecisionRecord,
+        policy: ActionSafetyPolicy,
+    ) -> tuple[DecisionRecord, list[str]]:
+        policy_violations: list[str] = []
+        has_test_support = any(span.source_type == SourceType.TEST for span in record.evidence_spans)
+        has_runbook_support = any(span.source_type == SourceType.RUNBOOK for span in record.evidence_spans)
+        has_precedent = bool(record.twin_cases)
+        has_incident_precedent = any(twin.source_type == SourceType.INCIDENT for twin in record.twin_cases)
+
+        if (
+            policy.max_blast_radius_files is not None
+            and record.blast_radius.files > policy.max_blast_radius_files
+        ):
+            policy_violations.append(
+                f"Blast radius files {record.blast_radius.files} exceeded policy limit {policy.max_blast_radius_files}."
+            )
+        if policy.max_hazard is not None and record.hazard > policy.max_hazard:
+            policy_violations.append(
+                f"Hazard score {record.hazard:.2f} exceeded policy limit {policy.max_hazard:.2f}."
+            )
+        if policy.min_confidence is not None and record.confidence < policy.min_confidence:
+            policy_violations.append(
+                f"Confidence {record.confidence:.2f} fell below policy minimum {policy.min_confidence:.2f}."
+            )
+        if policy.require_test_evidence and not has_test_support:
+            policy_violations.append("Policy requires supporting test evidence.")
+        if policy.require_runbook_evidence and not has_runbook_support:
+            policy_violations.append("Policy requires runbook or operational evidence.")
+        if policy.require_precedent and not has_precedent:
+            policy_violations.append("Policy requires prior precedent.")
+        if policy.require_incident_precedent and not has_incident_precedent:
+            policy_violations.append("Policy requires prior incident precedent.")
+
+        if not policy_violations:
+            return record, []
+
+        missing_evidence = list(record.missing_evidence)
+        for violation in policy_violations:
+            note = f"Safety policy violation: {violation}"
+            if note not in missing_evidence:
+                missing_evidence.append(note)
+        explanation = (
+            f"{record.explanation} Safety policy violations: {' '.join(policy_violations)}"
+        )
+        answer_or_action = (
+            f"{record.answer_or_action} Safety policy violations: {' '.join(policy_violations)}"
+        )
+        return (
+            record.model_copy(
+                update={
+                    "decision": DecisionName.ESCALATE,
+                    "missing_evidence": missing_evidence,
+                    "explanation": explanation,
+                    "answer_or_action": answer_or_action,
+                }
+            ),
+            policy_violations,
+        )
+
+    def _action_failure_reason(
+        self,
+        decision: DecisionName,
+        policy_violations: list[str],
+    ) -> str:
+        if policy_violations:
+            return (
+                "Action blocked because Evidence Gate safety thresholds were violated: "
+                + "; ".join(policy_violations)
+            )
+        return f"Action blocked because Evidence Gate returned {decision.value} for the proposed change."
 
     def _build_missing_evidence(
         self,

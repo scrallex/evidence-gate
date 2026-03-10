@@ -14,8 +14,12 @@ from pathlib import Path
 from evidence_gate.config import Settings
 from evidence_gate.decision.models import ExternalMetadata, KnowledgeBaseExternalSource, SourceType
 from evidence_gate.ingest.base import BaseIngestor
+from evidence_gate.ingest.confluence_export import ConfluenceExportIngestor
+from evidence_gate.ingest.jira_export import JiraExportIngestor
 from evidence_gate.ingest.local_repo import LocalRepoIngestor
 from evidence_gate.ingest.markdown_incident import MarkdownIncidentIngestor
+from evidence_gate.ingest.pagerduty_incident import PagerDutyIncidentIngestor
+from evidence_gate.ingest.slack_incident import SlackIncidentIngestor
 from evidence_gate.retrieval.repository import (
     DocumentRecord,
     SearchHit,
@@ -30,7 +34,29 @@ KB_FORMAT_VERSION = 2
 MAX_IN_MEMORY_KB = 8
 REPOSITORY_SOURCE_KIND = "repo"
 INCIDENT_SOURCE_KIND = "incidents"
-SUPPORTED_EXTERNAL_SOURCE_KINDS = frozenset({INCIDENT_SOURCE_KIND, "incident"})
+JIRA_SOURCE_KIND = "jira"
+PAGERDUTY_SOURCE_KIND = "pagerduty"
+SLACK_SOURCE_KIND = "slack"
+CONFLUENCE_SOURCE_KIND = "confluence"
+SUPPORTED_EXTERNAL_SOURCE_KINDS = frozenset(
+    {
+        INCIDENT_SOURCE_KIND,
+        "incident",
+        JIRA_SOURCE_KIND,
+        "ticket",
+        "tickets",
+        "epic",
+        "epics",
+        PAGERDUTY_SOURCE_KIND,
+        "pager-duty",
+        "pager_duty",
+        SLACK_SOURCE_KIND,
+        CONFLUENCE_SOURCE_KIND,
+        "architecture-docs",
+        "architecture_docs",
+        "wiki",
+    }
+)
 _KB_CACHE: dict[tuple[tuple[str, ...], str, str], "RepositoryKnowledgeBase"] = {}
 
 
@@ -832,7 +858,16 @@ def _canonical_source_kind(kind: str) -> str:
     if normalized in {REPOSITORY_SOURCE_KIND, "repository"}:
         return REPOSITORY_SOURCE_KIND
     if normalized in SUPPORTED_EXTERNAL_SOURCE_KINDS:
-        return INCIDENT_SOURCE_KIND
+        if normalized in {INCIDENT_SOURCE_KIND, "incident"}:
+            return INCIDENT_SOURCE_KIND
+        if normalized in {JIRA_SOURCE_KIND, "ticket", "tickets", "epic", "epics"}:
+            return JIRA_SOURCE_KIND
+        if normalized in {PAGERDUTY_SOURCE_KIND, "pager-duty", "pager_duty"}:
+            return PAGERDUTY_SOURCE_KIND
+        if normalized == SLACK_SOURCE_KIND:
+            return SLACK_SOURCE_KIND
+        if normalized in {CONFLUENCE_SOURCE_KIND, "architecture-docs", "architecture_docs", "wiki"}:
+            return CONFLUENCE_SOURCE_KIND
     return normalized
 
 
@@ -958,6 +993,18 @@ def _build_ingestors_for_source_specs(
             continue
         if source_spec.kind == INCIDENT_SOURCE_KIND:
             ingestors.append(MarkdownIncidentIngestor(root))
+            continue
+        if source_spec.kind == JIRA_SOURCE_KIND:
+            ingestors.append(JiraExportIngestor(root))
+            continue
+        if source_spec.kind == PAGERDUTY_SOURCE_KIND:
+            ingestors.append(PagerDutyIncidentIngestor(root))
+            continue
+        if source_spec.kind == SLACK_SOURCE_KIND:
+            ingestors.append(SlackIncidentIngestor(root))
+            continue
+        if source_spec.kind == CONFLUENCE_SOURCE_KIND:
+            ingestors.append(ConfluenceExportIngestor(root))
             continue
         raise ValueError(f"Unsupported external source type: {source_spec.kind}")
     return ingestors

@@ -36,6 +36,23 @@ allow-or-block decision when needed.
 - `refresh`
 - `external_sources`
 
+Supported `external_sources` types:
+
+- `incidents`
+- `jira`
+- `pagerduty`
+- `slack`
+- `confluence`
+
+`evidence_gate_decide_change_impact` also accepts:
+
+- `diff_summary`
+
+`evidence_gate_decide_action` also accepts:
+
+- `diff_summary`
+- `safety_policy`
+
 Example mixed-source ingest payload:
 
 ```json
@@ -43,8 +60,16 @@ Example mixed-source ingest payload:
   "repo_path": "/absolute/path/to/repo",
   "external_sources": [
     {
-      "type": "incidents",
-      "path": "/absolute/path/to/incidents"
+      "type": "pagerduty",
+      "path": "/absolute/path/to/pagerduty"
+    },
+    {
+      "type": "jira",
+      "path": "/absolute/path/to/jira"
+    },
+    {
+      "type": "confluence",
+      "path": "/absolute/path/to/confluence"
     }
   ]
 }
@@ -182,12 +207,14 @@ Example remote or local HTTP entry:
 For risky engineering edits:
 
 1. Call `evidence_gate_decide_change_impact` first when the user wants blast radius, citations, or planning help.
-2. Call `evidence_gate_decide_action` only when the user wants a strict allow-or-block judgment.
-3. If the decision is `abstain` or `escalate`, do not call the change safe.
-4. Surface the missing evidence and cite the strongest evidence spans.
-5. Inspect any returned PR or incident twins before continuing.
-6. Ingest external incident exports before asking questions that depend on them.
-7. If the agent is evaluating the same repo that hosts the Evidence Gate runtime, keep audit and knowledge-base roots outside that repo.
+2. Pass `diff_summary` whenever a code review, PR, or patch already has a concrete diff summary available.
+3. Call `evidence_gate_decide_action` only when the user wants a strict allow-or-block judgment.
+4. Use `safety_policy` only when the caller intends to enforce explicit CI or delivery thresholds.
+5. If the decision is `abstain` or `escalate`, do not call the change safe.
+6. Surface the missing evidence and cite the strongest evidence spans.
+7. Inspect any returned PR or incident twins before continuing.
+8. Ingest external exports before asking questions that depend on them.
+9. If the agent is evaluating the same repo that hosts the Evidence Gate runtime, keep audit and knowledge-base roots outside that repo.
 
 ## Troubleshooting
 

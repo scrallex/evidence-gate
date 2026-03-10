@@ -49,6 +49,38 @@ def _build_sample_repo(root: Path) -> None:
     )
 
 
+def _build_billing_repo(root: Path) -> None:
+    _write(
+        root / "services" / "billing.py",
+        "from services.gateway import authorize_charge\n\n"
+        "def submit_invoice(amount: int) -> str:\n"
+        "    return authorize_charge(amount)\n",
+    )
+    _write(
+        root / "services" / "gateway.py",
+        "def authorize_charge(amount: int) -> str:\n"
+        "    return 'ok'\n",
+    )
+    _write(
+        root / "tests" / "test_billing.py",
+        "from services.billing import submit_invoice\n\n"
+        "def test_submit_invoice() -> None:\n"
+        "    assert submit_invoice(100) == 'ok'\n",
+    )
+    _write(
+        root / "docs" / "billing.md",
+        "# Billing\n\nBilling changes affect duplicate-charge safeguards, refunds, and rollback flows.\n",
+    )
+    _write(
+        root / "runbooks" / "billing_rollback.md",
+        "# Billing rollback\n\nDisable retries and run the billing rollback when duplicate-charge guards fail.\n",
+    )
+    _write(
+        root / "prs" / "pr_2201.md",
+        "# PR 2201\n\nHardened billing duplicate-charge safeguards during a prior rollout.\n",
+    )
+
+
 def test_health_endpoint() -> None:
     get_settings.cache_clear()
     get_audit_store.cache_clear()
@@ -239,6 +271,82 @@ def test_knowledge_base_ingest_endpoint_supports_external_incident_sources(
     assert decision.status_code == 200
     payload = decision.json()
     assert any(twin["source"] == "external_incidents/incident_1842.md" for twin in payload["twin_cases"])
+
+
+def test_action_decision_endpoint_enforces_safety_policy_with_external_connector_context(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    repo_root = tmp_path / "billing_repo"
+    pagerduty_root = tmp_path / "pagerduty"
+    audit_root = tmp_path / "audit"
+    kb_root = tmp_path / "knowledge_bases"
+    _build_billing_repo(repo_root)
+    _write(
+        pagerduty_root / "incidents.json",
+        (
+            '[{"incident_number": 4417, "title": "Billing duplicate-charge incident", '
+            '"description": "Duplicate-charge safeguards failed after a billing authorization change.", '
+            '"status": "resolved", "service": {"summary": "billing"}, '
+            '"html_url": "https://pagerduty.example.com/incidents/4417", '
+            '"created_at": "2026-03-10T12:00:00+00:00"}]'
+        ),
+    )
+
+    monkeypatch.setenv("EVIDENCE_GATE_AUDIT_ROOT", str(audit_root))
+    monkeypatch.setenv("EVIDENCE_GATE_KB_ROOT", str(kb_root))
+    get_settings.cache_clear()
+    get_audit_store.cache_clear()
+    get_decision_service.cache_clear()
+
+    client = TestClient(create_app())
+
+    built = client.post(
+        "/v1/knowledge-bases/ingest",
+        json={
+            "repo_path": str(repo_root),
+            "external_sources": [
+                {
+                    "type": "pagerduty",
+                    "path": str(pagerduty_root),
+                }
+            ],
+        },
+    )
+    assert built.status_code == 200
+
+    blocked = client.post(
+        "/v1/decide/action",
+        json={
+            "repo_path": str(repo_root),
+            "action_summary": "Review the billing service PR before merge.",
+            "changed_paths": ["services/billing.py"],
+            "diff_summary": "Removed duplicate-charge safeguards from the billing authorization flow.",
+            "top_k": 10,
+            "safety_policy": {
+                "max_blast_radius_files": 1,
+                "require_test_evidence": True,
+                "require_precedent": True,
+                "require_incident_precedent": True,
+            },
+        },
+    )
+    assert blocked.status_code == 403
+    payload = blocked.json()
+    assert payload["allowed"] is False
+    assert payload["status"] == "block"
+    assert payload["decision_record"]["decision"] == "escalate"
+    assert payload["failure_reason"].startswith(
+        "Action blocked because Evidence Gate safety thresholds were violated:"
+    )
+    assert any("Blast radius files" in violation for violation in payload["policy_violations"])
+    assert any(
+        twin["source"].startswith("external_pagerduty/")
+        for twin in payload["decision_record"]["twin_cases"]
+    )
+    assert payload["decision_record"]["request_payload"]["diff_summary"] == (
+        "Removed duplicate-charge safeguards from the billing authorization flow."
+    )
 
 
 def test_knowledge_base_status_and_listing_endpoints(tmp_path: Path, monkeypatch) -> None:

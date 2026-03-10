@@ -46,14 +46,82 @@ jobs:
               handle.write(f"paths={json.dumps(paths)}\n")
           PY
 
+      - name: Build guardrail inputs
+        id: gate_inputs
+        shell: bash
+        env:
+          CHANGED_PATHS_JSON: ${{ steps.diff.outputs.paths }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          changed_paths = json.loads(os.environ["CHANGED_PATHS_JSON"])
+          strict_prefixes = (
+              "app/evidence_gate/decision/",
+              "app/evidence_gate/ingest/",
+              "app/evidence_gate/mcp/",
+              "app/evidence_gate/retrieval/",
+              ".github/workflows/",
+              "scripts/run_action_guardrail.py",
+              "action.yml",
+          )
+          strict_mode = any(path.startswith(strict_prefixes) for path in changed_paths)
+
+          safety_policy = {
+              "max_blast_radius_files": 15 if strict_mode else 30,
+              "max_hazard": 0.55 if strict_mode else 0.75,
+              "min_confidence": 0.45 if strict_mode else 0.30,
+              "require_test_evidence": strict_mode,
+              "require_precedent": strict_mode,
+          }
+
+          external_sources = []
+          export_roots = [
+              ("incidents", Path("exports/incidents")),
+              ("jira", Path("exports/jira")),
+              ("pagerduty", Path("exports/pagerduty")),
+              ("slack", Path("exports/slack")),
+              ("confluence", Path("exports/confluence")),
+          ]
+          for source_type, root in export_roots:
+              if root.is_dir():
+                  external_sources.append(
+                      {
+                          "type": source_type,
+                          "path": f"/workspace/target/{root.as_posix()}",
+                      }
+                  )
+
+          github_output = Path(os.environ["GITHUB_OUTPUT"])
+          with github_output.open("a", encoding="utf-8") as handle:
+              handle.write(
+                  "safety_policy="
+                  + json.dumps(safety_policy, separators=(",", ":"))
+                  + "\n"
+              )
+              handle.write(
+                  "external_sources="
+                  + json.dumps(external_sources, separators=(",", ":"))
+                  + "\n"
+              )
+              handle.write(f"strict_mode={'true' if strict_mode else 'false'}\n")
+          PY
+
       - name: Run Evidence Gate
         id: evidence_gate
         uses: scrallex/evidence-gate@evidence-gate
         with:
           action_summary: >-
             Pull request #${{ github.event.pull_request.number }}:
-            ${{ github.event.pull_request.title }}
+            ${{ github.event.pull_request.title }}.
+            Evaluate the diff as an active merge gate and block if the safety policy is violated.
           changed_paths: ${{ steps.diff.outputs.paths }}
+          base_sha: ${{ github.event.pull_request.base.sha }}
+          head_sha: ${{ github.event.pull_request.head.sha }}
+          external_sources: ${{ steps.gate_inputs.outputs.external_sources }}
+          safety_policy: ${{ steps.gate_inputs.outputs.safety_policy }}
           fail_on_block: "false"
 
       - name: Upsert Evidence Gate PR comment

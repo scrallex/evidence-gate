@@ -99,9 +99,9 @@ systems engineering teams already use.
 
 Tasks:
 
-1. Add connectors for Jira tickets and change records.
-2. Add connectors for PagerDuty or Slack incident history.
-3. Add connectors for Confluence or architecture documentation stores.
+1. Operationalize the live Jira export ingestor in CI and partner evaluation flows.
+2. Operationalize the live PagerDuty and Slack incident ingestors in CI and partner evaluation flows.
+3. Operationalize the live Confluence export ingestor for architecture corpora.
 4. Link code-change blast radius to external incident and decision evidence.
 5. Recalibrate the decision policy on multi-source enterprise corpora.
 
@@ -135,7 +135,7 @@ Use the same contract to gate pull requests or automation actions in CI.
 
 - action gating beyond change-impact questions
 - broader operational and incident intelligence
-- stronger enterprise connectors
+- stronger partner-ready enterprise ingestion and sync paths
 
 ## What to say no to
 

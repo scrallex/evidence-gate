@@ -8,6 +8,26 @@ inputs:
   changed_paths:
     description: JSON array of changed file paths from the PR diff.
     required: true
+  diff_summary:
+    description: Optional diff summary text to feed into the action decision.
+    required: false
+    default: ""
+  base_sha:
+    description: Optional base git SHA used to compute a diff summary automatically when diff_summary is empty.
+    required: false
+    default: ""
+  head_sha:
+    description: Optional head git SHA used to compute a diff summary automatically when diff_summary is empty.
+    required: false
+    default: ""
+  external_sources:
+    description: JSON array of external source objects to ingest before gating.
+    required: false
+    default: "[]"
+  safety_policy:
+    description: JSON object describing explicit safety thresholds for the action gate.
+    required: false
+    default: ""
   repo_path:
     description: Repository path visible to the Evidence Gate service. Defaults to /workspace/target when start_service=true.
     required: false
@@ -20,6 +40,14 @@ inputs:
     description: Start the bundled Dockerized Evidence Gate service before evaluating the action.
     required: false
     default: "true"
+  ingest_before_action:
+    description: Ingest the repository before calling the action decision endpoint.
+    required: false
+    default: "true"
+  refresh_knowledge_base:
+    description: Force-refresh the knowledge base during the ingest step.
+    required: false
+    default: "false"
   fail_on_block:
     description: Fail the action when Evidence Gate blocks the proposed action.
     required: false
@@ -44,6 +72,12 @@ outputs:
   comment_path:
     description: Path to the formatted PR comment markdown on the runner.
     value: ${{ steps.guard.outputs.comment_path }}
+  ingest_status:
+    description: Knowledge-base ingest status returned before the action decision.
+    value: ${{ steps.guard.outputs.ingest_status }}
+  repo_fingerprint:
+    description: Repository fingerprint returned by the ingest step.
+    value: ${{ steps.guard.outputs.repo_fingerprint }}
 
 branding:
   icon: check-circle
@@ -84,9 +118,16 @@ runs:
       env:
         ACTION_SUMMARY: ${{ inputs.action_summary }}
         CHANGED_PATHS_JSON: ${{ inputs.changed_paths }}
+        DIFF_SUMMARY_INPUT: ${{ inputs.diff_summary }}
+        BASE_SHA: ${{ inputs.base_sha }}
+        HEAD_SHA: ${{ inputs.head_sha }}
+        EXTERNAL_SOURCES_JSON: ${{ inputs.external_sources }}
+        SAFETY_POLICY_JSON: ${{ inputs.safety_policy }}
         REPO_PATH_INPUT: ${{ inputs.repo_path }}
         API_URL: ${{ inputs.api_url }}
         START_SERVICE: ${{ inputs.start_service }}
+        INGEST_BEFORE_ACTION: ${{ inputs.ingest_before_action }}
+        REFRESH_KNOWLEDGE_BASE: ${{ inputs.refresh_knowledge_base }}
         FAIL_ON_BLOCK: ${{ inputs.fail_on_block }}
       run: |
         set -euo pipefail
@@ -99,9 +140,30 @@ runs:
           exit 1
         fi
 
+        DIFF_SUMMARY="$DIFF_SUMMARY_INPUT"
+        if [ -z "$DIFF_SUMMARY" ] && [ -n "$BASE_SHA" ] && [ -n "$HEAD_SHA" ]; then
+          DIFF_SUMMARY=$(python - <<'PY'
+import os
+import subprocess
+
+summary = subprocess.check_output(
+    ["git", "diff", "--stat", "--unified=0", f"{os.environ['BASE_SHA']}..{os.environ['HEAD_SHA']}"],
+    text=True,
+).strip()
+print(summary)
+PY
+)
+        fi
+
         EXTRA_ARGS=()
         if [ "$FAIL_ON_BLOCK" = "true" ]; then
           EXTRA_ARGS+=(--fail-on-block)
+        fi
+        if [ "$INGEST_BEFORE_ACTION" != "true" ]; then
+          EXTRA_ARGS+=(--skip-ingest)
+        fi
+        if [ "$REFRESH_KNOWLEDGE_BASE" = "true" ]; then
+          EXTRA_ARGS+=(--refresh-knowledge-base)
         fi
 
         python "$GITHUB_ACTION_PATH/scripts/run_action_guardrail.py" \
@@ -109,6 +171,9 @@ runs:
           --repo-path "$REPO_PATH" \
           --action-summary "$ACTION_SUMMARY" \
           --changed-paths-json "$CHANGED_PATHS_JSON" \
+          --external-sources-json "$EXTERNAL_SOURCES_JSON" \
+          --diff-summary "$DIFF_SUMMARY" \
+          --safety-policy-json "$SAFETY_POLICY_JSON" \
           --output "$RUNNER_TEMP/evidence-gate-action.json" \
           --comment-output "$RUNNER_TEMP/evidence-gate-comment.md" \
           --github-output "$GITHUB_OUTPUT" \

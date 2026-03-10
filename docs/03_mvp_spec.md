@@ -104,7 +104,7 @@ admitting only when evidence is structurally supported.
 
 - CI packaging and required-check integrations
 - multi-tenant auth, production controls, and deployment hardening
-- external connectors such as Jira, PagerDuty, Slack, and Confluence
+- hosted sync to Jira, PagerDuty, Slack, and Confluence APIs beyond mounted export ingestion
 - multi-corpus evaluation beyond the checked-in FastAPI slice
 
 ## Implemented endpoints

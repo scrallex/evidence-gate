@@ -59,8 +59,8 @@ Successful ingest returns:
 - `document_count`
 - `span_count`
 
-If you have incident or postmortem exports available inside the container, you
-can include them during ingest:
+If you have exported incidents, tickets, chat history, or architecture docs
+available inside the container, include them during ingest:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/v1/knowledge-bases/ingest \
@@ -68,7 +68,10 @@ curl -X POST http://127.0.0.1:8000/v1/knowledge-bases/ingest \
   -d '{
     "repo_path": "/workspace/target",
     "external_sources": [
-      {"type": "incidents", "path": "/workspace/incidents"}
+      {"type": "pagerduty", "path": "/workspace/pagerduty"},
+      {"type": "jira", "path": "/workspace/jira"},
+      {"type": "slack", "path": "/workspace/slack"},
+      {"type": "confluence", "path": "/workspace/confluence"}
     ]
   }'
 ```
@@ -140,16 +143,18 @@ The repo ships a root [action.yml](/sep/evidence-gate/action.yml) that:
 
 - starts the Dockerized Evidence Gate service in CI
 - mounts the checked-out repo at `/workspace/target`
-- calls `POST /v1/decide/action`
+- optionally ingests mounted external corpora before gating
+- computes a diff summary from `base_sha` and `head_sha` when available
+- calls `POST /v1/decide/action` with optional `safety_policy`
 - writes a formatted PR comment markdown file
 - optionally fails the workflow when the action is blocked
 
-Today, the composite action evaluates the checked-out repository surface. If
-you need external incident corpora in CI, pre-ingest them through the API or
-point the action at an already-running Evidence Gate service that can see those
-paths.
+The action can ingest any mounted export directory that the container or target
+service can see through `external_sources`. If those corpora live outside the
+checkout, mount them into the runner or point the action at an already-running
+Evidence Gate service that can see those paths.
 
-Minimal usage example:
+Billing-style merge gate example:
 
 ```yaml
 jobs:
@@ -184,9 +189,26 @@ jobs:
       - id: evidence_gate
         uses: scrallex/evidence-gate@evidence-gate
         with:
-          action_summary: "Review the auth/session PR before merge"
+          action_summary: "Review the billing PR before merge"
           changed_paths: ${{ steps.diff.outputs.paths }}
+          base_sha: ${{ github.event.pull_request.base.sha }}
+          head_sha: ${{ github.event.pull_request.head.sha }}
+          external_sources: >-
+            [
+              {"type":"jira","path":"/workspace/target/exports/jira"},
+              {"type":"pagerduty","path":"/workspace/target/exports/pagerduty"},
+              {"type":"slack","path":"/workspace/target/exports/slack"},
+              {"type":"confluence","path":"/workspace/target/exports/confluence"}
+            ]
+          safety_policy: >-
+            {"max_blast_radius_files":6,"max_hazard":0.45,"min_confidence":0.55,"require_test_evidence":true,"require_precedent":true,"require_incident_precedent":true}
           fail_on_block: "false"
+      - name: Enforce guardrail decision
+        if: ${{ steps.evidence_gate.outputs.allowed != 'true' }}
+        shell: bash
+        run: |
+          echo "Evidence Gate blocked this pull request." >&2
+          exit 1
 ```
 
 The action exposes:
@@ -196,6 +218,8 @@ The action exposes:
 - `decision_id`
 - `response_path`
 - `comment_path`
+- `ingest_status`
+- `repo_fingerprint`
 
 In this repository, the same pattern is already wired in
 [evidence-gate-guardrail.yml](/sep/evidence-gate/.github/workflows/evidence-gate-guardrail.yml).

@@ -3,8 +3,11 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from evidence_gate.decision.models import (
+    ActionDecisionRequest,
     ActionDecisionResponse,
+    ActionSafetyPolicy,
     BlastRadius,
+    ChangeImpactRequest,
     DecisionName,
     DecisionRecord,
     EvidenceSpan,
@@ -89,6 +92,7 @@ def test_action_decision_response_round_trip() -> None:
         status="block",
         blocking_decisions=[DecisionName.ABSTAIN, DecisionName.ESCALATE],
         failure_reason="Action blocked because Evidence Gate returned escalate for the proposed change.",
+        policy_violations=["Blast radius files 7 exceeded policy limit 3."],
         decision_record=record,
     )
 
@@ -96,7 +100,41 @@ def test_action_decision_response_round_trip() -> None:
 
     assert restored.allowed is False
     assert restored.status == "block"
+    assert restored.policy_violations == ["Blast radius files 7 exceeded policy limit 3."]
     assert restored.decision_record.request_type == "action"
+
+
+def test_action_and_change_requests_round_trip_with_diff_summary_and_safety_policy() -> None:
+    action_request = ActionDecisionRequest(
+        repo_path="/repo",
+        action_summary="Review the billing change before merge.",
+        changed_paths=["services/billing.py"],
+        diff_summary="Removed duplicate-charge safeguards from the billing authorization flow.",
+        safety_policy=ActionSafetyPolicy(
+            max_blast_radius_files=3,
+            min_confidence=0.65,
+            require_test_evidence=True,
+            require_incident_precedent=True,
+        ),
+    )
+    restored_action = ActionDecisionRequest.model_validate_json(action_request.model_dump_json())
+
+    assert restored_action.diff_summary is not None
+    assert "duplicate-charge safeguards" in restored_action.diff_summary
+    assert restored_action.safety_policy is not None
+    assert restored_action.safety_policy.max_blast_radius_files == 3
+    assert restored_action.safety_policy.require_incident_precedent is True
+
+    change_request = ChangeImpactRequest(
+        repo_path="/repo",
+        change_summary="Assess the billing blast radius.",
+        changed_paths=["services/billing.py"],
+        diff_summary="Touched the duplicate-charge guard and ledger writer.",
+    )
+    restored_change = ChangeImpactRequest.model_validate_json(change_request.model_dump_json())
+
+    assert restored_change.changed_paths == ["services/billing.py"]
+    assert restored_change.diff_summary == "Touched the duplicate-charge guard and ledger writer."
 
 
 def test_knowledge_base_ingest_request_round_trip_with_external_sources() -> None:
