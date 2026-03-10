@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -71,6 +72,16 @@ class RepositoryKnowledgeBaseStatus:
     document_count: int
     span_count: int
     settings_match: bool
+
+
+@dataclass(slots=True)
+class RepositoryKnowledgeBaseRemoval:
+    repo_root: Path
+    cache_dir: Path
+    action: str
+    previous_status: str | None
+    document_count: int
+    span_count: int
 
 
 @dataclass(slots=True)
@@ -226,6 +237,75 @@ def list_repository_knowledge_bases(settings: Settings) -> list[RepositoryKnowle
     return statuses
 
 
+def delete_repository_knowledge_base(
+    repo_root: Path,
+    settings: Settings,
+    *,
+    dry_run: bool = False,
+) -> RepositoryKnowledgeBaseRemoval:
+    repo_root = repo_root.resolve()
+    cache_dir = _cache_dir_for_repo(repo_root, settings)
+    manifest = _load_repository_knowledge_base_manifest(cache_dir)
+
+    previous_status: str | None = "missing"
+    document_count = 0
+    span_count = 0
+    if manifest is not None:
+        snapshot = None
+        if manifest.repo_root.exists() and manifest.repo_root.is_dir():
+            snapshot = _snapshot_for_status(manifest.repo_root, settings)
+        status = _status_from_manifest(manifest, settings, snapshot)
+        previous_status = status.status
+        document_count = status.document_count
+        span_count = status.span_count
+
+    if not cache_dir.exists():
+        return RepositoryKnowledgeBaseRemoval(
+            repo_root=repo_root,
+            cache_dir=cache_dir,
+            action="missing",
+            previous_status=previous_status,
+            document_count=document_count,
+            span_count=span_count,
+        )
+
+    if dry_run:
+        action = "would_delete"
+    else:
+        shutil.rmtree(cache_dir)
+        _evict_in_memory_cache_for_repo(repo_root)
+        action = "deleted"
+
+    return RepositoryKnowledgeBaseRemoval(
+        repo_root=repo_root,
+        cache_dir=cache_dir,
+        action=action,
+        previous_status=previous_status,
+        document_count=document_count,
+        span_count=span_count,
+    )
+
+
+def prune_repository_knowledge_bases(
+    settings: Settings,
+    *,
+    stale_only: bool = True,
+    dry_run: bool = False,
+) -> list[RepositoryKnowledgeBaseRemoval]:
+    removals: list[RepositoryKnowledgeBaseRemoval] = []
+    for status in list_repository_knowledge_bases(settings):
+        if stale_only and status.status != "stale":
+            continue
+        removals.append(
+            delete_repository_knowledge_base(
+                status.repo_root,
+                settings,
+                dry_run=dry_run,
+            )
+        )
+    return removals
+
+
 def search_repository(
     repo_root: Path,
     *,
@@ -319,6 +399,13 @@ def _store_in_memory_cache(
     if len(_KB_CACHE) >= MAX_IN_MEMORY_KB:
         _KB_CACHE.clear()
     _KB_CACHE[cache_key] = knowledge_base
+
+
+def _evict_in_memory_cache_for_repo(repo_root: Path) -> None:
+    repo_key = str(repo_root.resolve())
+    stale_keys = [cache_key for cache_key in _KB_CACHE if cache_key[0] == repo_key]
+    for cache_key in stale_keys:
+        _KB_CACHE.pop(cache_key, None)
 
 
 def _artifact_relative_prefixes(repo_root: Path, settings: Settings) -> tuple[str, ...]:

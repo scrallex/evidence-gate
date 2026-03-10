@@ -38,7 +38,9 @@ Key endpoints:
 - `GET /health`
 - `GET /v1/knowledge-bases`
 - `GET /v1/knowledge-bases/status?repo_path=...`
+- `DELETE /v1/knowledge-bases?repo_path=...`
 - `POST /v1/knowledge-bases/ingest`
+- `POST /v1/knowledge-bases/prune`
 - `POST /v1/decide/query`
 - `POST /v1/decide/change-impact`
 - `GET /v1/decisions/{id}`

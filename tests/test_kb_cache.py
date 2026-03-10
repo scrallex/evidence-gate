@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
 import evidence_gate.retrieval.structural as structural
 from evidence_gate.config import Settings
 from evidence_gate.retrieval.structural import (
     clear_repository_knowledge_base_cache,
+    delete_repository_knowledge_base,
     get_repository_knowledge_base_status,
     list_repository_knowledge_bases,
     materialize_repository_knowledge_base,
+    prune_repository_knowledge_bases,
     search_repository,
 )
 
@@ -171,3 +174,54 @@ def test_repository_kb_status_and_listing_track_freshness(tmp_path: Path) -> Non
     stale = get_repository_knowledge_base_status(repo_root, settings)
     assert stale.status == "stale"
     assert stale.current_repo_fingerprint != stale.cached_repo_fingerprint
+
+
+def test_repository_kb_delete_removes_cache_for_missing_repo(tmp_path: Path) -> None:
+    repo_root = tmp_path / "sample_repo"
+    kb_root = tmp_path / "knowledge_bases"
+    _build_sample_repo(repo_root)
+    settings = Settings(knowledge_root=kb_root, audit_root=tmp_path / "audit")
+
+    clear_repository_knowledge_base_cache()
+    built = materialize_repository_knowledge_base(repo_root, settings)
+    assert built.cache_dir.exists()
+
+    shutil.rmtree(repo_root)
+
+    removal = delete_repository_knowledge_base(repo_root, settings)
+    assert removal.action == "deleted"
+    assert removal.previous_status == "stale"
+    assert not built.cache_dir.exists()
+
+
+def test_repository_kb_prune_stale_only_supports_dry_run(tmp_path: Path) -> None:
+    ready_repo = tmp_path / "ready_repo"
+    stale_repo = tmp_path / "stale_repo"
+    kb_root = tmp_path / "knowledge_bases"
+    settings = Settings(knowledge_root=kb_root, audit_root=tmp_path / "audit")
+
+    _build_sample_repo(ready_repo)
+    _build_sample_repo(stale_repo)
+
+    clear_repository_knowledge_base_cache()
+    ready_materialization = materialize_repository_knowledge_base(ready_repo, settings)
+    stale_materialization = materialize_repository_knowledge_base(stale_repo, settings)
+
+    (stale_repo / "docs" / "auth.md").write_text(
+        "# Auth\n\nStale cache signal for prune testing.\n",
+        encoding="utf-8",
+    )
+
+    dry_run = prune_repository_knowledge_bases(settings, stale_only=True, dry_run=True)
+    assert len(dry_run) == 1
+    assert dry_run[0].action == "would_delete"
+    assert dry_run[0].previous_status == "stale"
+    assert ready_materialization.cache_dir.exists()
+    assert stale_materialization.cache_dir.exists()
+
+    removed = prune_repository_knowledge_bases(settings, stale_only=True, dry_run=False)
+    assert len(removed) == 1
+    assert removed[0].action == "deleted"
+    assert removed[0].previous_status == "stale"
+    assert ready_materialization.cache_dir.exists()
+    assert not stale_materialization.cache_dir.exists()

@@ -194,3 +194,61 @@ def test_knowledge_base_status_and_listing_endpoints(tmp_path: Path, monkeypatch
     stale_payload = stale.json()
     assert stale_payload["status"] == "stale"
     assert stale_payload["cached_repo_fingerprint"] != stale_payload["current_repo_fingerprint"]
+
+
+def test_knowledge_base_delete_and_prune_endpoints(tmp_path: Path, monkeypatch) -> None:
+    ready_repo = tmp_path / "ready_repo"
+    stale_repo = tmp_path / "stale_repo"
+    audit_root = tmp_path / "audit"
+    kb_root = tmp_path / "knowledge_bases"
+    _build_sample_repo(ready_repo)
+    _build_sample_repo(stale_repo)
+
+    monkeypatch.setenv("EVIDENCE_GATE_AUDIT_ROOT", str(audit_root))
+    monkeypatch.setenv("EVIDENCE_GATE_KB_ROOT", str(kb_root))
+    get_settings.cache_clear()
+    get_audit_store.cache_clear()
+    get_decision_service.cache_clear()
+
+    client = TestClient(create_app())
+
+    ready_built = client.post("/v1/knowledge-bases/ingest", json={"repo_path": str(ready_repo)})
+    stale_built = client.post("/v1/knowledge-bases/ingest", json={"repo_path": str(stale_repo)})
+    assert ready_built.status_code == 200
+    assert stale_built.status_code == 200
+
+    (stale_repo / "docs" / "auth.md").write_text(
+        "# Auth\n\nThis repo is intentionally stale for prune endpoint coverage.\n",
+        encoding="utf-8",
+    )
+
+    dry_run = client.post(
+        "/v1/knowledge-bases/prune",
+        json={"stale_only": True, "dry_run": True},
+    )
+    assert dry_run.status_code == 200
+    dry_run_payload = dry_run.json()
+    assert dry_run_payload["removed_count"] == 1
+    assert dry_run_payload["results"][0]["action"] == "would_delete"
+    assert Path(dry_run_payload["results"][0]["knowledge_base_path"]).exists()
+
+    pruned = client.post(
+        "/v1/knowledge-bases/prune",
+        json={"stale_only": True, "dry_run": False},
+    )
+    assert pruned.status_code == 200
+    pruned_payload = pruned.json()
+    assert pruned_payload["removed_count"] == 1
+    assert pruned_payload["results"][0]["action"] == "deleted"
+    assert not Path(pruned_payload["results"][0]["knowledge_base_path"]).exists()
+
+    delete_ready = client.delete("/v1/knowledge-bases", params={"repo_path": str(ready_repo)})
+    assert delete_ready.status_code == 200
+    delete_ready_payload = delete_ready.json()
+    assert delete_ready_payload["action"] == "deleted"
+    assert delete_ready_payload["previous_status"] == "ready"
+    assert not Path(delete_ready_payload["knowledge_base_path"]).exists()
+
+    delete_missing = client.delete("/v1/knowledge-bases", params={"repo_path": str(ready_repo)})
+    assert delete_missing.status_code == 200
+    assert delete_missing.json()["action"] == "missing"

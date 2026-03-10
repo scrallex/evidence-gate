@@ -103,6 +103,27 @@ class KnowledgeBaseListResponse(BaseModel):
     knowledge_bases: list[KnowledgeBaseStatusResponse] = Field(default_factory=list)
 
 
+class KnowledgeBaseRemovalResponse(BaseModel):
+    repo_path: str
+    knowledge_base_path: str
+    action: Literal["deleted", "missing", "would_delete"]
+    previous_status: Literal["ready", "stale", "missing"] | None = None
+    document_count: int = Field(ge=0)
+    span_count: int = Field(ge=0)
+
+
+class KnowledgeBasePruneRequest(BaseModel):
+    stale_only: bool = True
+    dry_run: bool = False
+
+
+class KnowledgeBasePruneResponse(BaseModel):
+    stale_only: bool
+    dry_run: bool
+    removed_count: int = Field(ge=0)
+    results: list[KnowledgeBaseRemovalResponse] = Field(default_factory=list)
+
+
 class DecisionRecord(BaseModel):
     decision_id: str
     created_at: datetime

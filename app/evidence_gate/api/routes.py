@@ -11,6 +11,9 @@ from evidence_gate.decision.models import (
     KnowledgeBaseIngestRequest,
     KnowledgeBaseIngestResponse,
     KnowledgeBaseListResponse,
+    KnowledgeBasePruneRequest,
+    KnowledgeBasePruneResponse,
+    KnowledgeBaseRemovalResponse,
     KnowledgeBaseStatusResponse,
     QueryDecisionRequest,
 )
@@ -79,3 +82,19 @@ def get_knowledge_base_status(
         return service.get_repository_ingest_status(repo_path)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.delete("/v1/knowledge-bases", response_model=KnowledgeBaseRemovalResponse)
+def delete_knowledge_base(
+    repo_path: str,
+    service: DecisionService = Depends(get_decision_service),
+) -> KnowledgeBaseRemovalResponse:
+    return service.delete_repository_ingest(repo_path)
+
+
+@router.post("/v1/knowledge-bases/prune", response_model=KnowledgeBasePruneResponse)
+def prune_knowledge_bases(
+    request: KnowledgeBasePruneRequest,
+    service: DecisionService = Depends(get_decision_service),
+) -> KnowledgeBasePruneResponse:
+    return service.prune_repository_ingests(request)

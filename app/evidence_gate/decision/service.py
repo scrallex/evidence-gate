@@ -19,6 +19,9 @@ from evidence_gate.decision.models import (
     KnowledgeBaseIngestRequest,
     KnowledgeBaseIngestResponse,
     KnowledgeBaseListResponse,
+    KnowledgeBasePruneRequest,
+    KnowledgeBasePruneResponse,
+    KnowledgeBaseRemovalResponse,
     KnowledgeBaseStatusResponse,
     QueryDecisionRequest,
     SourceType,
@@ -26,9 +29,11 @@ from evidence_gate.decision.models import (
 )
 from evidence_gate.retrieval.repository import SearchHit
 from evidence_gate.retrieval.structural import (
+    delete_repository_knowledge_base,
     get_repository_knowledge_base_status,
     list_repository_knowledge_bases,
     materialize_repository_knowledge_base,
+    prune_repository_knowledge_bases,
     search_repository,
 )
 
@@ -132,16 +137,54 @@ class DecisionService:
             ]
         )
 
+    def delete_repository_ingest(self, repo_path: str) -> KnowledgeBaseRemovalResponse:
+        repo_root = self._normalize_repo_path(repo_path)
+        removal = delete_repository_knowledge_base(repo_root, self.settings)
+        return KnowledgeBaseRemovalResponse(
+            repo_path=str(removal.repo_root),
+            knowledge_base_path=str(removal.cache_dir),
+            action=removal.action,
+            previous_status=removal.previous_status,
+            document_count=removal.document_count,
+            span_count=removal.span_count,
+        )
+
+    def prune_repository_ingests(self, request: KnowledgeBasePruneRequest) -> KnowledgeBasePruneResponse:
+        removals = prune_repository_knowledge_bases(
+            self.settings,
+            stale_only=request.stale_only,
+            dry_run=request.dry_run,
+        )
+        return KnowledgeBasePruneResponse(
+            stale_only=request.stale_only,
+            dry_run=request.dry_run,
+            removed_count=len(removals),
+            results=[
+                KnowledgeBaseRemovalResponse(
+                    repo_path=str(removal.repo_root),
+                    knowledge_base_path=str(removal.cache_dir),
+                    action=removal.action,
+                    previous_status=removal.previous_status,
+                    document_count=removal.document_count,
+                    span_count=removal.span_count,
+                )
+                for removal in removals
+            ],
+        )
+
     def get_decision(self, decision_id: str) -> DecisionRecord | None:
         return self.audit_store.get(decision_id)
 
     def _resolve_repo_root(self, repo_path: str) -> Path:
-        repo_root = Path(repo_path).expanduser().resolve()
+        repo_root = self._normalize_repo_path(repo_path)
         if not repo_root.exists():
             raise ValueError(f"Repository path does not exist: {repo_root}")
         if not repo_root.is_dir():
             raise ValueError(f"Repository path must be a directory: {repo_root}")
         return repo_root
+
+    def _normalize_repo_path(self, repo_path: str) -> Path:
+        return Path(repo_path).expanduser().resolve()
 
     def _search(self, repo_root: Path, query: str, top_k: int) -> list[SearchHit]:
         hits = search_repository(
