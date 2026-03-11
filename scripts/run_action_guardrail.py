@@ -5,11 +5,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 from typing import Any
 from urllib import error, request
 
 from format_pr_comment import build_comment, build_retry_prompt
+from live_connector_exports import materialize_live_external_sources
 
 
 def _call_json_endpoint(
@@ -88,6 +90,23 @@ def _single_line(value: str) -> str:
     return " ".join(value.split())
 
 
+def _merge_external_sources(*groups: list[dict[str, str]]) -> list[dict[str, str]]:
+    merged: list[dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for group in groups:
+        for item in group:
+            source_type = str(item.get("type", "")).strip()
+            source_path = str(item.get("path", "")).strip()
+            if not source_type or not source_path:
+                continue
+            identity = (source_type.lower(), source_path)
+            if identity in seen:
+                continue
+            merged.append({"type": source_type, "path": source_path})
+            seen.add(identity)
+    return merged
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the Evidence Gate action guardrail.")
     parser.add_argument("--api-url", required=True)
@@ -99,6 +118,15 @@ def main() -> int:
     parser.add_argument("--safety-policy-json", default="")
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--timeout-seconds", type=int, default=90)
+    parser.add_argument("--live-output-root")
+    parser.add_argument("--live-visible-root")
+    parser.add_argument("--github-repository", default="")
+    parser.add_argument("--github-lookback-days", type=int, default=30)
+    parser.add_argument("--jira-base-url", default="")
+    parser.add_argument("--jira-user-email", default="")
+    parser.add_argument("--jira-project-keys", default="")
+    parser.add_argument("--jira-lookback-days", type=int, default=30)
+    parser.add_argument("--pagerduty-lookback-days", type=int, default=30)
     parser.add_argument("--output")
     parser.add_argument("--comment-output")
     parser.add_argument("--github-output")
@@ -113,6 +141,21 @@ def main() -> int:
     external_sources = json.loads(args.external_sources_json)
     if not isinstance(external_sources, list) or not all(isinstance(item, dict) for item in external_sources):
         raise SystemExit("--external-sources-json must be a JSON array of objects")
+    live_external_sources: list[dict[str, str]] = []
+    if args.live_output_root:
+        live_external_sources = materialize_live_external_sources(
+            output_root=Path(args.live_output_root),
+            visible_root=Path(args.live_visible_root) if args.live_visible_root else None,
+            github_repository=args.github_repository or os.environ.get("GITHUB_REPOSITORY", ""),
+            github_lookback_days=args.github_lookback_days,
+            jira_base_url=args.jira_base_url,
+            jira_user_email=args.jira_user_email,
+            jira_project_keys=args.jira_project_keys,
+            jira_lookback_days=args.jira_lookback_days,
+            pagerduty_lookback_days=args.pagerduty_lookback_days,
+            timeout_seconds=args.timeout_seconds,
+        )
+    external_sources = _merge_external_sources(external_sources, live_external_sources)
     safety_policy: dict[str, Any] | None = None
     if args.safety_policy_json:
         loaded_policy = json.loads(args.safety_policy_json)

@@ -17,6 +17,8 @@ proceeds.
 
 - ingests repository content plus optional local exports from incidents, Jira,
   PagerDuty, Slack, and Confluence into a persisted structural knowledge base
+- can materialize live read-only GitHub, Jira, and PagerDuty exports at ingest
+  time through token-backed helper scripts and the composite GitHub Action
 - ingests optional LSIF or SCIP sidecars from `.evidence-gate/graphs` to improve
   blast radius and retrieval on dynamic or non-Python repos
 - answers change-impact and engineering evidence queries
@@ -110,10 +112,28 @@ curl -X POST http://127.0.0.1:8000/v1/knowledge-bases/ingest \
     "external_sources": [
       {"type": "pagerduty", "path": "/path/to/pagerduty"},
       {"type": "jira", "path": "/path/to/jira"},
+      {"type": "github", "path": "/path/to/github_prs"},
       {"type": "confluence", "path": "/path/to/confluence"}
     ]
   }'
 ```
+
+Fetch live read-only connector exports for the last 30 days:
+
+```bash
+GITHUB_TOKEN=... \
+GITHUB_REPOSITORY=owner/repo \
+JIRA_BASE_URL=https://company.atlassian.net \
+JIRA_API_TOKEN=... \
+JIRA_USER_EMAIL=you@company.com \
+PAGERDUTY_TOKEN=... \
+python scripts/fetch_live_exports.py --output-root /tmp/evidence-gate-live
+```
+
+The script prints a JSON `external_sources` array that can be passed straight
+into `/v1/knowledge-bases/ingest`. The composite GitHub Action now does this
+automatically for GitHub pull requests when `github_token` is supplied, and it
+can also fetch Jira and PagerDuty context when those tokens are configured.
 
 Ask a change-impact question:
 
@@ -182,10 +202,11 @@ The repo now includes a design-partner evaluator path:
 - `scripts/run_demo_sandbox.sh`: boots the stack, clones FastAPI, ingests it, and prints copy-paste test commands
 - `docs/08_partner_evaluation_guide.md`: step-by-step instructions for mounting a private repo into the container
 
-The composite GitHub Action can ingest the checked-out repository plus any
-mounted export directories you pass through `external_sources`. If those
-corpora live outside the checkout, mount them into the runner or point the
-action at an already-running Evidence Gate service that can see those paths.
+The composite GitHub Action can now self-fetch recent GitHub pull request
+precedent from the checked-out repository when `github_token` is supplied, and
+it can optionally fetch Jira or PagerDuty context when those tokens are
+configured. You can still pass explicit `external_sources`, but mounted export
+directories are no longer required for the default PR guardrail path.
 
 For repositories that can emit native code graphs, place LSIF or SCIP sidecars
 under `.evidence-gate/graphs`. Evidence Gate will ingest those graphs to

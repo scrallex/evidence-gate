@@ -15,6 +15,7 @@ from evidence_gate.config import Settings
 from evidence_gate.decision.models import ExternalMetadata, KnowledgeBaseExternalSource, SourceType
 from evidence_gate.ingest.base import BaseIngestor
 from evidence_gate.ingest.confluence_export import ConfluenceExportIngestor
+from evidence_gate.ingest.github_pull_request import GitHubPullRequestIngestor
 from evidence_gate.ingest.jira_export import JiraExportIngestor
 from evidence_gate.ingest.local_repo import LocalRepoIngestor
 from evidence_gate.ingest.markdown_incident import MarkdownIncidentIngestor
@@ -35,6 +36,7 @@ KB_FORMAT_VERSION = 3
 MAX_IN_MEMORY_KB = 8
 REPOSITORY_SOURCE_KIND = "repo"
 INCIDENT_SOURCE_KIND = "incidents"
+GITHUB_SOURCE_KIND = "github"
 JIRA_SOURCE_KIND = "jira"
 PAGERDUTY_SOURCE_KIND = "pagerduty"
 SLACK_SOURCE_KIND = "slack"
@@ -43,6 +45,12 @@ SUPPORTED_EXTERNAL_SOURCE_KINDS = frozenset(
     {
         INCIDENT_SOURCE_KIND,
         "incident",
+        GITHUB_SOURCE_KIND,
+        "github-prs",
+        "github_prs",
+        "pull-requests",
+        "pull_requests",
+        "pulls",
         JIRA_SOURCE_KIND,
         "ticket",
         "tickets",
@@ -875,6 +883,8 @@ def _canonical_source_kind(kind: str) -> str:
     if normalized in SUPPORTED_EXTERNAL_SOURCE_KINDS:
         if normalized in {INCIDENT_SOURCE_KIND, "incident"}:
             return INCIDENT_SOURCE_KIND
+        if normalized in {GITHUB_SOURCE_KIND, "github-prs", "github_prs", "pull-requests", "pull_requests", "pulls"}:
+            return GITHUB_SOURCE_KIND
         if normalized in {JIRA_SOURCE_KIND, "ticket", "tickets", "epic", "epics"}:
             return JIRA_SOURCE_KIND
         if normalized in {PAGERDUTY_SOURCE_KIND, "pager-duty", "pager_duty"}:
@@ -1009,6 +1019,9 @@ def _build_ingestors_for_source_specs(
             continue
         if source_spec.kind == INCIDENT_SOURCE_KIND:
             ingestors.append(MarkdownIncidentIngestor(root))
+            continue
+        if source_spec.kind == GITHUB_SOURCE_KIND:
+            ingestors.append(GitHubPullRequestIngestor(root))
             continue
         if source_spec.kind == JIRA_SOURCE_KIND:
             ingestors.append(JiraExportIngestor(root))

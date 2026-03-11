@@ -70,6 +70,7 @@ curl -X POST http://127.0.0.1:8000/v1/knowledge-bases/ingest \
     "external_sources": [
       {"type": "pagerduty", "path": "/workspace/pagerduty"},
       {"type": "jira", "path": "/workspace/jira"},
+      {"type": "github", "path": "/workspace/github_prs"},
       {"type": "slack", "path": "/workspace/slack"},
       {"type": "confluence", "path": "/workspace/confluence"}
     ]
@@ -168,16 +169,18 @@ The repo ships a root [action.yml](/sep/evidence-gate/action.yml) that:
 
 - starts the Dockerized Evidence Gate service in CI
 - mounts the checked-out repo at `/workspace/target`
-- optionally ingests mounted external corpora before gating
+- automatically fetches recent GitHub pull request precedent when `github_token` is set
+- optionally fetches recent Jira or PagerDuty context when those tokens are set
+- still accepts explicit `external_sources` when you want mounted corpora
 - computes a diff summary from `base_sha` and `head_sha` when available
 - calls `POST /v1/decide/action` with optional `safety_policy`
 - writes a formatted PR comment markdown file
 - optionally fails the workflow when the action is blocked
 
-The action can ingest any mounted export directory that the container or target
-service can see through `external_sources`. If those corpora live outside the
-checkout, mount them into the runner or point the action at an already-running
-Evidence Gate service that can see those paths.
+For the default pull-request guardrail path, mounted export directories are no
+longer required. A workflow can pass only `github_token` and get recent PR
+precedent immediately. Jira and PagerDuty remain optional add-ons through their
+respective tokens.
 
 Billing-style merge gate example:
 
@@ -218,13 +221,12 @@ jobs:
           changed_paths: ${{ steps.diff.outputs.paths }}
           base_sha: ${{ github.event.pull_request.base.sha }}
           head_sha: ${{ github.event.pull_request.head.sha }}
-          external_sources: >-
-            [
-              {"type":"jira","path":"/workspace/target/exports/jira"},
-              {"type":"pagerduty","path":"/workspace/target/exports/pagerduty"},
-              {"type":"slack","path":"/workspace/target/exports/slack"},
-              {"type":"confluence","path":"/workspace/target/exports/confluence"}
-            ]
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          jira_api_token: ${{ secrets.JIRA_API_TOKEN }}
+          jira_base_url: ${{ vars.JIRA_BASE_URL }}
+          jira_user_email: ${{ vars.JIRA_USER_EMAIL }}
+          jira_project_keys: ${{ vars.JIRA_PROJECT_KEYS }}
+          pagerduty_token: ${{ secrets.PAGERDUTY_TOKEN }}
           safety_policy: >-
             {"max_blast_radius_files":6,"max_hazard":0.45,"min_confidence":0.55,"require_test_evidence":true,"require_precedent":true,"require_incident_precedent":true}
           fail_on_block: "false"
@@ -257,6 +259,10 @@ only fail the workflow if the follow-up attempt is still blocked.
 
 In this repository, the same pattern is already wired in
 [evidence-gate-guardrail.yml](/sep/evidence-gate/.github/workflows/evidence-gate-guardrail.yml).
+
+For local or host-driven evaluations outside GitHub Actions, the companion
+script `scripts/fetch_live_exports.py` can materialize the same GitHub, Jira,
+and PagerDuty directories before you call ingest manually.
 
 ## 7. What a partner should provide for a useful evaluation
 

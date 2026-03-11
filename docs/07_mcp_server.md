@@ -39,6 +39,7 @@ allow-or-block decision when needed.
 Supported `external_sources` types:
 
 - `incidents`
+- `github`
 - `jira`
 - `pagerduty`
 - `slack`
@@ -68,12 +69,21 @@ Example mixed-source ingest payload:
       "path": "/absolute/path/to/jira"
     },
     {
+      "type": "github",
+      "path": "/absolute/path/to/github_prs"
+    },
+    {
       "type": "confluence",
       "path": "/absolute/path/to/confluence"
     }
   ]
 }
 ```
+
+If you want those directories generated from live systems instead of manual
+exports, use `scripts/fetch_live_exports.py` first. It fetches recent GitHub,
+Jira, and PagerDuty data into ingest-ready directories while preserving the
+existing MCP and HTTP ingest contract.
 
 ## Local stdio
 

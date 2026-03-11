@@ -24,6 +24,38 @@ inputs:
     description: JSON array of external source objects to ingest before gating.
     required: false
     default: "[]"
+  github_token:
+    description: Optional GitHub token used to fetch recent pull request precedent for the current repository.
+    required: false
+    default: ""
+  github_repository:
+    description: Optional owner/repo slug for live GitHub fetch. Defaults to GITHUB_REPOSITORY.
+    required: false
+    default: ""
+  live_lookback_days:
+    description: Number of recent days to fetch for live GitHub, Jira, and PagerDuty connectors.
+    required: false
+    default: "30"
+  jira_api_token:
+    description: Optional Jira API token used to fetch recent issues during ingest.
+    required: false
+    default: ""
+  jira_base_url:
+    description: Optional Jira base URL, for example https://company.atlassian.net.
+    required: false
+    default: ""
+  jira_user_email:
+    description: Optional Jira user email for basic auth. If omitted, bearer auth is attempted.
+    required: false
+    default: ""
+  jira_project_keys:
+    description: Optional comma-separated Jira project keys to limit live issue fetch.
+    required: false
+    default: ""
+  pagerduty_token:
+    description: Optional PagerDuty API token used to fetch recent incidents during ingest.
+    required: false
+    default: ""
   safety_policy:
     description: JSON object describing explicit safety thresholds for the action gate.
     required: false
@@ -105,6 +137,7 @@ runs:
         set -euo pipefail
         docker rm -f evidence-gate-action >/dev/null 2>&1 || true
         mkdir -p "$RUNNER_TEMP/evidence-gate-data"
+        mkdir -p "$RUNNER_TEMP/evidence-gate-live"
         docker build -t evidence-gate-action "$GITHUB_ACTION_PATH"
         docker run -d \
           --name evidence-gate-action \
@@ -113,6 +146,7 @@ runs:
           -e EVIDENCE_GATE_AUDIT_ROOT=/data/audit \
           -e EVIDENCE_GATE_KB_ROOT=/data/knowledge_bases \
           -v "$RUNNER_TEMP/evidence-gate-data:/data" \
+          -v "$RUNNER_TEMP/evidence-gate-live:/workspace/live_exports" \
           -v "$GITHUB_WORKSPACE:/workspace/target" \
           evidence-gate-action
         for attempt in $(seq 1 90); do
@@ -134,6 +168,14 @@ runs:
         BASE_SHA: ${{ inputs.base_sha }}
         HEAD_SHA: ${{ inputs.head_sha }}
         EXTERNAL_SOURCES_JSON: ${{ inputs.external_sources }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        GITHUB_REPOSITORY_INPUT: ${{ inputs.github_repository }}
+        LIVE_LOOKBACK_DAYS: ${{ inputs.live_lookback_days }}
+        JIRA_API_TOKEN: ${{ inputs.jira_api_token }}
+        JIRA_BASE_URL: ${{ inputs.jira_base_url }}
+        JIRA_USER_EMAIL: ${{ inputs.jira_user_email }}
+        JIRA_PROJECT_KEYS: ${{ inputs.jira_project_keys }}
+        PAGERDUTY_TOKEN: ${{ inputs.pagerduty_token }}
         SAFETY_POLICY_JSON: ${{ inputs.safety_policy }}
         REPO_PATH_INPUT: ${{ inputs.repo_path }}
         API_URL: ${{ inputs.api_url }}
@@ -150,6 +192,11 @@ runs:
         if [ -z "$REPO_PATH" ]; then
           echo "repo_path is required when start_service=false" >&2
           exit 1
+        fi
+
+        LIVE_VISIBLE_ROOT="$RUNNER_TEMP/evidence-gate-live"
+        if [ "$START_SERVICE" = "true" ]; then
+          LIVE_VISIBLE_ROOT="/workspace/live_exports"
         fi
 
         DIFF_SUMMARY="$DIFF_SUMMARY_INPUT"
@@ -174,6 +221,15 @@ runs:
           --action-summary "$ACTION_SUMMARY" \
           --changed-paths-json "$CHANGED_PATHS_JSON" \
           --external-sources-json "$EXTERNAL_SOURCES_JSON" \
+          --live-output-root "$RUNNER_TEMP/evidence-gate-live" \
+          --live-visible-root "$LIVE_VISIBLE_ROOT" \
+          --github-repository "${GITHUB_REPOSITORY_INPUT:-${GITHUB_REPOSITORY:-}}" \
+          --github-lookback-days "$LIVE_LOOKBACK_DAYS" \
+          --jira-base-url "$JIRA_BASE_URL" \
+          --jira-user-email "$JIRA_USER_EMAIL" \
+          --jira-project-keys "$JIRA_PROJECT_KEYS" \
+          --jira-lookback-days "$LIVE_LOOKBACK_DAYS" \
+          --pagerduty-lookback-days "$LIVE_LOOKBACK_DAYS" \
           --diff-summary "$DIFF_SUMMARY" \
           --safety-policy-json "$SAFETY_POLICY_JSON" \
           --output "$RUNNER_TEMP/evidence-gate-action.json" \

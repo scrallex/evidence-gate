@@ -111,6 +111,7 @@ jobs:
           changed_paths: ${{ steps.diff.outputs.paths }}
           base_sha: ${{ github.event.pull_request.base.sha }}
           head_sha: ${{ github.event.pull_request.head.sha }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           safety_policy: >-
             {"corpus_profile":"open_source","require_test_evidence":true}
           fail_on_block: "false"

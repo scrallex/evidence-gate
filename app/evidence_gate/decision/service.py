@@ -36,6 +36,7 @@ from evidence_gate.decision.models import (
 from evidence_gate.retrieval.repository import SearchHit
 from evidence_gate.retrieval.structural import (
     CONFLUENCE_SOURCE_KIND,
+    GITHUB_SOURCE_KIND,
     INCIDENT_SOURCE_KIND,
     JIRA_SOURCE_KIND,
     PAGERDUTY_SOURCE_KIND,
@@ -327,6 +328,8 @@ class DecisionService:
         normalized = source_kind.strip().lower()
         if normalized in {INCIDENT_SOURCE_KIND, "incident"}:
             return INCIDENT_SOURCE_KIND
+        if normalized in {GITHUB_SOURCE_KIND, "github-prs", "github_prs", "pull-requests", "pull_requests", "pulls"}:
+            return GITHUB_SOURCE_KIND
         if normalized in {JIRA_SOURCE_KIND, "ticket", "tickets", "epic", "epics"}:
             return JIRA_SOURCE_KIND
         if normalized in {PAGERDUTY_SOURCE_KIND, "pager-duty", "pager_duty"}:

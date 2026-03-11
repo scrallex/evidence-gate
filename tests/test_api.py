@@ -346,6 +346,65 @@ def test_knowledge_base_ingest_endpoint_supports_external_incident_sources(
     assert any(twin["source"] == "external_incidents/incident_1842.md" for twin in payload["twin_cases"])
 
 
+def test_knowledge_base_ingest_endpoint_supports_external_github_pr_sources(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    repo_root = tmp_path / "billing_repo"
+    github_root = tmp_path / "github_prs"
+    audit_root = tmp_path / "audit"
+    kb_root = tmp_path / "knowledge_bases"
+    _build_billing_repo(repo_root)
+    _write(
+        github_root / "pulls.json",
+        (
+            '{"pulls":[{"number":42,"title":"Restore duplicate-charge safeguards",'
+            '"body":"Reinstates the billing authorization guard after a failed rollout.",'
+            '"state":"closed","html_url":"https://github.com/acme/billing/pull/42",'
+            '"updated_at":"2026-03-10T12:00:00+00:00",'
+            '"merged_at":"2026-03-10T13:00:00+00:00",'
+            '"user":{"login":"reviewer"},'
+            '"base":{"ref":"main","repo":{"full_name":"acme/billing"}},'
+            '"head":{"ref":"restore-billing-guard","repo":{"full_name":"acme/billing"}},'
+            '"labels":[{"name":"billing"},{"name":"incident-followup"}]}]}'
+        ),
+    )
+
+    monkeypatch.setenv("EVIDENCE_GATE_AUDIT_ROOT", str(audit_root))
+    monkeypatch.setenv("EVIDENCE_GATE_KB_ROOT", str(kb_root))
+    get_settings.cache_clear()
+    get_audit_store.cache_clear()
+    get_decision_service.cache_clear()
+
+    client = TestClient(create_app())
+
+    built = client.post(
+        "/v1/knowledge-bases/ingest",
+        json={
+            "repo_path": str(repo_root),
+            "external_sources": [
+                {
+                    "type": "github",
+                    "path": str(github_root),
+                }
+            ],
+        },
+    )
+    assert built.status_code == 200
+
+    decision = client.post(
+        "/v1/decide/query",
+        json={
+            "repo_path": str(repo_root),
+            "query": "Which prior pull request restored the duplicate-charge safeguards in billing?",
+            "top_k": 10,
+        },
+    )
+    assert decision.status_code == 200
+    payload = decision.json()
+    assert any(twin["source"].startswith("external_github_prs/") for twin in payload["twin_cases"])
+
+
 def test_action_decision_endpoint_enforces_safety_policy_with_external_connector_context(
     tmp_path: Path,
     monkeypatch,
