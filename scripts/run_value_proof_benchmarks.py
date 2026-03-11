@@ -14,7 +14,9 @@ if str(APP_ROOT) not in sys.path:
 
 from evidence_gate.benchmark.value_proofs import (
     DEFAULT_SWEBENCH_DATASET,
+    DEFAULT_SWEBENCH_SELECTION_MODE,
     DEFAULT_VALUE_PROOF_ROOT,
+    SWE_BENCH_SELECTION_MODES,
     run_value_proof_benchmarks,
 )
 
@@ -57,6 +59,12 @@ def parse_args() -> argparse.Namespace:
         help="Maximum number of unique SWE-bench repositories to include.",
     )
     parser.add_argument(
+        "--swebench-selection-mode",
+        choices=sorted(SWE_BENCH_SELECTION_MODES),
+        default=DEFAULT_SWEBENCH_SELECTION_MODE,
+        help="How to select SWE-bench instances: pilot chooses one ranked task per repo, full keeps all ranked tasks.",
+    )
+    parser.add_argument(
         "--generalization-cases-per-repo",
         type=int,
         default=4,
@@ -82,6 +90,8 @@ def main() -> int:
         generalization_cases_per_repo=args.generalization_cases_per_repo,
         top_k=args.top_k,
         swebench_dataset=args.swebench_dataset,
+        swebench_selection_mode=args.swebench_selection_mode,
+        verbose=True,
     )
     poisoned = payload["poisoned_corpus"]["summary"]
     multi_source = payload["multi_source_incident"]["summary"]

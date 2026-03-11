@@ -37,6 +37,8 @@ except ImportError:  # pragma: no cover - exercised only when the optional depen
 
 DEFAULT_VALUE_PROOF_ROOT = Path.home() / ".evidence-gate" / "benchmarks" / "value_proofs"
 DEFAULT_SWEBENCH_DATASET = "princeton-nlp/SWE-bench_Lite"
+DEFAULT_SWEBENCH_SELECTION_MODE = "pilot"
+SWE_BENCH_SELECTION_MODES = frozenset({"pilot", "full"})
 SWE_BENCH_PILOT_REPO_ORDER = (
     "pallets/flask",
     "mwaskom/seaborn",
@@ -224,9 +226,11 @@ def run_value_proof_benchmarks(
     report_path: Path,
     swebench_instances: int = 4,
     swebench_repos: int = 4,
+    swebench_selection_mode: str = DEFAULT_SWEBENCH_SELECTION_MODE,
     generalization_cases_per_repo: int = 4,
     top_k: int = 12,
     swebench_dataset: str = DEFAULT_SWEBENCH_DATASET,
+    verbose: bool = False,
 ) -> dict[str, Any]:
     """Run all value-proof benchmarks and persist a combined report."""
 
@@ -243,7 +247,9 @@ def run_value_proof_benchmarks(
         dataset_name=swebench_dataset,
         max_instances=swebench_instances,
         max_unique_repos=swebench_repos,
+        selection_mode=swebench_selection_mode,
         top_k=max(top_k, 16),
+        verbose=verbose,
     )
     generalization = run_multi_corpus_generalization_benchmark(
         work_root=work_root / "generalization",
@@ -425,9 +431,11 @@ def run_swebench_replay_benchmark(
     work_root: Path,
     dataset_name: str = DEFAULT_SWEBENCH_DATASET,
     split: str = "test",
-    max_instances: int = 8,
-    max_unique_repos: int = 8,
+    max_instances: int | None = 8,
+    max_unique_repos: int | None = 8,
+    selection_mode: str = DEFAULT_SWEBENCH_SELECTION_MODE,
     top_k: int = 16,
+    verbose: bool = False,
 ) -> dict[str, Any]:
     """Replay SWE-bench tasks with an OSS-calibrated gate and healing retry."""
 
@@ -439,15 +447,26 @@ def run_swebench_replay_benchmark(
 
     work_root = work_root.expanduser().resolve()
     dataset = load_dataset(dataset_name, split=split)
+    dataset_case_count = len(dataset)
+    dataset_repo_count = len({str(item["repo"]) for item in dataset})
     instances = _select_swebench_instances(
         dataset,
         max_instances=max_instances,
         max_unique_repos=max_unique_repos,
+        selection_mode=selection_mode,
     )
+    if verbose:
+        print(
+            "SWE-bench replay selection: "
+            f"mode={selection_mode}, selected={len(instances)}/{dataset_case_count} instances "
+            f"across up to {max_unique_repos or dataset_repo_count} repositories"
+        )
 
     results: list[dict[str, Any]] = []
     safety_policy = _open_source_action_policy()
-    for item in instances:
+    prepared_contexts: dict[tuple[str, str], tuple[Path, DecisionService, list[Any]]] = {}
+    total_instances = len(instances)
+    for index, item in enumerate(instances, start=1):
         repo = str(item["repo"])
         instance_id = str(item["instance_id"])
         base_commit = str(item["base_commit"])
@@ -457,21 +476,29 @@ def run_swebench_replay_benchmark(
             continue
         initial_gold_paths, gold_test_paths = _split_gold_patch_paths(gold_paths)
 
-        repo_root = _prepare_swebench_repo(
-            cache_root=work_root / "repos",
-            repo=repo,
-            commit=base_commit,
-        )
-        settings = _benchmark_settings(work_root / "state" / instance_id)
-        service = DecisionService(settings, FileAuditStore(settings.audit_root))
+        if verbose:
+            print(f"[{index}/{total_instances}] {instance_id} {repo} @ {base_commit[:12]}")
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", SyntaxWarning)
-            clear_repository_knowledge_base_cache()
-            service.ingest_repository(
-                KnowledgeBaseIngestRequest(repo_path=str(repo_root), refresh=True)
+        context_key = (repo, base_commit)
+        if context_key not in prepared_contexts:
+            repo_root = _prepare_swebench_repo(
+                cache_root=work_root / "repos",
+                repo=repo,
+                commit=base_commit,
             )
-            documents = scan_repository(repo_root)
+            settings = _benchmark_settings(work_root / "state" / f"{repo.replace('/', '__')}__{base_commit[:12]}")
+            service = DecisionService(settings, FileAuditStore(settings.audit_root))
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", SyntaxWarning)
+                clear_repository_knowledge_base_cache()
+                service.ingest_repository(
+                    KnowledgeBaseIngestRequest(repo_path=str(repo_root), refresh=True)
+                )
+                documents = scan_repository(repo_root)
+            prepared_contexts[context_key] = (repo_root, service, documents)
+
+        repo_root, service, documents = prepared_contexts[context_key]
         query = _summarize_problem_statement(str(item["problem_statement"]))
         decoy_paths = _select_decoy_paths(repo_root, gold_paths, query)
         if not decoy_paths:
@@ -569,8 +596,12 @@ def run_swebench_replay_benchmark(
     return {
         "dataset": dataset_name,
         "summary": {
+            "selection_mode": selection_mode,
+            "dataset_case_count": dataset_case_count,
+            "dataset_repo_count": dataset_repo_count,
             "case_count": len(results),
             "repo_count": repo_count,
+            "dataset_coverage_rate": round(len(results) / max(1, dataset_case_count), 4),
             "initial_gold_allow_rate": round(len(initial_gold_allowed) / max(1, len(results)), 4),
             "healed_gold_allow_rate": round(len(healed_gold_allowed) / max(1, len(results)), 4),
             "healing_retry_rate": round(len(healing_attempts) / max(1, len(results)), 4),
@@ -1065,9 +1096,16 @@ def _build_multi_source_corpus(root: Path) -> tuple[Path, dict[str, Path], list[
 def _select_swebench_instances(
     dataset: Any,
     *,
-    max_instances: int,
-    max_unique_repos: int,
+    max_instances: int | None,
+    max_unique_repos: int | None,
+    selection_mode: str = DEFAULT_SWEBENCH_SELECTION_MODE,
 ) -> list[dict[str, Any]]:
+    if selection_mode not in SWE_BENCH_SELECTION_MODES:
+        raise ValueError(
+            f"Unsupported SWE-bench selection mode: {selection_mode}. "
+            f"Expected one of {sorted(SWE_BENCH_SELECTION_MODES)}."
+        )
+
     grouped: dict[str, list[dict[str, Any]]] = {}
     for item in dataset:
         repo = str(item["repo"])
@@ -1082,9 +1120,13 @@ def _select_swebench_instances(
             repo,
         ),
     )
+    if max_unique_repos is None:
+        selected_repos = ordered_repos
+    else:
+        selected_repos = ordered_repos[:max_unique_repos]
     selected: list[dict[str, Any]] = []
-    for repo in ordered_repos[:max_unique_repos]:
-        if len(selected) >= max_instances:
+    for repo in selected_repos:
+        if max_instances is not None and len(selected) >= max_instances:
             break
         ranked_items = sorted(
             grouped[repo],
@@ -1094,8 +1136,62 @@ def _select_swebench_instances(
                 str(item["instance_id"]),
             ),
         )
-        selected.append(ranked_items[0])
+        if selection_mode == "pilot":
+            selected.append(ranked_items[0])
+            continue
+        for item in ranked_items:
+            if max_instances is not None and len(selected) >= max_instances:
+                break
+            selected.append(item)
+    if max_instances is None:
+        return selected
     return selected[:max_instances]
+
+
+def render_swebench_replay_report(payload: dict[str, Any]) -> str:
+    summary = payload["summary"]
+    lines = [
+        "# SWE-bench Lite Replay Report",
+        "",
+        "This report measures Evidence Gate as a compiler-like healing loop over official SWE-bench tasks.",
+        "It is not a human-facing PR review study. It measures whether the gate blocks weak code-only attempts,",
+        "emits machine-readable `missing_evidence`, and admits stronger retries without opening the wrong-file path.",
+        "",
+        "## Coverage",
+        "",
+        f"- Dataset: {payload['dataset']}",
+        f"- Selection mode: {summary['selection_mode']}",
+        f"- Dataset instances: {summary['dataset_case_count']}",
+        f"- Dataset repositories: {summary['dataset_repo_count']}",
+        f"- Evaluated instances: {summary['case_count']}",
+        f"- Evaluated repositories: {summary['repo_count']}",
+        f"- Dataset coverage: {summary['dataset_coverage_rate']:.2%}",
+        "",
+        "## Results",
+        "",
+        f"- Initial gold-path allow rate: {summary['initial_gold_allow_rate']:.2%}",
+        f"- Healed gold-path allow rate: {summary['healed_gold_allow_rate']:.2%}",
+        f"- Healing retry rate: {summary['healing_retry_rate']:.2%}",
+        f"- Healing success rate: {summary['healing_success_rate']:.2%}",
+        f"- Initial test-gap block rate: {summary['test_gap_block_rate']:.2%}",
+        f"- Wrong-file false-allow rate: {summary['decoy_false_allow_rate']:.2%}",
+        f"- Baseline allow rate: {summary['baseline_allow_rate']:.2%}",
+        f"- Alignment-gap trigger rate: {summary['alignment_gap_trigger_rate']:.2%}",
+        "",
+        "## Interpretation",
+        "",
+        (
+            "Evidence Gate behaves like a compiler pass for coding agents: it rejects unsupported attempts, "
+            "returns concrete diagnostics through `missing_evidence`, and raises admit rate when the retry adds "
+            "the missing evidence instead of merely rephrasing the request."
+        ),
+        (
+            "This benchmark still replays official tasks instead of running a full autonomous agent such as "
+            "OpenHands or SWE-agent end-to-end. It proves the healing contract, not final task-completion pass rate."
+        ),
+        "",
+    ]
+    return "\n".join(lines)
 
 
 def _prepare_swebench_repo(*, cache_root: Path, repo: str, commit: str) -> Path:
@@ -1207,7 +1303,10 @@ def _render_value_proof_report(payload: dict[str, Any]) -> str:
         "## 3. SWE-bench Replay With Healing Loop",
         "",
         f"- Dataset: {payload['swebench_replay']['dataset']}",
-        f"- Cases: {swebench['case_count']} across {swebench['repo_count']} repositories",
+        (
+            f"- Cases: {swebench['case_count']} across {swebench['repo_count']} repositories "
+            f"(selection={swebench['selection_mode']}, coverage={swebench['dataset_coverage_rate']:.2%})"
+        ),
         f"- Initial gold-path allow rate: {swebench['initial_gold_allow_rate']:.2%}",
         f"- Healed gold-path allow rate: {swebench['healed_gold_allow_rate']:.2%}",
         f"- Healing retry rate: {swebench['healing_retry_rate']:.2%}",

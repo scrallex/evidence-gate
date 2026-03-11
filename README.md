@@ -32,8 +32,14 @@ proceeds.
 
 ## Why It Matters
 
-The product wedge is not "repo chat." It is safer admission behavior plus a
+The product wedge is not "AI PR review." It is safer admission behavior plus a
 compiler-like healing loop for agents.
+
+AI PR reviewers mostly tell a human what looks risky after the code already
+exists. Evidence Gate is trying to do something narrower and more operational:
+block the agent attempt, emit machine-readable `missing_evidence`, and force
+the next retry to add the missing test, runbook context, or supported file path
+before a human ever has to review the patch.
 
 In the checked-in 50-case FastAPI benchmark, `Evidence Gate structural` reaches
 84.00% binary accuracy with a 0.00% false-admit rate. The baseline reaches
@@ -240,12 +246,18 @@ The broader proof suite now adds four more signals:
 - SWE-bench replay with healing loop: 25.00% initial gold-path allow, 75.00% healed gold-path allow, and 0.00% wrong-file false-allow
 - multi-corpus generalization pilot: 12 curated cases across Redis, React, and Vite with 75.00% gold-path allow and 0.00% wrong-file false-allow
 
+The repo also now supports a dedicated full-dataset SWE-bench Lite replay path:
+
+- `scripts/run_swebench_full_replay.py`: runs the full 300-instance replay and writes a standalone report
+- `benchmarks/results/swebench_lite_full_replay.md`: full replay summary artifact
+- `benchmarks/results/swebench_lite_full_replay.json`: raw per-instance results
+
 The current evidence therefore supports a strong false-admit and safety claim,
-an initial autonomous-uplift claim when the agent consumes `missing_evidence`
+an initial compiler-for-agents claim when the agent consumes `missing_evidence`
 and retries, and a cross-language design-partner story across Python, C,
 JavaScript, and TypeScript. It still does not support a universal throughput
-claim because the current pilot retains a low source-hit rate and Vite only
-reaches 50.00% gold-path allow.
+claim, and it still does not prove final autonomous task pass-rate uplift
+against a live framework such as OpenHands or SWE-agent.
 
 ## Roadmap
 

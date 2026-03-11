@@ -10,6 +10,14 @@ Show one concrete sequence:
 2. Evidence Gate blocks the pull request and posts a retry prompt
 3. the agent follows that prompt, adds the missing test, and the same pull request turns green
 
+This is the shortest product story in the repo because it makes the market
+distinction obvious:
+
+- a typical AI PR reviewer tells a human reviewer what looks wrong
+- Evidence Gate blocks the agent attempt itself
+- the block returns machine-readable `missing_evidence` and a retry prompt
+- the agent can use that prompt to heal the patch before human review
+
 ## Assets
 
 - `scripts/scaffold_agent_healing_demo.py`
@@ -85,3 +93,7 @@ The current cut renders to 114 seconds.
 Use this exact message on the final slide or voiceover:
 
 `AI agents write tech debt. Evidence Gate forces them to write tests and read your docs before you ever have to review their code.`
+
+Short variant for investor or partner conversations:
+
+`This is not another AI PR reviewer. It is a compiler for agents: block, diagnose, retry, then admit.`

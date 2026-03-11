@@ -68,6 +68,19 @@ prompt, the gate admits three of four gold paths while still rejecting every
 wrong-file decoy. The remaining failed case healed into a path-alignment miss,
 which is a real guardrail signal rather than a missing-test problem.
 
+Why this matters:
+this is the core "compiler for agents" claim. A human-facing PR reviewer can
+describe the missing test after the fact. Evidence Gate instead turns the block
+into structured repair guidance that an agent can consume immediately on the
+next attempt.
+
+Full-dataset replay:
+the repo now includes a dedicated `scripts/run_swebench_full_replay.py` path
+for a 300-instance `SWE-bench_Lite` replay. That is the right next proof layer
+for the current harness because the previous default only sampled one instance
+per repository. Even that full replay is still a replay benchmark, not an
+end-to-end autonomous pass-rate study with OpenHands or SWE-agent.
+
 ## 4. Multi-corpus generalization pilot
 
 Question:
