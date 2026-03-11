@@ -153,7 +153,7 @@ def test_change_impact_decision_flow(tmp_path: Path, monkeypatch) -> None:
     stored = client.get(f"/v1/decisions/{decision_id}")
     assert stored.status_code == 200
     assert stored.json()["decision_id"] == decision_id
-    assert (audit_root / "decisions" / f"{decision_id}.json").exists()
+    assert (audit_root / "audit.db").exists()
     assert any(kb_root.rglob("manifest.json"))
 
 

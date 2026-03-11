@@ -433,7 +433,8 @@ def run_swebench_replay_benchmark(
 
     if load_dataset is None:
         raise RuntimeError(
-            "The `datasets` package is required for SWE-bench replay. Install it before running this benchmark."
+            "The `datasets` package is required for SWE-bench replay. Install the dev extras "
+            "with `python -m pip install -e '.[dev]'` before running this benchmark."
         )
 
     work_root = work_root.expanduser().resolve()

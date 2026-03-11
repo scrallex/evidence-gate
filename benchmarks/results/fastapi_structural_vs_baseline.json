@@ -73,8 +73,8 @@
           "fastapi/security/oauth2.py",
           "docs/en/docs/tutorial/security/simple-oauth2.md",
           "docs/en/docs/reference/background.md",
-          "docs_src/security/tutorial005_py310.py",
-          "docs_src/security/tutorial005_an_py310.py"
+          "docs_src/security/tutorial005_an_py310.py",
+          "docs_src/security/tutorial005_py310.py"
         ],
         "expected_path_rank": 1,
         "predicted_admit": true,
@@ -106,13 +106,13 @@
             "verified": true
           },
           {
-            "path": "docs_src/security/tutorial005_py310.py",
+            "path": "docs_src/security/tutorial005_an_py310.py",
             "score": 0.4159,
             "source_type": "code",
             "verified": false
           },
           {
-            "path": "docs_src/security/tutorial005_an_py310.py",
+            "path": "docs_src/security/tutorial005_py310.py",
             "score": 0.4159,
             "source_type": "code",
             "verified": false
