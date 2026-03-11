@@ -99,6 +99,16 @@ of the curated gold paths. Redis also needed one fairness fix in this pass,
 adding `.tcl` test files to the ingestible text extensions so its unit and
 integration tests are visible to the gate.
 
+## Vite limitation
+
+Vite is the cleanest example of why Evidence Gate should optimize for safety
+before throughput. The current pilot admits only 50.00% of the curated Vite
+gold paths because Vite depends heavily on dynamic imports, plugin-injected
+state, and virtual-module behavior that the current static heuristics cannot
+fully prove. Evidence Gate correctly fails safe here: it abstains or escalates
+when it cannot statically guarantee the blast radius. That is a real product
+limitation, but it is also the correct reliability behavior.
+
 ## Honest conclusion
 
 What is now proven:

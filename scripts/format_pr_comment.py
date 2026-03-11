@@ -9,6 +9,30 @@ from pathlib import Path
 from typing import Any
 
 
+def build_retry_prompt(payload: dict[str, Any]) -> str:
+    action_payload = payload
+    if "decision_record" not in action_payload:
+        action_payload = {
+            "allowed": payload.get("decision") == "admit",
+            "decision_record": payload,
+            "policy_violations": [],
+        }
+
+    if action_payload.get("allowed"):
+        return ""
+
+    record = action_payload["decision_record"]
+    missing_evidence = [str(item) for item in record.get("missing_evidence", []) if str(item).strip()]
+    if not missing_evidence:
+        return ""
+    guidance = "; ".join(missing_evidence[:3])
+    return (
+        "Evidence Gate blocked the previous attempt because: "
+        f"{guidance}. "
+        "Write the missing tests or update the supported files, then retry the gate."
+    )
+
+
 def build_comment(payload: dict[str, Any]) -> str:
     action_payload = payload
     if "decision_record" not in action_payload:
@@ -57,6 +81,17 @@ def build_comment(payload: dict[str, Any]) -> str:
     explanation = record.get("explanation")
     if explanation:
         lines.append(f"- Explanation: {explanation}")
+
+    retry_prompt = build_retry_prompt(action_payload)
+    if retry_prompt:
+        lines.extend(
+            [
+                "",
+                "### Suggested Retry Prompt",
+                "",
+                retry_prompt,
+            ]
+        )
 
     return "\n".join(lines) + "\n"
 

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 from urllib import error, request
 
-from format_pr_comment import build_comment
+from format_pr_comment import build_comment, build_retry_prompt
 
 
 def _call_json_endpoint(
@@ -84,6 +84,10 @@ def _write_github_output(path: str, values: dict[str, str]) -> None:
             handle.write(f"{key}={value}\n")
 
 
+def _single_line(value: str) -> str:
+    return " ".join(value.split())
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the Evidence Gate action guardrail.")
     parser.add_argument("--api-url", required=True)
@@ -152,6 +156,7 @@ def main() -> int:
 
     if args.github_output:
         record = payload.get("decision_record", {})
+        retry_prompt = build_retry_prompt(payload)
         _write_github_output(
             args.github_output,
             {
@@ -163,6 +168,10 @@ def main() -> int:
                 "comment_path": str(comment_path) if comment_path is not None else "",
                 "ingest_status": str(ingest_payload.get("status", "")),
                 "repo_fingerprint": str(ingest_payload.get("repo_fingerprint", "")),
+                "failure_reason": _single_line(str(payload.get("failure_reason", "") or "")),
+                "missing_evidence_json": json.dumps(record.get("missing_evidence", []), separators=(",", ":")),
+                "policy_violations_json": json.dumps(payload.get("policy_violations", []), separators=(",", ":")),
+                "retry_prompt": _single_line(retry_prompt),
             },
         )
 

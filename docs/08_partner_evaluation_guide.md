@@ -241,13 +241,17 @@ The action exposes:
 - `allowed`
 - `decision`
 - `decision_id`
+- `failure_reason`
+- `missing_evidence_json`
+- `policy_violations_json`
+- `retry_prompt`
 - `response_path`
 - `comment_path`
 
 For autonomous-agent evaluations, prefer `fail_on_block: "false"` on the first
 pass. Read the blocked response, inject the `missing_evidence` strings back into
-the agent prompt, and only fail the workflow if the follow-up attempt is still
-blocked.
+the agent prompt or feed `retry_prompt` directly into the next attempt, and
+only fail the workflow if the follow-up attempt is still blocked.
 - `ingest_status`
 - `repo_fingerprint`
 

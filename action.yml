@@ -66,6 +66,18 @@ outputs:
   decision_id:
     description: Persisted decision identifier.
     value: ${{ steps.guard.outputs.decision_id }}
+  failure_reason:
+    description: Human-readable block reason returned by the action decision endpoint.
+    value: ${{ steps.guard.outputs.failure_reason }}
+  missing_evidence_json:
+    description: JSON array of missing-evidence strings from the blocked decision.
+    value: ${{ steps.guard.outputs.missing_evidence_json }}
+  policy_violations_json:
+    description: JSON array of policy violations from the blocked decision.
+    value: ${{ steps.guard.outputs.policy_violations_json }}
+  retry_prompt:
+    description: Single-line retry prompt that can be fed back into an agent after a blocked action.
+    value: ${{ steps.guard.outputs.retry_prompt }}
   response_path:
     description: Path to the raw JSON response on the runner.
     value: ${{ steps.guard.outputs.response_path }}

@@ -150,6 +150,7 @@ def test_run_action_guardrail_ingests_before_blocking_and_writes_outputs(
     assert "Evidence Gate: Block (Escalate)" in comment
     assert "Policy violations" in comment
     assert "external_pagerduty/4417.md" in comment
+    assert "Suggested Retry Prompt" in comment
 
     output_lines = github_output.read_text(encoding="utf-8").splitlines()
     assert "allowed=false" in output_lines
@@ -158,4 +159,7 @@ def test_run_action_guardrail_ingests_before_blocking_and_writes_outputs(
     assert "decision_id=decision-123" in output_lines
     assert "ingest_status=built" in output_lines
     assert "repo_fingerprint=repo-fingerprint-123" in output_lines
-
+    assert any(line.startswith("failure_reason=Action blocked because Evidence Gate safety thresholds were violated:") for line in output_lines)
+    assert any(line.startswith('missing_evidence_json=["Safety policy violation: Blast radius files 4 exceeded policy limit 1."]') for line in output_lines)
+    assert any(line.startswith('policy_violations_json=["Blast radius files 4 exceeded policy limit 1."]') for line in output_lines)
+    assert any("retry_prompt=Evidence Gate blocked the previous attempt because:" in line for line in output_lines)

@@ -111,6 +111,27 @@ Exit criteria:
 - escalation paths point to prior operational evidence, not only repo artifacts
 - the product story expands from code intelligence to institutional memory guardrail
 
+### Phase 8: native graph ingestion horizon
+
+Goal:
+stop asking Evidence Gate to reverse-engineer every language ecosystem with
+lightweight parsers when the repository can often emit a native code graph
+itself.
+
+Tasks:
+
+1. Add an LSIF ingest stub so repositories can provide language-server-derived symbol and reference graphs.
+2. Add a SCIP ingest stub so repositories can reuse native indexers instead of Evidence Gate guessing imports.
+3. Map LSIF or SCIP graph nodes back to Evidence Gate evidence spans, blast-radius inputs, and twin-case citations.
+4. Benchmark graph-assisted retrieval on dynamic JavaScript or TypeScript repos such as Vite against the current heuristic parser.
+5. Define fallback rules so the gate remains fail-safe when no graph export is available.
+
+Exit criteria:
+
+- Evidence Gate can ingest a native repo graph without replacing the rest of the decision contract
+- dynamic repos recover throughput without sacrificing the current 0.00% false-allow posture
+- the long-term parser story shifts from bespoke language heuristics to standard graph ingestion
+
 ## Commercial sequence
 
 ### Immediate proof
