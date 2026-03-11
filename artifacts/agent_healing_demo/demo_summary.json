@@ -1,0 +1,39 @@
+{
+  "repo": "scrallex/evidence-gate-healing-loop-demo-20260311b",
+  "repo_url": "https://github.com/scrallex/evidence-gate-healing-loop-demo-20260311b",
+  "local_repo_dir": "/tmp/evidence-gate-healing-loop-demo",
+  "pr_number": 1,
+  "pr_url": "https://github.com/scrallex/evidence-gate-healing-loop-demo-20260311b/pull/1",
+  "blocked": {
+    "phase": "blocked",
+    "pr_number": 1,
+    "pr_url": "https://github.com/scrallex/evidence-gate-healing-loop-demo-20260311b/pull/1",
+    "run": {
+      "conclusion": "failure",
+      "databaseId": 22930416751,
+      "displayTitle": "Agent fix: restore billing tax calculation",
+      "headSha": "4e13d3d115d436bf9551b8f1dffd3740311973b9",
+      "status": "completed",
+      "url": "https://github.com/scrallex/evidence-gate-healing-loop-demo-20260311b/actions/runs/22930416751"
+    },
+    "comment_path": "/sep/evidence-gate/artifacts/agent_healing_demo/blocked_comment.md",
+    "checks_path": "/sep/evidence-gate/artifacts/agent_healing_demo/blocked_checks.txt",
+    "retry_prompt": "Evidence Gate blocked the previous attempt because: No supporting test evidence was found for the affected flow.; Safety policy violation: Policy requires supporting test evidence.. Write the missing tests or update the supported files, then retry the gate."
+  },
+  "healed": {
+    "phase": "healed",
+    "pr_number": 1,
+    "pr_url": "https://github.com/scrallex/evidence-gate-healing-loop-demo-20260311b/pull/1",
+    "run": {
+      "conclusion": "success",
+      "databaseId": 22930437421,
+      "displayTitle": "Agent fix: restore billing tax calculation",
+      "headSha": "297e2fee35463a83caa2d1e2a979f70bc19d7541",
+      "status": "completed",
+      "url": "https://github.com/scrallex/evidence-gate-healing-loop-demo-20260311b/actions/runs/22930437421"
+    },
+    "comment_path": "/sep/evidence-gate/artifacts/agent_healing_demo/healed_comment.md",
+    "checks_path": "/sep/evidence-gate/artifacts/agent_healing_demo/healed_checks.txt",
+    "retry_prompt": ""
+  }
+}

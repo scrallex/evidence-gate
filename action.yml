@@ -154,17 +154,7 @@ runs:
 
         DIFF_SUMMARY="$DIFF_SUMMARY_INPUT"
         if [ -z "$DIFF_SUMMARY" ] && [ -n "$BASE_SHA" ] && [ -n "$HEAD_SHA" ]; then
-          DIFF_SUMMARY=$(python - <<'PY'
-import os
-import subprocess
-
-summary = subprocess.check_output(
-    ["git", "diff", "--stat", "--unified=0", f"{os.environ['BASE_SHA']}..{os.environ['HEAD_SHA']}"],
-    text=True,
-).strip()
-print(summary)
-PY
-)
+          DIFF_SUMMARY=$(git diff --stat --unified=0 "$BASE_SHA..$HEAD_SHA")
         fi
 
         EXTRA_ARGS=()

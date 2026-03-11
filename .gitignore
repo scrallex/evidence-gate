@@ -31,3 +31,4 @@ data/
 # Private or exploratory research archives
 sources/archive/raw/
 sources/archive/extracted/
+artifacts/agent_healing_demo/video_frames/
