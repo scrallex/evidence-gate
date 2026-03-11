@@ -50,6 +50,14 @@ and get back:
 - added a demo sandbox script that clones FastAPI, starts the stack, and ingests the corpus
 - added a partner evaluation guide for mounting a private repo into the container
 
+### Phase 8: native graph ingestion bootstrap
+
+- added a dedicated native graph sidecar path under `.evidence-gate/graphs`
+- added initial LSIF and SCIP ingest stubs for file-level code graph recovery
+- wired native graph edges into blast radius before the heuristic import fallback
+- added graph-backed file summaries to the repository knowledge base for retrieval
+- kept the existing fail-safe parser path when no graph export is available
+
 ## What remains
 
 ### Phase 5: agent and IDE hardening
@@ -120,11 +128,10 @@ itself.
 
 Tasks:
 
-1. Add an LSIF ingest stub so repositories can provide language-server-derived symbol and reference graphs.
-2. Add a SCIP ingest stub so repositories can reuse native indexers instead of Evidence Gate guessing imports.
-3. Map LSIF or SCIP graph nodes back to Evidence Gate evidence spans, blast-radius inputs, and twin-case citations.
-4. Benchmark graph-assisted retrieval on dynamic JavaScript or TypeScript repos such as Vite against the current heuristic parser.
-5. Define fallback rules so the gate remains fail-safe when no graph export is available.
+1. Benchmark graph-assisted retrieval on dynamic JavaScript or TypeScript repos such as Vite against the current heuristic parser.
+2. Expand the LSIF ingest beyond the current file-level reference stub into richer symbol and result-set handling.
+3. Expand the SCIP ingest beyond relationship-based file recovery into stronger symbol-role and semantic retrieval support.
+4. Define partner-facing generation guidance for emitting `.evidence-gate/graphs` artifacts in CI.
 
 Exit criteria:
 

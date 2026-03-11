@@ -99,6 +99,13 @@ of the curated gold paths. Redis also needed one fairness fix in this pass,
 adding `.tcl` test files to the ingestible text extensions so its unit and
 integration tests are visible to the gate.
 
+Native graph note:
+the repo now includes an initial LSIF or SCIP sidecar path under
+`.evidence-gate/graphs` so a repository can provide file-level code graph
+evidence instead of relying only on the heuristic parser. The checked-in
+generalization numbers above predate any graph-assisted rerun and should still
+be read as heuristic-only baseline results.
+
 ## Vite limitation
 
 Vite is the cleanest example of why Evidence Gate should optimize for safety
@@ -108,6 +115,12 @@ state, and virtual-module behavior that the current static heuristics cannot
 fully prove. Evidence Gate correctly fails safe here: it abstains or escalates
 when it cannot statically guarantee the blast radius. That is a real product
 limitation, but it is also the correct reliability behavior.
+
+The new native graph stub is the intended way out of that ceiling. If a Vite or
+TypeScript repository emits LSIF or SCIP sidecars, Evidence Gate can now ingest
+that file-level graph and use it for both blast radius and retrieval without
+changing the surrounding decision contract. What remains unproven is the actual
+throughput gain on a graph-assisted Vite rerun.
 
 ## Honest conclusion
 

@@ -18,6 +18,7 @@ from evidence_gate.ingest.confluence_export import ConfluenceExportIngestor
 from evidence_gate.ingest.jira_export import JiraExportIngestor
 from evidence_gate.ingest.local_repo import LocalRepoIngestor
 from evidence_gate.ingest.markdown_incident import MarkdownIncidentIngestor
+from evidence_gate.ingest.native_graph import NativeGraphIngestor
 from evidence_gate.ingest.pagerduty_incident import PagerDutyIncidentIngestor
 from evidence_gate.ingest.slack_incident import SlackIncidentIngestor
 from evidence_gate.retrieval.repository import (
@@ -30,7 +31,7 @@ from evidence_gate.retrieval.repository import (
 from evidence_gate.structural.sidecar import ManifoldIndex, build_index, encode_text
 from evidence_gate.verification.truth_pack import TruthPackEngine, TruthPackSpan, _span_id
 
-KB_FORMAT_VERSION = 2
+KB_FORMAT_VERSION = 3
 MAX_IN_MEMORY_KB = 8
 REPOSITORY_SOURCE_KIND = "repo"
 INCIDENT_SOURCE_KIND = "incidents"
@@ -487,17 +488,15 @@ def search_repository(
     match_limit = max(top_k * 4, 12)
     matches = kb.truth_pack.structural_search(query, top_k=match_limit)
 
-    hits: list[SearchHit] = []
-    seen_sources: set[str] = set()
+    hits_by_source: dict[str, SearchHit] = {}
+    combined_scores: dict[str, float] = {}
+    verified_by_source: dict[str, bool] = {}
     for match in matches:
         evaluation = kb.truth_pack.evaluate(match.span, query=query)
         span = match.span
         snippet = " ".join(span.text.strip().split())
         if not snippet:
             continue
-        if span.source in seen_sources:
-            continue
-        seen_sources.add(span.source)
         score = min(
             1.0,
             0.45 * match.final_score
@@ -505,18 +504,34 @@ def search_repository(
             + 0.15 * span.patternability
             + 0.15 * evaluation.semantic_similarity,
         )
+        hit = SearchHit(
+            path=span.source,
+            source_type=span.source_type,
+            score=score,
+            snippet=snippet[:240],
+            line_number=span.line_number,
+            verified=evaluation.verified,
+            metadata=span.metadata,
+        )
+        existing = hits_by_source.get(span.source)
+        if existing is None or (hit.verified, hit.score) > (existing.verified, existing.score):
+            hits_by_source[span.source] = hit
+        combined_scores[span.source] = 1.0 - (1.0 - combined_scores.get(span.source, 0.0)) * (1.0 - score)
+        verified_by_source[span.source] = verified_by_source.get(span.source, False) or hit.verified
+
+    hits: list[SearchHit] = []
+    for source, best_hit in hits_by_source.items():
         hits.append(
             SearchHit(
-                path=span.source,
-                source_type=span.source_type,
-                score=score,
-                snippet=snippet[:240],
-                line_number=span.line_number,
-                verified=evaluation.verified,
-                metadata=span.metadata,
+                path=best_hit.path,
+                source_type=best_hit.source_type,
+                score=combined_scores.get(source, best_hit.score),
+                snippet=best_hit.snippet,
+                line_number=best_hit.line_number,
+                verified=verified_by_source.get(source, best_hit.verified),
+                metadata=best_hit.metadata,
             )
         )
-
     hits.sort(key=lambda hit: (hit.verified, hit.score), reverse=True)
     return hits[: max(top_k * 2, settings.thresholds.top_k_evidence + settings.thresholds.top_k_twins)]
 
@@ -990,6 +1005,7 @@ def _build_ingestors_for_source_specs(
                     exclude_relative_prefixes=_artifact_relative_prefixes(root, settings),
                 )
             )
+            ingestors.append(NativeGraphIngestor(root))
             continue
         if source_spec.kind == INCIDENT_SOURCE_KIND:
             ingestors.append(MarkdownIncidentIngestor(root))

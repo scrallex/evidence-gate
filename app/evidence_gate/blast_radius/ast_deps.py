@@ -1,4 +1,4 @@
-"""AST-based dependency analysis for initial blast radius scoring."""
+"""Dependency analysis for blast radius using native graphs plus lightweight fallbacks."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from evidence_gate.decision.models import BlastRadius
+from evidence_gate.native_graph import load_repository_native_graph
 from evidence_gate.retrieval.repository import SKIP_DIRS, classify_source_type
 
 
@@ -28,6 +29,10 @@ class ASTDependencyAnalyzer:
         ".jsx",
         ".ts",
         ".tsx",
+        ".mjs",
+        ".cjs",
+        ".mts",
+        ".cts",
         ".c",
         ".cc",
         ".cpp",
@@ -40,6 +45,7 @@ class ASTDependencyAnalyzer:
         self.dependencies: dict[str, DependencyInfo] = {}
         self.module_to_file: dict[str, str] = {}
         self.workspace_roots: dict[str, str] = {}
+        self.native_graph = load_repository_native_graph(self.repo_root)
 
     def build_dependency_graph(self) -> None:
         self.workspace_roots = self._discover_workspace_roots()
@@ -65,6 +71,8 @@ class ASTDependencyAnalyzer:
                 target_file = self._resolve_import(imported_module)
                 if target_file and target_file in self.dependencies:
                     self.dependencies[target_file].imported_by.add(file_path)
+
+        self._apply_native_graph_edges()
 
     def impacted_files(self, file_path: str) -> set[str]:
         if file_path not in self.dependencies:
@@ -133,11 +141,25 @@ class ASTDependencyAnalyzer:
     def _extract_imports(self, file_path: Path) -> set[str]:
         if file_path.suffix == ".py":
             return self._extract_python_imports(file_path)
-        if file_path.suffix in {".js", ".jsx", ".ts", ".tsx"}:
+        if file_path.suffix in {".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".mts", ".cts"}:
             return self._extract_js_imports(file_path)
         if file_path.suffix in {".c", ".cc", ".cpp", ".h", ".hpp"}:
             return self._extract_cpp_imports(file_path)
         return set()
+
+    def _apply_native_graph_edges(self) -> None:
+        if not self.native_graph.has_edges():
+            return
+        for source_path, target_paths in self.native_graph.edges_by_source.items():
+            source_dependency = self.dependencies.get(source_path)
+            if source_dependency is None:
+                continue
+            for target_path in target_paths:
+                target_dependency = self.dependencies.get(target_path)
+                if target_dependency is None:
+                    continue
+                source_dependency.imports.add(target_path)
+                target_dependency.imported_by.add(source_path)
 
     def _extract_python_imports(self, file_path: Path) -> set[str]:
         imports: set[str] = set()

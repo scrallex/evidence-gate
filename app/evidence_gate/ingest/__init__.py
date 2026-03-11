@@ -5,6 +5,7 @@ from evidence_gate.ingest.confluence_export import ConfluenceExportIngestor
 from evidence_gate.ingest.jira_export import JiraExportIngestor
 from evidence_gate.ingest.local_repo import LocalRepoIngestor
 from evidence_gate.ingest.markdown_incident import MarkdownIncidentIngestor
+from evidence_gate.ingest.native_graph import NativeGraphIngestor
 from evidence_gate.ingest.pagerduty_incident import PagerDutyIncidentIngestor
 from evidence_gate.ingest.slack_incident import SlackIncidentIngestor
 
@@ -14,6 +15,7 @@ __all__ = [
     "JiraExportIngestor",
     "LocalRepoIngestor",
     "MarkdownIncidentIngestor",
+    "NativeGraphIngestor",
     "PagerDutyIncidentIngestor",
     "SlackIncidentIngestor",
 ]

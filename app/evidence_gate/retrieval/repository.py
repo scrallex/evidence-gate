@@ -54,7 +54,9 @@ SKIP_DIRS = {
 TEXT_EXTENSIONS = {
     ".c",
     ".cc",
+    ".cjs",
     ".cpp",
+    ".cts",
     ".h",
     ".hpp",
     ".java",
@@ -62,6 +64,8 @@ TEXT_EXTENSIONS = {
     ".json",
     ".jsx",
     ".md",
+    ".mjs",
+    ".mts",
     ".py",
     ".rb",
     ".rst",
@@ -128,7 +132,24 @@ def classify_source_type(relative_path: str) -> SourceType:
         return SourceType.INCIDENT
     if lower.startswith("prs/") or "/prs/" in f"/{lower}" or "pull_request" in lower or re.search(r"\bpr[_-]?\d+", lower):
         return SourceType.PR
-    if Path(lower).suffix in {".py", ".js", ".jsx", ".ts", ".tsx", ".java", ".rb", ".c", ".cc", ".cpp", ".h", ".hpp"}:
+    if Path(lower).suffix in {
+        ".py",
+        ".js",
+        ".jsx",
+        ".ts",
+        ".tsx",
+        ".java",
+        ".rb",
+        ".c",
+        ".cc",
+        ".cpp",
+        ".h",
+        ".hpp",
+        ".mjs",
+        ".cjs",
+        ".mts",
+        ".cts",
+    }:
         return SourceType.CODE
     if lower.endswith((".md", ".rst", ".txt")):
         return SourceType.DOC

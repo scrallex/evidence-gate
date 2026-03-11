@@ -17,6 +17,8 @@ proceeds.
 
 - ingests repository content plus optional local exports from incidents, Jira,
   PagerDuty, Slack, and Confluence into a persisted structural knowledge base
+- ingests optional LSIF or SCIP sidecars from `.evidence-gate/graphs` to improve
+  blast radius and retrieval on dynamic or non-Python repos
 - answers change-impact and engineering evidence queries
 - returns cited evidence spans, prior PR or incident twins, blast radius, and an
   `admit | abstain | escalate` decision
@@ -184,6 +186,11 @@ The composite GitHub Action can ingest the checked-out repository plus any
 mounted export directories you pass through `external_sources`. If those
 corpora live outside the checkout, mount them into the runner or point the
 action at an already-running Evidence Gate service that can see those paths.
+
+For repositories that can emit native code graphs, place LSIF or SCIP sidecars
+under `.evidence-gate/graphs`. Evidence Gate will ingest those graphs to
+augment blast radius and retrieval while preserving the existing decision
+contract and heuristic fallback behavior.
 
 ## Benchmark Proof
 

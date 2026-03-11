@@ -6,6 +6,7 @@ from collections import Counter
 from pathlib import Path
 
 from evidence_gate.ingest.base import BaseIngestor
+from evidence_gate.native_graph import native_graph_relative_prefixes
 from evidence_gate.retrieval.repository import (
     DocumentRecord,
     classify_source_type,
@@ -28,9 +29,12 @@ class LocalRepoIngestor(BaseIngestor):
 
     def collect_documents(self) -> list[DocumentRecord]:
         documents: list[DocumentRecord] = []
+        exclude_prefixes = tuple(
+            sorted({*self.exclude_relative_prefixes, *native_graph_relative_prefixes()})
+        )
         for path in iter_repository_files(
             self.repo_root,
-            exclude_relative_prefixes=self.exclude_relative_prefixes,
+            exclude_relative_prefixes=exclude_prefixes,
         ):
             content = path.read_text(encoding="utf-8", errors="ignore")
             if not content.strip():
