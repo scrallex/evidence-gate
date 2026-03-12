@@ -23,6 +23,7 @@ from evidence_gate.decision.models import (
 )
 from evidence_gate.decision.service import DecisionService
 from evidence_gate.retrieval.repository import (
+    DocumentRecord,
     classify_source_type,
     scan_repository,
     search_documents,
@@ -500,7 +501,7 @@ def run_swebench_replay_benchmark(
 
         repo_root, service, documents = prepared_contexts[context_key]
         query = _summarize_problem_statement(str(item["problem_statement"]))
-        decoy_paths = _select_decoy_paths(repo_root, gold_paths, query)
+        decoy_paths = _select_decoy_paths(repo_root, gold_paths, query, documents=documents)
         if not decoy_paths:
             continue
 
@@ -522,6 +523,7 @@ def run_swebench_replay_benchmark(
                 gold_test_paths,
                 query,
                 initial_gold_paths,
+                documents=documents,
             )
             retry_attempted = (
                 not initial_gold_action.allowed
@@ -784,13 +786,15 @@ def _select_retry_test_paths(
     gold_test_paths: list[str],
     query: str,
     existing_paths: list[str],
+    *,
+    documents: list[DocumentRecord] | None = None,
 ) -> list[str]:
     if gold_test_paths:
         return gold_test_paths[:2]
-    documents = scan_repository(repo_root)
+    repository_documents = documents if documents is not None else scan_repository(repo_root)
     existing = {Path(path).as_posix() for path in existing_paths}
     retry_paths: list[str] = []
-    for hit in search_documents(documents, query, top_k=20):
+    for hit in search_documents(repository_documents, query, top_k=20):
         candidate = Path(hit.path).as_posix()
         if hit.source_type != SourceType.TEST or candidate in existing:
             continue
@@ -1240,10 +1244,17 @@ def _patch_paths(patch_text: str) -> list[str]:
     return paths
 
 
-def _select_decoy_paths(repo_root: Path, gold_paths: list[str], query: str) -> list[str]:
+def _select_decoy_paths(
+    repo_root: Path,
+    gold_paths: list[str],
+    query: str,
+    *,
+    documents: list[DocumentRecord] | None = None,
+) -> list[str]:
     gold_set = {Path(path).as_posix() for path in gold_paths}
     query_tokens = set(tokenize(query))
-    for document in scan_repository(repo_root):
+    repository_documents = documents if documents is not None else scan_repository(repo_root)
+    for document in repository_documents:
         candidate = Path(document.path).as_posix()
         if candidate in gold_set:
             continue

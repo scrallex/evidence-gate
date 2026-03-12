@@ -99,3 +99,40 @@ def test_ast_dependency_analyzer_resolves_workspace_package_aliases(tmp_path: Pa
     impacted = analyzer.impacted_files("packages/cache-kit/src/store.ts")
 
     assert "packages/cache-kit/__tests__/cache.spec.ts" in impacted
+
+
+def test_ast_dependency_analyzer_dependency_depth_handles_cycles(tmp_path: Path) -> None:
+    repo_root = tmp_path / "cyclic_repo"
+    _write(
+        repo_root / "pkg" / "a.py",
+        "from pkg.c import c\n\n"
+        "def a():\n"
+        "    return c()\n",
+    )
+    _write(
+        repo_root / "pkg" / "b.py",
+        "from pkg.a import a\n\n"
+        "def b():\n"
+        "    return a()\n",
+    )
+    _write(
+        repo_root / "pkg" / "c.py",
+        "from pkg.b import b\n\n"
+        "def c():\n"
+        "    return b()\n",
+    )
+    _write(
+        repo_root / "pkg" / "d.py",
+        "from pkg.c import c\n\n"
+        "def d():\n"
+        "    return c()\n",
+    )
+
+    analyzer = ASTDependencyAnalyzer(repo_root)
+    analyzer.build_dependency_graph()
+
+    impacted = analyzer.impacted_files("pkg/a.py")
+    depth = analyzer.dependency_depth("pkg/a.py")
+
+    assert impacted == {"pkg/a.py", "pkg/b.py", "pkg/c.py", "pkg/d.py"}
+    assert depth == 3

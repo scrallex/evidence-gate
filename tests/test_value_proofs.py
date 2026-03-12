@@ -2,13 +2,16 @@ from pathlib import Path
 
 from evidence_gate.benchmark.value_proofs import (
     GENERALIZATION_CASES,
-    _select_swebench_instances,
     _build_healing_prompt,
+    _select_decoy_paths,
+    _select_retry_test_paths,
+    _select_swebench_instances,
     _split_gold_patch_paths,
     render_swebench_replay_report,
     run_multi_source_incident_benchmark,
     run_poisoned_corpus_benchmark,
 )
+from evidence_gate.retrieval.repository import scan_repository
 
 
 def test_poisoned_corpus_benchmark_builds_balanced_case_set(tmp_path: Path) -> None:
@@ -114,3 +117,41 @@ def test_render_swebench_replay_report_mentions_compiler_loop_and_limit() -> Non
 
     assert "compiler-like healing loop" in report
     assert "OpenHands or SWE-agent" in report
+
+
+def test_swebench_helpers_reuse_pre_scanned_documents(tmp_path: Path, monkeypatch) -> None:
+    repo_root = tmp_path / "repo"
+    (repo_root / "src").mkdir(parents=True)
+    (repo_root / "tests").mkdir(parents=True)
+    (repo_root / "src" / "cache.py").write_text("def refresh_cache():\n    return True\n", encoding="utf-8")
+    (repo_root / "src" / "worker.py").write_text("def run_worker():\n    return True\n", encoding="utf-8")
+    (repo_root / "tests" / "test_cache.py").write_text(
+        "from src.cache import refresh_cache\n\n"
+        "def test_refresh_cache():\n"
+        "    assert refresh_cache() is True\n",
+        encoding="utf-8",
+    )
+
+    documents = scan_repository(repo_root)
+
+    def _unexpected_scan(*args, **kwargs):
+        raise AssertionError("scan_repository should not run when documents are provided")
+
+    monkeypatch.setattr("evidence_gate.benchmark.value_proofs.scan_repository", _unexpected_scan)
+
+    decoy_paths = _select_decoy_paths(
+        repo_root,
+        ["src/cache.py"],
+        "Review the cache refresh change before merge.",
+        documents=documents,
+    )
+    retry_paths = _select_retry_test_paths(
+        repo_root,
+        [],
+        "Review the cache refresh change before merge.",
+        ["src/cache.py"],
+        documents=documents,
+    )
+
+    assert decoy_paths == ["src/worker.py"]
+    assert retry_paths == ["tests/test_cache.py"]

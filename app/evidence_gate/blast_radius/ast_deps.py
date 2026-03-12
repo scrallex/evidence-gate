@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast
 import json
 import re
+from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -75,40 +76,13 @@ class ASTDependencyAnalyzer:
         self._apply_native_graph_edges()
 
     def impacted_files(self, file_path: str) -> set[str]:
-        if file_path not in self.dependencies:
-            return {file_path}
-
-        visited: set[str] = set()
-        queue = [file_path]
-        while queue:
-            current = queue.pop()
-            if current in visited:
-                continue
-            visited.add(current)
-            dependency = self.dependencies.get(current)
-            if dependency is None:
-                continue
-            for importer in dependency.imported_by:
-                if importer not in visited:
-                    queue.append(importer)
-        return visited
+        return set(self._importer_depths(file_path))
 
     def dependency_depth(self, file_path: str) -> int:
-        if file_path not in self.dependencies:
+        importer_depths = self._importer_depths(file_path)
+        if not importer_depths:
             return 0
-
-        def _walk(current: str, seen: set[str]) -> int:
-            dependency = self.dependencies.get(current)
-            if dependency is None:
-                return 0
-            depth = 0
-            for importer in dependency.imported_by:
-                if importer in seen:
-                    continue
-                depth = max(depth, 1 + _walk(importer, seen | {importer}))
-            return depth
-
-        return _walk(file_path, {file_path})
+        return max(importer_depths.values())
 
     def summarize(self, changed_paths: list[str]) -> BlastRadius:
         impacted: set[str] = set()
@@ -137,6 +111,27 @@ class ASTDependencyAnalyzer:
             max_dependency_depth=max_depth,
             impacted_paths=sorted(impacted),
         )
+
+    def _importer_depths(self, file_path: str) -> dict[str, int]:
+        if file_path not in self.dependencies:
+            return {file_path: 0}
+
+        # Use shortest importer distance rather than exploring all simple paths.
+        # Dense or cyclic graphs can make recursive longest-path walks explode.
+        depths = {file_path: 0}
+        queue: deque[str] = deque([file_path])
+        while queue:
+            current = queue.popleft()
+            dependency = self.dependencies.get(current)
+            if dependency is None:
+                continue
+            next_depth = depths[current] + 1
+            for importer in dependency.imported_by:
+                if importer in depths:
+                    continue
+                depths[importer] = next_depth
+                queue.append(importer)
+        return depths
 
     def _extract_imports(self, file_path: Path) -> set[str]:
         if file_path.suffix == ".py":
