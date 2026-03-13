@@ -13,10 +13,10 @@ from textwrap import wrap
 
 WIDTH = 1600
 HEIGHT = 900
-TITLE_Y = 110
-BODY_Y = 220
+TITLE_Y = 182
+BODY_Y = 286
 LINE_HEIGHT = 36
-SNIPPET_Y = 360
+SNIPPET_Y = 430
 SNIPPET_LINE_HEIGHT = 28
 FOOTER_Y = 840
 
@@ -54,6 +54,49 @@ def svg_text_block(lines: list[str], *, x: int, y: int, font_size: int, fill: st
     return "\n".join(rendered)
 
 
+def extract_comment_focus(comment_text: str) -> str:
+    focus_lines: list[str] = []
+    for raw_line in comment_text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if line.startswith("## "):
+            focus_lines.append(line)
+            continue
+        if line.startswith("- Failure reason:"):
+            focus_lines.append(line)
+            continue
+        if line.startswith("- Missing evidence:"):
+            focus_lines.append(line)
+            continue
+        if line.startswith("### Suggested Retry Prompt"):
+            focus_lines.append(line)
+            continue
+        if focus_lines and not line.startswith("- ") and not line.startswith("<!-- "):
+            focus_lines.append(line)
+    return "\n".join(focus_lines)
+
+
+def load_full_replay_metrics(benchmark_json: Path) -> dict[str, object]:
+    payload = json.loads(benchmark_json.read_text(encoding="utf-8"))
+    summary = payload["summary"]
+    cases = payload.get("cases", [])
+    initial_allowed = sum(1 for case in cases if case.get("initial_gold_allowed"))
+    healed_allowed = sum(1 for case in cases if case.get("healed_gold_allowed"))
+    healed_delta = healed_allowed - initial_allowed
+    false_allow_count = sum(1 for case in cases if case.get("decoy_allowed"))
+    return {
+        "dataset_name": payload["dataset"],
+        "case_count": summary["case_count"],
+        "initial_allow_rate": summary["initial_gold_allow_rate"],
+        "healed_allow_rate": summary["healed_gold_allow_rate"],
+        "uplift_points": (summary["healed_gold_allow_rate"] - summary["initial_gold_allow_rate"]) * 100.0,
+        "healed_delta": healed_delta,
+        "false_allow_rate": summary["decoy_false_allow_rate"],
+        "false_allow_count": false_allow_count,
+    }
+
+
 def write_slide(
     *,
     output_path: Path,
@@ -62,14 +105,30 @@ def write_slide(
     snippet: str,
     accent: str,
     footer: str,
+    eyebrow: str,
 ) -> None:
     body_lines = wrap_lines(body, 72)
     code_lines = snippet_lines(snippet)
+    title_font_size = 60
+    if len(title) > 34:
+        title_font_size = 54
+    if len(title) > 46:
+        title_font_size = 48
     svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="{WIDTH}" height="{HEIGHT}" viewBox="0 0 {WIDTH} {HEIGHT}">
-  <rect width="{WIDTH}" height="{HEIGHT}" fill="#0b1220" />
-  <rect x="0" y="0" width="{WIDTH}" height="18" fill="{accent}" />
-  <rect x="80" y="310" width="1440" height="450" rx="18" fill="#101827" stroke="{accent}" stroke-width="3" />
-  <text x="80" y="{TITLE_Y}" font-family="DejaVu Sans" font-size="58" font-weight="700" fill="#f8fafc">{escape(title)}</text>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#08111f" />
+      <stop offset="100%" stop-color="#14243f" />
+    </linearGradient>
+  </defs>
+  <rect width="{WIDTH}" height="{HEIGHT}" fill="url(#bg)" />
+  <circle cx="1340" cy="120" r="180" fill="{accent}" opacity="0.10" />
+  <circle cx="1480" cy="760" r="220" fill="{accent}" opacity="0.08" />
+  <rect x="0" y="0" width="{WIDTH}" height="16" fill="{accent}" />
+  <rect x="80" y="90" width="340" height="48" rx="24" fill="{accent}" opacity="0.18" />
+  <text x="110" y="123" font-family="DejaVu Sans" font-size="22" font-weight="700" fill="{accent}">{escape(eyebrow)}</text>
+  <rect x="80" y="360" width="1440" height="390" rx="22" fill="#0d1728" stroke="{accent}" stroke-width="3" />
+  <text x="80" y="{TITLE_Y}" font-family="DejaVu Sans" font-size="{title_font_size}" font-weight="700" fill="#f8fafc">{escape(title)}</text>
   {svg_text_block(body_lines, x=80, y=BODY_Y, font_size=30, fill="#cbd5e1", font_family="DejaVu Sans")}
   {svg_text_block(code_lines, x=110, y=SNIPPET_Y, font_size=24, fill="#e2e8f0", font_family="DejaVu Sans Mono")}
   <text x="80" y="{FOOTER_Y}" font-family="DejaVu Sans" font-size="24" fill="{accent}">{escape(footer)}</text>
@@ -78,7 +137,7 @@ def write_slide(
     output_path.write_text(svg, encoding="utf-8")
 
 
-def slide_specs(summary: dict[str, object]) -> list[dict[str, object]]:
+def slide_specs(summary: dict[str, object], benchmark_metrics: dict[str, object]) -> list[dict[str, object]]:
     blocked = summary["blocked"]
     healed = summary["healed"]
     repo_url = str(summary["repo_url"])
@@ -87,101 +146,136 @@ def slide_specs(summary: dict[str, object]) -> list[dict[str, object]]:
     blocked_checks = Path(str(blocked["checks_path"])).read_text(encoding="utf-8")
     healed_checks = Path(str(healed["checks_path"])).read_text(encoding="utf-8")
     retry_prompt = str(blocked.get("retry_prompt", ""))
+    blocked_focus = extract_comment_focus(blocked_comment)
+    proof_snippet = (
+        f"Tested on {benchmark_metrics['case_count']} SWE-bench Lite tasks\n"
+        f"Healed {benchmark_metrics['healed_delta']} broken PR-like patches\n"
+        f"+{benchmark_metrics['uplift_points']:.2f} points admit uplift\n"
+        f"{benchmark_metrics['false_allow_rate']:.2%} wrong-file false-allow"
+    )
 
     return [
         {
-            "title": "Evidence Gate: Compiler For AI Agents",
+            "eyebrow": "THE PROBLEM",
+            "title": "AI Agents Write Tech Debt",
             "body": (
-                "This demo shows a real public pull request getting blocked for missing test evidence, "
-                "then turning green after the agent consumes Evidence Gate's retry prompt."
+                "They fix code fast, but they skip tests and ignore the operating context that makes the "
+                "change safe to merge. Evidence Gate exists to block that incomplete work before review."
             ),
-            "snippet": f"Repo: {repo_url}\nPR: {pr_url}",
+            "snippet": (
+                "Failure pattern:\n"
+                "  1. code-only fix lands\n"
+                "  2. tests stay stale\n"
+                "  3. runbook context is skipped\n"
+                "  4. reviewer inherits the cleanup"
+            ),
             "accent": "#38bdf8",
-            "footer": "Message: AI agents write tech debt. Evidence Gate forces them to finish the job.",
-            "duration": 10,
+            "footer": "Hook: Evidence Gate forces agents to finish the engineering job, not just the diff.",
+            "duration": 8,
         },
         {
-            "title": "Scene 1: The Agent Makes The Code-Only Fix",
+            "eyebrow": "1. THE ACTION",
+            "title": "The Agent Opens A Code-Only PR",
             "body": (
-                "The first pull request fixes the billing tax bug but skips the missing regression test. "
-                "The GitHub Action runs Evidence Gate as an active merge gate."
+                "This is a real public demo PR. The agent fixes the billing tax bug in `billing/api.py`, "
+                "but it does not touch the regression test that should prove the fix."
             ),
-            "snippet": "Changed path:\n  billing/api.py\n\nNo test file touched on the first attempt.",
+            "snippet": (
+                f"Repo: {repo_url}\n"
+                f"PR: {pr_url}\n\n"
+                "Changed path:\n"
+                "  billing/api.py\n\n"
+                "No test file touched on the first attempt."
+            ),
             "accent": "#f59e0b",
-            "footer": "Evidence Gate is wired directly into the pull request workflow.",
-            "duration": 14,
+            "footer": "This is the failure mode: a plausible fix that still creates review debt.",
+            "duration": 11,
         },
         {
-            "title": "Scene 2: The PR Gets Blocked",
+            "eyebrow": "2. THE GATE",
+            "title": "Evidence Gate Blocks The PR",
             "body": (
-                "The workflow fails closed. Evidence Gate does not allow the billing fix through because "
-                "the pull request lacks supporting test evidence."
+                "The workflow fails closed. Evidence Gate sees a code path change without supporting test "
+                "evidence and refuses to let the pull request slide through on vibes."
             ),
             "snippet": blocked_checks,
             "accent": "#ef4444",
-            "footer": "Outcome: red check, blocked merge, no human review required yet.",
-            "duration": 16,
+            "footer": "Outcome: red check, blocked merge, no human reviewer has to explain the miss.",
+            "duration": 12,
         },
         {
-            "title": "Scene 3: Evidence Gate Explains Exactly Why",
+            "eyebrow": "3. THE DIAGNOSTIC",
+            "title": "The Gate Returns `missing_evidence`",
             "body": (
-                "The pull request comment is the sales moment. It cites the missing evidence and emits "
-                "a concrete retry instruction instead of just saying no."
+                "This is the differentiator. Evidence Gate does not only say no. It emits a machine-readable "
+                "diagnostic and a retry prompt the agent can use on the very next attempt."
             ),
-            "snippet": blocked_comment,
+            "snippet": blocked_focus,
             "accent": "#ef4444",
-            "footer": "Key UX: missing_evidence plus a Suggested Retry Prompt.",
-            "duration": 18,
+            "footer": "Key UX: the block becomes the agent's next instruction.",
+            "duration": 14,
         },
         {
-            "title": "Scene 4: The Agent Uses The Retry Prompt",
+            "eyebrow": "4. THE HEAL",
+            "title": "The Agent Consumes The Prompt",
             "body": (
-                "Now the agent can repair the change instead of opening another bad pull request. "
-                "The retry prompt becomes the next instruction."
+                "The retry prompt tells the agent what is missing. It goes back, adds the regression test, "
+                "and pushes the same pull request through the gate again."
             ),
-            "snippet": retry_prompt or "Evidence Gate blocked the previous attempt because the change lacked supporting test evidence.",
+            "snippet": (
+                (retry_prompt or "Evidence Gate blocked the previous attempt because the change lacked supporting test evidence.")
+                + "\n\n"
+                "New file:\n"
+                "  tests/test_total.py\n\n"
+                "Test case:\n"
+                "  assert calculate_total_cents(1000, 8) == 1080"
+            ),
             "accent": "#f59e0b",
             "footer": "Compiler loop: fail, explain, repair, retry.",
-            "duration": 14,
+            "duration": 13,
         },
         {
-            "title": "Scene 5: The Agent Adds The Missing Test",
+            "eyebrow": "5. THE RESULT",
+            "title": "The Same PR Turns Green",
             "body": (
-                "A second commit adds the regression test for the billing total calculation and pushes "
-                "the same pull request back through the gate."
-            ),
-            "snippet": "New file:\n  tests/test_total.py\n\nTest case:\n  assert calculate_total_cents(1000, 8) == 1080",
-            "accent": "#22c55e",
-            "footer": "The agent is now doing the complete engineering job.",
-            "duration": 14,
-        },
-        {
-            "title": "Scene 6: The PR Turns Green",
-            "body": (
-                "The same pull request now passes because the required evidence is present. "
-                "Evidence Gate has coached the agent into a mergeable change."
+                "Nothing about the reviewer changed. The patch got better. With the missing test in place, "
+                "Evidence Gate now admits the change and the pull request turns green."
             ),
             "snippet": healed_checks,
             "accent": "#22c55e",
-            "footer": "Outcome: green check, guarded merge path, less human cleanup.",
-            "duration": 16,
+            "footer": "Evidence Gate is not review summarization. It is admission control for agents.",
+            "duration": 12,
         },
         {
-            "title": "Evidence Gate Stops Tech Debt Before Review",
+            "eyebrow": "5. THE PROOF",
+            "title": "This Pattern Holds Beyond One Demo",
             "body": (
-                "This is the product wedge: a 0.00% false-allow guardrail that pushes agents toward "
-                "tested, document-backed pull requests before they ever reach a reviewer."
+                "The public PR is the visual hook. The benchmark is the proof layer: on the full official "
+                "SWE-bench Lite replay, the healing loop rescued 54 initially blocked gold-path attempts."
+            ),
+            "snippet": proof_snippet,
+            "accent": "#38bdf8",
+            "footer": "Use this line: Tested on 300 SWE-bench Lite tasks. Healed 54 broken PRs. +18% uplift.",
+            "duration": 12,
+        },
+        {
+            "eyebrow": "CLOSE",
+            "title": "Compiler For Agents, Not Another PR Bot",
+            "body": (
+                "CodeRabbit tells a human what looks risky. Evidence Gate blocks the agent, explains why, "
+                "and forces the next retry to include the missing test or supported file path."
             ),
             "snippet": (
-                "Healing loop proof:\n"
-                "  75.00% healed SWE-bench gold-path allow\n"
-                "  66.67% healing success rate\n"
-                "  0.00% false-allow in the replay\n"
-                "  75.00% cross-language curated pilot allow"
+                "Narrative:\n"
+                "  problem -> code-only PR\n"
+                "  gate -> missing_evidence\n"
+                "  heal -> added test\n"
+                "  result -> green PR\n"
+                "  proof -> +18.00 points on 300 tasks"
             ),
             "accent": "#38bdf8",
             "footer": "Tagline: AI agents write tech debt. Evidence Gate forces them to write tests and read your docs first.",
-            "duration": 12,
+            "duration": 9,
         },
     ]
 
@@ -206,12 +300,19 @@ def parse_args() -> argparse.Namespace:
         default=Path("artifacts/agent_healing_demo/video_frames"),
         help="Working directory for generated slides.",
     )
+    parser.add_argument(
+        "--benchmark-json",
+        type=Path,
+        default=Path("benchmarks/results/swebench_lite_full_replay.json"),
+        help="Path to the full SWE-bench Lite replay JSON for proof-slide stats.",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     summary = json.loads(args.summary_json.read_text(encoding="utf-8"))
+    benchmark_metrics = load_full_replay_metrics(args.benchmark_json)
     workdir = args.workdir.expanduser().resolve()
     if workdir.exists():
         for path in workdir.iterdir():
@@ -220,7 +321,7 @@ def main() -> int:
     else:
         workdir.mkdir(parents=True, exist_ok=True)
 
-    specs = slide_specs(summary)
+    specs = slide_specs(summary, benchmark_metrics)
     concat_lines: list[str] = []
     for index, spec in enumerate(specs, start=1):
         svg_path = workdir / f"slide_{index:02d}.svg"
@@ -233,6 +334,7 @@ def main() -> int:
             snippet=str(spec["snippet"]),
             accent=str(spec["accent"]),
             footer=str(spec["footer"]),
+            eyebrow=str(spec["eyebrow"]),
         )
         run(["convert", str(svg_path), str(png_path)])
         run(

@@ -81,7 +81,8 @@ Evidence Gate comment. The default output path is:
 artifacts/agent_healing_demo/evidence-gate-healing-loop-demo.mp4
 ```
 
-The current cut renders to 114 seconds.
+The refreshed sales cut now renders to about 91 seconds and closes with the
+full 300-task `SWE-bench_Lite` replay numbers instead of the old pilot slice.
 
 ## Findings
 
