@@ -1,0 +1,608 @@
+{
+  "artifacts": {
+    "documents": "documents.json",
+    "sidecar": "sidecar.json",
+    "spans": "spans.json"
+  },
+  "built_at": "2026-03-11T22:25:21.483191+00:00",
+  "document_count": 117,
+  "file_count": 117,
+  "format_version": 2,
+  "repo_fingerprint": "d5c41ffc88938928fae758f405528978",
+  "repo_root": "/sep/evidence-gate",
+  "settings_signature": "092f500b5a1e626ed739482cae2f1445",
+  "snapshot": [
+    {
+      "mtime_ns": 1773130623517072019,
+      "path": ".github/workflows/evidence-gate-guardrail.yml",
+      "size": 5912
+    },
+    {
+      "mtime_ns": 1773172722246882601,
+      "path": ".vscode/settings.json",
+      "size": 116
+    },
+    {
+      "mtime_ns": 1773183359993818314,
+      "path": "README.md",
+      "size": 9228
+    },
+    {
+      "mtime_ns": 1773188329045489877,
+      "path": "action.yml",
+      "size": 7127
+    },
+    {
+      "mtime_ns": 1773111770387694117,
+      "path": "app/evidence_gate/__init__.py",
+      "size": 92
+    },
+    {
+      "mtime_ns": 1773111770388645822,
+      "path": "app/evidence_gate/api/__init__.py",
+      "size": 36
+    },
+    {
+      "mtime_ns": 1773116456054293842,
+      "path": "app/evidence_gate/api/main.py",
+      "size": 1468
+    },
+    {
+      "mtime_ns": 1773124698226782563,
+      "path": "app/evidence_gate/api/routes.py",
+      "size": 4768
+    },
+    {
+      "mtime_ns": 1773111770388520774,
+      "path": "app/evidence_gate/audit/__init__.py",
+      "size": 32
+    },
+    {
+      "mtime_ns": 1773124662114034646,
+      "path": "app/evidence_gate/audit/store.py",
+      "size": 1903
+    },
+    {
+      "mtime_ns": 1773119795156464452,
+      "path": "app/evidence_gate/benchmark/__init__.py",
+      "size": 46
+    },
+    {
+      "mtime_ns": 1773121014816815950,
+      "path": "app/evidence_gate/benchmark/fastapi.py",
+      "size": 38416
+    },
+    {
+      "mtime_ns": 1773183453150313312,
+      "path": "app/evidence_gate/benchmark/value_proofs.py",
+      "size": 53625
+    },
+    {
+      "mtime_ns": 1773111770388600576,
+      "path": "app/evidence_gate/blast_radius/__init__.py",
+      "size": 31
+    },
+    {
+      "mtime_ns": 1773181555442991590,
+      "path": "app/evidence_gate/blast_radius/ast_deps.py",
+      "size": 11006
+    },
+    {
+      "mtime_ns": 1773117829633817572,
+      "path": "app/evidence_gate/config.py",
+      "size": 2923
+    },
+    {
+      "mtime_ns": 1773111770388489560,
+      "path": "app/evidence_gate/decision/__init__.py",
+      "size": 37
+    },
+    {
+      "mtime_ns": 1773174025142029796,
+      "path": "app/evidence_gate/decision/models.py",
+      "size": 6648
+    },
+    {
+      "mtime_ns": 1773174056448532908,
+      "path": "app/evidence_gate/decision/service.py",
+      "size": 31415
+    },
+    {
+      "mtime_ns": 1773129658512989897,
+      "path": "app/evidence_gate/ingest/__init__.py",
+      "size": 765
+    },
+    {
+      "mtime_ns": 1773124615574694909,
+      "path": "app/evidence_gate/ingest/base.py",
+      "size": 429
+    },
+    {
+      "mtime_ns": 1773129658512989897,
+      "path": "app/evidence_gate/ingest/confluence_export.py",
+      "size": 4429
+    },
+    {
+      "mtime_ns": 1773129658511481244,
+      "path": "app/evidence_gate/ingest/external_common.py",
+      "size": 3367
+    },
+    {
+      "mtime_ns": 1773129658512941580,
+      "path": "app/evidence_gate/ingest/jira_export.py",
+      "size": 5168
+    },
+    {
+      "mtime_ns": 1773124615574704983,
+      "path": "app/evidence_gate/ingest/local_repo.py",
+      "size": 1610
+    },
+    {
+      "mtime_ns": 1773129844730455557,
+      "path": "app/evidence_gate/ingest/markdown_incident.py",
+      "size": 3376
+    },
+    {
+      "mtime_ns": 1773129658512958864,
+      "path": "app/evidence_gate/ingest/pagerduty_incident.py",
+      "size": 4722
+    },
+    {
+      "mtime_ns": 1773129658512974841,
+      "path": "app/evidence_gate/ingest/slack_incident.py",
+      "size": 4453
+    },
+    {
+      "mtime_ns": 1773123361847504079,
+      "path": "app/evidence_gate/mcp/__init__.py",
+      "size": 145
+    },
+    {
+      "mtime_ns": 1773123361848986119,
+      "path": "app/evidence_gate/mcp/__main__.py",
+      "size": 128
+    },
+    {
+      "mtime_ns": 1773129760051374682,
+      "path": "app/evidence_gate/mcp/server.py",
+      "size": 11278
+    },
+    {
+      "mtime_ns": 1773111770388560627,
+      "path": "app/evidence_gate/retrieval/__init__.py",
+      "size": 42
+    },
+    {
+      "mtime_ns": 1773181529882762269,
+      "path": "app/evidence_gate/retrieval/repository.py",
+      "size": 6385
+    },
+    {
+      "mtime_ns": 1773129760050374634,
+      "path": "app/evidence_gate/retrieval/structural.py",
+      "size": 46137
+    },
+    {
+      "mtime_ns": 1773112391102787812,
+      "path": "app/evidence_gate/structural/__init__.py",
+      "size": 64
+    },
+    {
+      "mtime_ns": 1773112391103568877,
+      "path": "app/evidence_gate/structural/encoding.py",
+      "size": 1928
+    },
+    {
+      "mtime_ns": 1773112391103584074,
+      "path": "app/evidence_gate/structural/sidecar.py",
+      "size": 9302
+    },
+    {
+      "mtime_ns": 1773112391103584074,
+      "path": "app/evidence_gate/verification/__init__.py",
+      "size": 40
+    },
+    {
+      "mtime_ns": 1773124580856141331,
+      "path": "app/evidence_gate/verification/truth_pack.py",
+      "size": 7037
+    },
+    {
+      "mtime_ns": 1773188394500671360,
+      "path": "artifacts/agent_healing_demo/blocked_checks.txt",
+      "size": 134
+    },
+    {
+      "mtime_ns": 1773188394500612963,
+      "path": "artifacts/agent_healing_demo/blocked_comment.md",
+      "size": 1239
+    },
+    {
+      "mtime_ns": 1773188438806594790,
+      "path": "artifacts/agent_healing_demo/demo_summary.json",
+      "size": 2001
+    },
+    {
+      "mtime_ns": 1773188438806491730,
+      "path": "artifacts/agent_healing_demo/healed_checks.txt",
+      "size": 134
+    },
+    {
+      "mtime_ns": 1773188438806401121,
+      "path": "artifacts/agent_healing_demo/healed_comment.md",
+      "size": 539
+    },
+    {
+      "mtime_ns": 1773188634880537606,
+      "path": "artifacts/agent_healing_demo/video_frames/segments.txt",
+      "size": 664
+    },
+    {
+      "mtime_ns": 1773183416489544352,
+      "path": "benchmarks/README.md",
+      "size": 1919
+    },
+    {
+      "mtime_ns": 1773267850007539408,
+      "path": "benchmarks/cases/fastapi_cases.json",
+      "size": 21459
+    },
+    {
+      "mtime_ns": 1773267899542690175,
+      "path": "benchmarks/results/fastapi_structural_vs_baseline.json",
+      "size": 209033
+    },
+    {
+      "mtime_ns": 1773267899542971050,
+      "path": "benchmarks/results/fastapi_structural_vs_baseline.md",
+      "size": 3831
+    },
+    {
+      "mtime_ns": 1773183285277386549,
+      "path": "benchmarks/results/value_proof_benchmarks.json",
+      "size": 137649
+    },
+    {
+      "mtime_ns": 1773183459319302744,
+      "path": "benchmarks/results/value_proof_benchmarks.md",
+      "size": 3170
+    },
+    {
+      "mtime_ns": 1773126952608075869,
+      "path": "data/audit/decisions/52ee8508d62f4230b24d82127080bdcf.json",
+      "size": 5543
+    },
+    {
+      "mtime_ns": 1773126951624295879,
+      "path": "data/knowledge_bases/4ab95b536764976acfd2846e/manifest.json",
+      "size": 12240
+    },
+    {
+      "mtime_ns": 1773124843574820500,
+      "path": "docker-compose.yml",
+      "size": 362
+    },
+    {
+      "mtime_ns": 1773122023000758986,
+      "path": "docs/01_product_thesis.md",
+      "size": 2767
+    },
+    {
+      "mtime_ns": 1773122593576418162,
+      "path": "docs/02_repo_asset_map.md",
+      "size": 3836
+    },
+    {
+      "mtime_ns": 1773175322033276871,
+      "path": "docs/03_mvp_spec.md",
+      "size": 5549
+    },
+    {
+      "mtime_ns": 1773187089825379091,
+      "path": "docs/04_execution_plan.md",
+      "size": 6316
+    },
+    {
+      "mtime_ns": 1773130623521072212,
+      "path": "docs/05_repo_audit_and_delivery_gameplan.md",
+      "size": 6010
+    },
+    {
+      "mtime_ns": 1773130623521072212,
+      "path": "docs/06_release_readiness_and_partner_path.md",
+      "size": 4470
+    },
+    {
+      "mtime_ns": 1773130623521072212,
+      "path": "docs/07_mcp_server.md",
+      "size": 5726
+    },
+    {
+      "mtime_ns": 1773187106739235393,
+      "path": "docs/08_partner_evaluation_guide.md",
+      "size": 9502
+    },
+    {
+      "mtime_ns": 1773183393518435948,
+      "path": "docs/09_agent_skills.md",
+      "size": 4553
+    },
+    {
+      "mtime_ns": 1773187098999843569,
+      "path": "docs/10_value_proof.md",
+      "size": 5108
+    },
+    {
+      "mtime_ns": 1773188716363065076,
+      "path": "docs/11_agent_healing_demo.md",
+      "size": 2935
+    },
+    {
+      "mtime_ns": 1773123361847504079,
+      "path": "pyproject.toml",
+      "size": 687
+    },
+    {
+      "mtime_ns": 1773187047910277821,
+      "path": "scripts/format_pr_comment.py",
+      "size": 4056
+    },
+    {
+      "mtime_ns": 1773188194396061313,
+      "path": "scripts/publish_agent_healing_demo.py",
+      "size": 11246
+    },
+    {
+      "mtime_ns": 1773188611916038097,
+      "path": "scripts/render_agent_healing_video.py",
+      "size": 10622
+    },
+    {
+      "mtime_ns": 1773187059899864042,
+      "path": "scripts/run_action_guardrail.py",
+      "size": 6775
+    },
+    {
+      "mtime_ns": 1773124843574820500,
+      "path": "scripts/run_container.sh",
+      "size": 591
+    },
+    {
+      "mtime_ns": 1773124843575619959,
+      "path": "scripts/run_demo_sandbox.sh",
+      "size": 2201
+    },
+    {
+      "mtime_ns": 1773119827757050872,
+      "path": "scripts/run_fastapi_benchmark.py",
+      "size": 2702
+    },
+    {
+      "mtime_ns": 1773124843575629448,
+      "path": "scripts/run_mcp_stdio.sh",
+      "size": 353
+    },
+    {
+      "mtime_ns": 1773174211782990943,
+      "path": "scripts/run_value_proof_benchmarks.py",
+      "size": 3493
+    },
+    {
+      "mtime_ns": 1773187760787311512,
+      "path": "scripts/scaffold_agent_healing_demo.py",
+      "size": 6914
+    },
+    {
+      "mtime_ns": 1773110926926565042,
+      "path": "scripts/sync_sources.sh",
+      "size": 2491
+    },
+    {
+      "mtime_ns": 1773122023000758986,
+      "path": "sources/SOURCE_INDEX.md",
+      "size": 1075
+    },
+    {
+      "mtime_ns": 1773122023001759034,
+      "path": "sources/archive/README.md",
+      "size": 384
+    },
+    {
+      "mtime_ns": 1773111770388705354,
+      "path": "tests/conftest.py",
+      "size": 266
+    },
+    {
+      "mtime_ns": 1773187077081460084,
+      "path": "tests/test_action_guardrail.py",
+      "size": 6289
+    },
+    {
+      "mtime_ns": 1773174241060396632,
+      "path": "tests/test_api.py",
+      "size": 23000
+    },
+    {
+      "mtime_ns": 1773119819302639461,
+      "path": "tests/test_fastapi_benchmark.py",
+      "size": 586
+    },
+    {
+      "mtime_ns": 1773130407377631008,
+      "path": "tests/test_ingestors.py",
+      "size": 8823
+    },
+    {
+      "mtime_ns": 1773128044398689176,
+      "path": "tests/test_kb_cache.py",
+      "size": 12489
+    },
+    {
+      "mtime_ns": 1773132217991096002,
+      "path": "tests/test_mcp_server.py",
+      "size": 10048
+    },
+    {
+      "mtime_ns": 1773174224948623061,
+      "path": "tests/test_models.py",
+      "size": 6175
+    },
+    {
+      "mtime_ns": 1773181568625625609,
+      "path": "tests/test_structural_retrieval.py",
+      "size": 3549
+    },
+    {
+      "mtime_ns": 1773174250470848454,
+      "path": "tests/test_value_proofs.py",
+      "size": 1935
+    },
+    {
+      "mtime_ns": 1773113459873058077,
+      "path": "var/knowledge_bases/463c3932de37cd0586f4faef/documents.json",
+      "size": 999
+    },
+    {
+      "mtime_ns": 1773113459873476203,
+      "path": "var/knowledge_bases/463c3932de37cd0586f4faef/manifest.json",
+      "size": 1100
+    },
+    {
+      "mtime_ns": 1773113459873401005,
+      "path": "var/knowledge_bases/463c3932de37cd0586f4faef/sidecar.json",
+      "size": 9892
+    },
+    {
+      "mtime_ns": 1773113459873237072,
+      "path": "var/knowledge_bases/463c3932de37cd0586f4faef/spans.json",
+      "size": 10323
+    },
+    {
+      "mtime_ns": 1773113500821323944,
+      "path": "var/knowledge_bases/6317254745841635c4472149/documents.json",
+      "size": 999
+    },
+    {
+      "mtime_ns": 1773113500821724332,
+      "path": "var/knowledge_bases/6317254745841635c4472149/manifest.json",
+      "size": 1100
+    },
+    {
+      "mtime_ns": 1773113500821659755,
+      "path": "var/knowledge_bases/6317254745841635c4472149/sidecar.json",
+      "size": 9892
+    },
+    {
+      "mtime_ns": 1773113500821503849,
+      "path": "var/knowledge_bases/6317254745841635c4472149/spans.json",
+      "size": 10323
+    },
+    {
+      "mtime_ns": 1773114095749701583,
+      "path": "var/knowledge_bases/7d140da627baf354348774e0/documents.json",
+      "size": 999
+    },
+    {
+      "mtime_ns": 1773114095750871041,
+      "path": "var/knowledge_bases/7d140da627baf354348774e0/manifest.json",
+      "size": 1100
+    },
+    {
+      "mtime_ns": 1773114095750788004,
+      "path": "var/knowledge_bases/7d140da627baf354348774e0/sidecar.json",
+      "size": 9892
+    },
+    {
+      "mtime_ns": 1773114095750631370,
+      "path": "var/knowledge_bases/7d140da627baf354348774e0/spans.json",
+      "size": 10323
+    },
+    {
+      "mtime_ns": 1773114522180437712,
+      "path": "var/knowledge_bases/99a429fc5ae6eb80588e5e04/documents.json",
+      "size": 999
+    },
+    {
+      "mtime_ns": 1773114522180838726,
+      "path": "var/knowledge_bases/99a429fc5ae6eb80588e5e04/manifest.json",
+      "size": 1100
+    },
+    {
+      "mtime_ns": 1773114522180773679,
+      "path": "var/knowledge_bases/99a429fc5ae6eb80588e5e04/sidecar.json",
+      "size": 9892
+    },
+    {
+      "mtime_ns": 1773114522180615796,
+      "path": "var/knowledge_bases/99a429fc5ae6eb80588e5e04/spans.json",
+      "size": 10323
+    },
+    {
+      "mtime_ns": 1773116445641404882,
+      "path": "var/knowledge_bases/baef7edb7f5acfdf31a3162a/documents.json",
+      "size": 999
+    },
+    {
+      "mtime_ns": 1773116445641882524,
+      "path": "var/knowledge_bases/baef7edb7f5acfdf31a3162a/manifest.json",
+      "size": 1100
+    },
+    {
+      "mtime_ns": 1773116445641814118,
+      "path": "var/knowledge_bases/baef7edb7f5acfdf31a3162a/sidecar.json",
+      "size": 9892
+    },
+    {
+      "mtime_ns": 1773116445641642696,
+      "path": "var/knowledge_bases/baef7edb7f5acfdf31a3162a/spans.json",
+      "size": 10323
+    },
+    {
+      "mtime_ns": 1773116460130048709,
+      "path": "var/knowledge_bases/caba36c72a815c0fa8143833/documents.json",
+      "size": 999
+    },
+    {
+      "mtime_ns": 1773116460130561515,
+      "path": "var/knowledge_bases/caba36c72a815c0fa8143833/manifest.json",
+      "size": 1100
+    },
+    {
+      "mtime_ns": 1773116460130448237,
+      "path": "var/knowledge_bases/caba36c72a815c0fa8143833/sidecar.json",
+      "size": 9892
+    },
+    {
+      "mtime_ns": 1773116460130244914,
+      "path": "var/knowledge_bases/caba36c72a815c0fa8143833/spans.json",
+      "size": 10323
+    },
+    {
+      "mtime_ns": 1773114321372799772,
+      "path": "var/knowledge_bases/e563ada60c4092a2e17589a2/documents.json",
+      "size": 999
+    },
+    {
+      "mtime_ns": 1773114321373210624,
+      "path": "var/knowledge_bases/e563ada60c4092a2e17589a2/manifest.json",
+      "size": 1100
+    },
+    {
+      "mtime_ns": 1773114321373139998,
+      "path": "var/knowledge_bases/e563ada60c4092a2e17589a2/sidecar.json",
+      "size": 9892
+    },
+    {
+      "mtime_ns": 1773114321372974713,
+      "path": "var/knowledge_bases/e563ada60c4092a2e17589a2/spans.json",
+      "size": 10323
+    }
+  ],
+  "sources": [
+    {
+      "path": "/sep/evidence-gate",
+      "type": "repo"
+    }
+  ],
+  "span_count": 1857
+}
