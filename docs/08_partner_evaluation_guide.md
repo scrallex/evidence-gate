@@ -163,12 +163,15 @@ server with absolute default paths for audit and knowledge-base storage.
 See [07_mcp_server.md](/sep/evidence-gate/docs/07_mcp_server.md) for example
 Cursor and Cline configurations.
 
-## 6. Use the GitHub Action guardrail
+## 6. Use the required-check wrappers
 
 The repo ships a root [action.yml](/sep/evidence-gate/action.yml) that:
 
 - starts the Dockerized Evidence Gate service in CI
 - mounts the checked-out repo at `/workspace/target`
+- prefers the prebuilt image `ghcr.io/scrallex/evidence-gate:latest` and falls
+  back to a local Docker build only when the pull fails or `force_local_build`
+  is set
 - automatically fetches recent GitHub pull request precedent when `github_token` is set
 - optionally fetches recent Jira, Confluence, Slack, or PagerDuty context when those credentials are set
 - still accepts explicit `external_sources` when you want mounted corpora
@@ -182,7 +185,7 @@ longer required. A workflow can pass only `github_token` and get recent PR
 precedent immediately. Jira and PagerDuty remain optional add-ons through their
 respective tokens.
 
-Billing-style merge gate example:
+GitHub required-check example:
 
 ```yaml
 jobs:
@@ -216,8 +219,6 @@ jobs:
           PY
       - id: evidence_gate
         uses: scrallex/evidence-gate@evidence-gate
-        env:
-          GATING_MODE: shadow
         with:
           action_summary: "Review the billing PR before merge"
           changed_paths: ${{ steps.diff.outputs.paths }}
@@ -235,13 +236,8 @@ jobs:
           slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
           slack_channel_ids: ${{ vars.SLACK_CHANNEL_IDS }}
           pagerduty_token: ${{ secrets.PAGERDUTY_TOKEN }}
+          gating_mode: enforce
           safety_policy_preset: strict-financial
-      - name: Enforce only after shadow review
-        if: ${{ env.GATING_MODE != 'shadow' && steps.evidence_gate.outputs.allowed != 'true' }}
-        shell: bash
-        run: |
-          echo "Evidence Gate blocked this pull request." >&2
-          exit 1
 ```
 
 The action exposes:
@@ -260,7 +256,7 @@ The action exposes:
 - `ingest_status`
 - `repo_fingerprint`
 
-For autonomous-agent evaluations, prefer `GATING_MODE=shadow` on the first
+For a zero-risk pilot, switch the wrapper to `gating_mode: shadow` on the first
 pass. The action will still ingest the repo, calculate the real decision, write
 audit history for the dashboard, and emit a non-failing annotation when it
 would have blocked. Read the blocked response, inject the `missing_evidence`
@@ -276,15 +272,24 @@ Built-in zero-config presets now ship in `policies/`:
 In this repository, the same pattern is already wired in
 [evidence-gate-guardrail.yml](/sep/evidence-gate/.github/workflows/evidence-gate-guardrail.yml).
 
-For local or host-driven evaluations outside GitHub Actions, the companion
-script `scripts/fetch_live_exports.py` can materialize the same GitHub, Jira,
-Confluence, Slack, and PagerDuty directories before you call ingest manually.
-If you want a continuously refreshed context cache instead of one-shot exports,
-run `scripts/sync_live_exports.py` on a short poll interval with the same
-read-only tokens. It stores per-source sync cursors in a local state file so
-each pass only asks for newly updated context.
+For GitLab merge-request pipelines, start from
+[ci/gitlab/evidence-gate-required-check.yml](/sep/evidence-gate/ci/gitlab/evidence-gate-required-check.yml).
+It runs the same decision contract inside the prebuilt CI image and marks the
+job failed when the gate blocks. The provider-neutral bridge script
+`scripts/run_required_check.py` is the shared diff-to-gate entrypoint behind
+both wrappers.
+
+For local or host-driven evaluations outside GitHub Actions or GitLab, the
+companion script `scripts/fetch_live_exports.py` can materialize the same
+GitHub, Jira, Confluence, Slack, and PagerDuty directories before you call
+ingest manually. If you want a continuously refreshed context cache instead of
+one-shot exports, run `scripts/sync_live_exports.py` on a short poll interval
+with the same read-only tokens. It stores per-source sync cursors in a local
+state file so each pass only asks for newly updated context.
 The runbook for token rotation, safe poll cadence, and cursor repair is
-`runbooks/live_connector_operations.md`.
+`runbooks/live_connector_operations.md`. The runbook for required-check rollout,
+rollback, prebuilt-image fallback, and diff troubleshooting is
+`runbooks/required_check_operations.md`.
 The security and privacy posture for remote or local model backends is
 documented in [12_security_and_privacy.md](/sep/evidence-gate/docs/12_security_and_privacy.md).
 

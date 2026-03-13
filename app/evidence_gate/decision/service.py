@@ -154,7 +154,7 @@ class DecisionService:
     def decide_change_impact(self, request: ChangeImpactRequest) -> DecisionRecord:
         repo_root = self._resolve_repo_root(request.repo_path)
         query = self._decision_query(request.change_summary, request.diff_summary)
-        ranked_hits = self._search(repo_root, query, request.top_k)
+        ranked_hits = self._search(repo_root, query, request.top_k, changed_paths=request.changed_paths)
         evidence_spans, twin_cases = self._split_hits(ranked_hits)
         focus_paths = request.changed_paths or [
             evidence.source
@@ -176,7 +176,7 @@ class DecisionService:
     def decide_action(self, request: ActionDecisionRequest) -> ActionDecisionResponse:
         repo_root = self._resolve_repo_root(request.repo_path)
         query = self._decision_query(request.action_summary, request.diff_summary)
-        ranked_hits = self._search(repo_root, query, request.top_k)
+        ranked_hits = self._search(repo_root, query, request.top_k, changed_paths=request.changed_paths)
         evidence_spans, twin_cases = self._split_hits(ranked_hits)
         focus_paths = request.changed_paths or [
             evidence.source
@@ -770,12 +770,20 @@ class DecisionService:
             return CONFLUENCE_SOURCE_KIND
         raise ValueError(f"Unsupported external source type: {source_kind}")
 
-    def _search(self, repo_root: Path, query: str, top_k: int) -> list[SearchHit]:
+    def _search(
+        self,
+        repo_root: Path,
+        query: str,
+        top_k: int,
+        *,
+        changed_paths: list[str] | None = None,
+    ) -> list[SearchHit]:
         hits = search_repository(
             repo_root,
             query=query,
             top_k=top_k,
             settings=self.settings,
+            changed_paths=changed_paths,
         )
         if not hits:
             raise ValueError(f"No structural evidence was found under {repo_root}")

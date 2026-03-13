@@ -23,6 +23,8 @@ proceeds.
 - uses Tree-sitter-backed JavaScript and TypeScript analysis plus optional
   LSIF/SCIP sidecars to improve blast radius on React, Node, and other
   non-Python repos
+- boosts retrieval with changed-path-aware test discovery so likely regression
+  tests surface even when the initial query does not mention them explicitly
 - persists AST parse results for unchanged files so blast-radius analysis can
   reuse structural edges on large monorepos instead of reparsing everything
 - ingests optional LSIF or SCIP sidecars from `.evidence-gate/graphs` to improve
@@ -39,6 +41,8 @@ proceeds.
   feed and an Agent Healing Rate view
 - exposes the same decision contract through an MCP server and a composite
   GitHub Action for agent, IDE, and CI workflows
+- ships required-check wrappers for GitHub and GitLab plus a provider-neutral
+  `scripts/run_required_check.py` entrypoint for protected-branch workflows
 
 ## Why It Matters
 
@@ -327,10 +331,30 @@ it can optionally fetch Jira or PagerDuty context when those tokens are
 configured. You can still pass explicit `external_sources`, but mounted export
 directories are no longer required for the default PR guardrail path.
 
+For protected-branch workflows, the repo now also ships:
+
+- `.github/workflows/evidence-gate-guardrail.yml`: a GitHub required-check wrapper
+- `ci/gitlab/evidence-gate-required-check.yml`: a GitLab merge-request wrapper
+- `scripts/run_required_check.py`: a provider-neutral diff-to-gate runner
+- `.github/workflows/publish-ci-image.yml`: a GHCR publish path for the prebuilt CI image
+- `runbooks/required_check_operations.md`: rollout, rollback, and troubleshooting guidance
+
 For repositories that can emit native code graphs, place LSIF or SCIP sidecars
 under `.evidence-gate/graphs`. Evidence Gate will ingest those graphs to
 augment blast radius and retrieval while preserving the existing decision
 contract and heuristic fallback behavior.
+
+If you want to run the required check outside the packaged wrappers:
+
+```bash
+python scripts/run_required_check.py \
+  --api-url http://127.0.0.1:8000 \
+  --repo-path /absolute/path/to/repo \
+  --base-sha "$BASE_SHA" \
+  --head-sha "$HEAD_SHA" \
+  --safety-policy-preset strict-financial \
+  --fail-on-block
+```
 
 ## Benchmark Proof
 
@@ -377,9 +401,9 @@ against a live framework such as OpenHands or SWE-agent.
 
 ## Roadmap
 
-- Immediate: validate the evaluator kit on partner-shaped repos and harden CI adoption
-- Medium term: publish prebuilt CI images, tighten delivery-path policies, and broaden GitHub or GitLab integration
-- Long term: hosted source sync, broader multi-source benchmarks, and production deployment hardening
+- Immediate: validate the required-check wrappers, prebuilt CI image, and test-linking improvements on partner-shaped repos
+- Medium term: prove final pass-rate uplift against a live framework such as OpenHands or SWE-agent
+- Long term: hosted source sync, multi-tenant auth and policy controls, and broader production deployment hardening
 
 Persisted runtime state lives outside the repo under `~/.evidence-gate/` by
 default and is intentionally not part of the tracked source surface. Use

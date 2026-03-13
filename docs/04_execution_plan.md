@@ -88,10 +88,11 @@ delivery path itself.
 Tasks:
 
 1. Validate the new `POST /v1/decide/action` policy on real CI workflows.
-2. Extend the GitHub Action wrapper and add GitLab CI integration.
+2. Field-validate the GitHub required-check wrapper and GitLab CI template on partner repos.
 3. Define policy for merge blocking using blast radius plus missing evidence.
 4. Return machine-readable failure reasons and human-readable PR comments.
 5. Extend the audit surface so repeated checks can be reviewed over time.
+6. Publish and pin the prebuilt CI image so wrappers do not rebuild the service on every run.
 
 Exit criteria:
 
@@ -128,7 +129,7 @@ itself.
 
 Tasks:
 
-1. Benchmark graph-assisted retrieval on dynamic JavaScript or TypeScript repos such as Vite against the current heuristic parser.
+1. Benchmark the current graph-assisted retrieval and changed-path-aware test linking on dynamic JavaScript or TypeScript repos such as Vite.
 2. Expand the LSIF ingest beyond the current file-level reference stub into richer symbol and result-set handling.
 3. Expand the SCIP ingest beyond relationship-based file recovery into stronger symbol-role and semantic retrieval support.
 4. Define partner-facing generation guidance for emitting `.evidence-gate/graphs` artifacts in CI.

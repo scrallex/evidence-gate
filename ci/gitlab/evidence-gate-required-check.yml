@@ -1,0 +1,40 @@
+stages:
+  - verify
+
+variables:
+  EVIDENCE_GATE_IMAGE: ghcr.io/scrallex/evidence-gate:latest
+  EVIDENCE_GATE_API_URL: http://127.0.0.1:8000
+
+evidence_gate_required_check:
+  stage: verify
+  image: $EVIDENCE_GATE_IMAGE
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  script:
+    - mkdir -p .evidence-gate-artifacts
+    - uvicorn evidence_gate.api.main:app --host 127.0.0.1 --port 8000 > /tmp/evidence-gate-api.log 2>&1 &
+    - |
+      for attempt in $(seq 1 60); do
+        if curl -fsS "$EVIDENCE_GATE_API_URL/health" >/dev/null; then
+          break
+        fi
+        sleep 1
+      done
+    - python /opt/evidence-gate/scripts/run_required_check.py
+      --provider gitlab
+      --api-url "$EVIDENCE_GATE_API_URL"
+      --repo-path "$CI_PROJECT_DIR"
+      --action-summary "Merge request !${CI_MERGE_REQUEST_IID}: ${CI_MERGE_REQUEST_TITLE}. Evaluate the diff as an active merge gate and block if the safety policy is violated."
+      --github-repository "$CI_PROJECT_PATH"
+      --summary-output .evidence-gate-artifacts/summary.md
+      --comment-output .evidence-gate-artifacts/comment.md
+      --output .evidence-gate-artifacts/decision.json
+      --dotenv-output .evidence-gate-artifacts/evidence-gate.env
+      --safety-policy-preset strict-financial
+      --fail-on-block
+  artifacts:
+    when: always
+    paths:
+      - .evidence-gate-artifacts/
+    reports:
+      dotenv: .evidence-gate-artifacts/evidence-gate.env

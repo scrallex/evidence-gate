@@ -15,6 +15,7 @@ from typing import Any
 from evidence_gate.decision.models import BlastRadius
 from evidence_gate.native_graph import load_repository_native_graph
 from evidence_gate.retrieval.repository import SKIP_DIRS, classify_source_type
+from evidence_gate.structural.test_links import TestPathIndex
 from evidence_gate.structural.tree_sitter_support import (
     analyze_js_ts_file,
     frontend_anchor_tokens,
@@ -134,6 +135,7 @@ class ASTDependencyAnalyzer:
         self._apply_native_graph_edges()
         self._apply_symbol_reference_edges()
         self._apply_frontend_test_edges()
+        self._apply_path_linked_test_edges()
         self._persist_parse_cache(next_cache)
 
     def impacted_files(self, file_path: str) -> set[str]:
@@ -451,6 +453,31 @@ class ASTDependencyAnalyzer:
             if parent_name and parent_name in overlap:
                 return True
         return len(overlap) >= 2 or len(source_tokens) == 1
+
+    def _apply_path_linked_test_edges(self) -> None:
+        test_paths = [
+            file_path
+            for file_path in self.dependencies
+            if classify_source_type(file_path).value == "test"
+        ]
+        if not test_paths:
+            return
+        test_index = TestPathIndex.from_paths(test_paths)
+        if not test_index.tokens_by_path:
+            return
+
+        for file_path, dependency in self.dependencies.items():
+            if classify_source_type(file_path).value == "test":
+                continue
+            min_score = 0.45 if is_frontend_code_path(file_path) else 0.6
+            for test_path, _score in test_index.linked_tests(
+                file_path,
+                native_graph=self.native_graph,
+                max_results=3,
+                min_score=min_score,
+            ):
+                dependency.imported_by.add(test_path)
+                self.dependencies[test_path].imports.add(file_path)
 
     def _load_parse_cache(self) -> dict[str, dict[str, Any]]:
         cache_path = self._cache_file_path()

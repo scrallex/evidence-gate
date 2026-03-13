@@ -51,20 +51,22 @@ for path-resolution issues in local IDE clients.
 
 ### 3. Action-gating path is implemented but not widely integrated
 
-The service now exposes `POST /v1/decide/action` plus a GitHub Action wrapper,
-but it still needs field validation on real CI workflows and clearer policy
-defaults for blocking merges.
+The service now exposes `POST /v1/decide/action`, a GitHub required-check
+wrapper, a GitLab merge-request template, and a GHCR publish path for the
+prebuilt CI image. It still needs field validation on real CI workflows and
+clearer rollout defaults between `shadow` and `enforce`.
 
 ### 4. Partner adaptation still needs proof on private corpora
 
 The guide now exists, but the product still needs validation on real private
 repos with partner-specific docs, runbooks, and exported institutional history.
 
-### 5. Broader enterprise connectors now exist, but they are export-based
+### 5. Broader enterprise connectors now exist, but they still need hosted polish
 
-The current system can ingest mounted Jira, PagerDuty, Slack, and Confluence
-exports. The remaining gap is operational polish: partner-ready export recipes,
-policy tuning on multi-source corpora, and eventually hosted sync.
+The current system can ingest mounted exports and token-backed live reads for
+Jira, PagerDuty, Slack, and Confluence. The remaining gap is operational polish:
+partner-ready sync hardening, policy tuning on multi-source corpora, and
+eventually hosted sync.
 
 ## What would make this genuinely worthwhile to send broadly
 
@@ -113,9 +115,9 @@ CI action-gating preview
 Tasks:
 
 - harden `POST /v1/decide/action` policies
-- validate GitHub or GitLab check integration
+- validate GitHub and GitLab required-check integration
 - define escalation rules using blast radius plus missing evidence
-- emit auditable machine-readable outputs
+- emit auditable machine-readable outputs and keep the prebuilt CI image current
 
 ### Step 4: expand to enterprise memory
 

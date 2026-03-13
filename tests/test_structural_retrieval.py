@@ -244,3 +244,41 @@ def test_ast_dependency_analyzer_reparses_only_changed_files(tmp_path: Path, mon
 
     assert sorted(parsed_files) == ["pkg/b.py", "pkg/c.py"]
     assert "pkg/a.py" in warm_analyzer.impacted_files("pkg/c.py")
+
+
+def test_search_repository_boosts_path_linked_tests_for_changed_paths(tmp_path: Path) -> None:
+    repo_root = tmp_path / "frontend_repo"
+    _write(
+        repo_root / "apps" / "web" / "src" / "components" / "BillingButton.tsx",
+        "export function BillingButton() {\n"
+        "  return <button>Pay</button>;\n"
+        "}\n",
+    )
+    _write(
+        repo_root / "apps" / "web" / "src" / "components" / "__tests__" / "BillingButton.test.tsx",
+        "import {BillingButton} from '../BillingButton';\n\n"
+        "test('renders the billing button', () => {\n"
+        "  expect(BillingButton).toBeTruthy();\n"
+        "});\n",
+    )
+    _write(
+        repo_root / "docs" / "ui_release.md",
+        "# UI release\n\nReview the checkout UI update before merge and confirm the rollout plan.\n",
+    )
+
+    plain_hits = search_repository(
+        repo_root,
+        query="Review the checkout UI update before merge.",
+        top_k=5,
+        settings=Settings(),
+    )
+    boosted_hits = search_repository(
+        repo_root,
+        query="Review the checkout UI update before merge.",
+        top_k=5,
+        settings=Settings(),
+        changed_paths=["apps/web/src/components/BillingButton.tsx"],
+    )
+
+    assert "apps/web/src/components/__tests__/BillingButton.test.tsx" not in {hit.path for hit in plain_hits[:5]}
+    assert "apps/web/src/components/__tests__/BillingButton.test.tsx" in {hit.path for hit in boosted_hits[:5]}

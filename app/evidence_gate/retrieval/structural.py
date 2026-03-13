@@ -22,14 +22,17 @@ from evidence_gate.ingest.markdown_incident import MarkdownIncidentIngestor
 from evidence_gate.ingest.native_graph import NativeGraphIngestor
 from evidence_gate.ingest.pagerduty_incident import PagerDutyIncidentIngestor
 from evidence_gate.ingest.slack_incident import SlackIncidentIngestor
+from evidence_gate.native_graph import load_repository_native_graph
 from evidence_gate.retrieval.repository import (
     DocumentRecord,
     SearchHit,
     iter_repository_files,
     scan_repository,
+    search_documents,
     tokenize,
 )
 from evidence_gate.structural.sidecar import ManifoldIndex, build_index, encode_text
+from evidence_gate.structural.test_links import TestPathIndex, looks_like_test_path, path_anchor_tokens
 from evidence_gate.verification.truth_pack import TruthPackEngine, TruthPackSpan, _span_id
 
 KB_FORMAT_VERSION = 3
@@ -491,49 +494,84 @@ def search_repository(
     query: str,
     top_k: int,
     settings: Settings,
+    changed_paths: Sequence[str] | None = None,
 ) -> list[SearchHit]:
     kb = load_repository_knowledge_base(repo_root, settings)
+    normalized_changed_paths = _normalize_changed_paths(changed_paths)
     match_limit = max(top_k * 4, 12)
-    matches = kb.truth_pack.structural_search(query, top_k=match_limit)
+    query_plan = _search_query_plan(query, normalized_changed_paths)
+    support_candidate_paths = _support_candidate_paths(
+        repo_root,
+        kb.documents,
+        normalized_changed_paths,
+    )
+    path_boosts = _support_path_boosts(
+        repo_root,
+        kb.documents,
+        normalized_changed_paths,
+    )
 
     hits_by_source: dict[str, SearchHit] = {}
     combined_scores: dict[str, float] = {}
     verified_by_source: dict[str, bool] = {}
-    for match in matches:
-        evaluation = kb.truth_pack.evaluate(match.span, query=query)
-        span = match.span
-        snippet = " ".join(span.text.strip().split())
-        if not snippet:
-            continue
-        score = min(
-            1.0,
-            0.45 * match.final_score
-            + 0.25 * evaluation.coverage
-            + 0.15 * span.patternability
-            + 0.15 * evaluation.semantic_similarity,
-        )
-        hit = SearchHit(
-            path=span.source,
-            source_type=span.source_type,
-            score=score,
-            snippet=snippet[:240],
-            line_number=span.line_number,
-            verified=evaluation.verified,
-            metadata=span.metadata,
-        )
-        existing = hits_by_source.get(span.source)
-        if existing is None or (hit.verified, hit.score) > (existing.verified, existing.score):
-            hits_by_source[span.source] = hit
-        combined_scores[span.source] = 1.0 - (1.0 - combined_scores.get(span.source, 0.0)) * (1.0 - score)
-        verified_by_source[span.source] = verified_by_source.get(span.source, False) or hit.verified
+    for planned_query, weight, support_only in query_plan:
+        matches = kb.truth_pack.structural_search(planned_query, top_k=match_limit)
+        for match in matches:
+            evaluation = kb.truth_pack.evaluate(match.span, query=planned_query)
+            span = match.span
+            snippet = " ".join(span.text.strip().split())
+            if not snippet:
+                continue
+            if support_only and span.source not in support_candidate_paths:
+                continue
+            score = min(
+                1.0,
+                0.45 * match.final_score
+                + 0.25 * evaluation.coverage
+                + 0.15 * span.patternability
+                + 0.15 * evaluation.semantic_similarity,
+            )
+            _merge_ranked_hit(
+                SearchHit(
+                    path=span.source,
+                    source_type=span.source_type,
+                    score=score,
+                    snippet=snippet[:240],
+                    line_number=span.line_number,
+                    verified=evaluation.verified,
+                    metadata=span.metadata,
+                ),
+                weight=weight,
+                hits_by_source=hits_by_source,
+                combined_scores=combined_scores,
+                verified_by_source=verified_by_source,
+            )
+
+        lexical_hits = search_documents(kb.documents, planned_query, top_k=match_limit)
+        lexical_weight = min(weight, 0.75)
+        for hit in lexical_hits:
+            if support_only and hit.path not in support_candidate_paths:
+                continue
+            _merge_ranked_hit(
+                hit,
+                weight=lexical_weight,
+                hits_by_source=hits_by_source,
+                combined_scores=combined_scores,
+                verified_by_source=verified_by_source,
+            )
 
     hits: list[SearchHit] = []
     for source, best_hit in hits_by_source.items():
+        boosted_score = min(
+            1.0,
+            combined_scores.get(source, best_hit.score)
+            + path_boosts.get(source, 0.0),
+        )
         hits.append(
             SearchHit(
                 path=best_hit.path,
                 source_type=best_hit.source_type,
-                score=combined_scores.get(source, best_hit.score),
+                score=boosted_score,
                 snippet=best_hit.snippet,
                 line_number=best_hit.line_number,
                 verified=verified_by_source.get(source, best_hit.verified),
@@ -542,6 +580,143 @@ def search_repository(
         )
     hits.sort(key=lambda hit: (hit.verified, hit.score), reverse=True)
     return hits[: max(top_k * 2, settings.thresholds.top_k_evidence + settings.thresholds.top_k_twins)]
+
+
+def _merge_ranked_hit(
+    hit: SearchHit,
+    *,
+    weight: float,
+    hits_by_source: dict[str, SearchHit],
+    combined_scores: dict[str, float],
+    verified_by_source: dict[str, bool],
+) -> None:
+    weighted_score = min(1.0, hit.score * weight)
+    weighted_hit = SearchHit(
+        path=hit.path,
+        source_type=hit.source_type,
+        score=weighted_score,
+        snippet=hit.snippet,
+        line_number=hit.line_number,
+        verified=hit.verified,
+        metadata=hit.metadata,
+    )
+    existing = hits_by_source.get(hit.path)
+    if existing is None or (weighted_hit.verified, weighted_hit.score) > (existing.verified, existing.score):
+        hits_by_source[hit.path] = weighted_hit
+    combined_scores[hit.path] = 1.0 - (1.0 - combined_scores.get(hit.path, 0.0)) * (1.0 - weighted_score)
+    verified_by_source[hit.path] = verified_by_source.get(hit.path, False) or hit.verified
+
+
+def _normalize_changed_paths(changed_paths: Sequence[str] | None) -> tuple[str, ...]:
+    if not changed_paths:
+        return ()
+    normalized: list[str] = []
+    for path in changed_paths:
+        candidate = Path(str(path).strip()).as_posix()
+        if not candidate or candidate == ".":
+            continue
+        while candidate.startswith("./"):
+            candidate = candidate[2:]
+        normalized.append(candidate)
+    return tuple(dict.fromkeys(normalized))
+
+
+def _search_query_plan(query: str, changed_paths: Sequence[str]) -> list[tuple[str, float, bool]]:
+    planned: list[tuple[str, float, bool]] = [(query, 1.0, False)]
+    if not changed_paths:
+        return planned
+
+    anchor_tokens: list[str] = []
+    frontend_changed = False
+    for path in changed_paths[:4]:
+        frontend_changed = frontend_changed or path.endswith((".jsx", ".tsx"))
+        anchor_tokens.extend(sorted(path_anchor_tokens(path)))
+
+    if anchor_tokens:
+        deduped_tokens = list(dict.fromkeys(anchor_tokens))[:8]
+        planned.append((" ".join([*deduped_tokens, "test", "regression", "spec"]), 0.75, True))
+        if frontend_changed:
+            planned.append((" ".join([*deduped_tokens, "component", "render", "test"]), 0.65, True))
+    return planned
+
+
+def _support_candidate_paths(
+    repo_root: Path,
+    documents: Sequence[DocumentRecord],
+    changed_paths: Sequence[str],
+    *,
+    graph=None,
+    test_index: TestPathIndex | None = None,
+) -> set[str]:
+    if not changed_paths:
+        return set()
+
+    graph = load_repository_native_graph(repo_root) if graph is None else graph
+    document_paths = [document.path for document in documents]
+    document_path_set = set(document_paths)
+    if test_index is None:
+        test_index = TestPathIndex.from_paths(document_paths)
+    candidates: set[str] = set()
+    for changed_path in changed_paths:
+        graph_related_paths = {
+            *graph.incoming_by_target.get(changed_path, set()),
+            *graph.edges_by_source.get(changed_path, set()),
+        }
+        candidates.update(path for path in graph_related_paths if path in document_path_set)
+        for test_path, _score in test_index.linked_tests(
+            changed_path,
+            native_graph=graph,
+            max_results=5,
+            min_score=0.4,
+        ):
+            candidates.add(test_path)
+        for related_path in graph_related_paths:
+            for test_path, _score in test_index.linked_tests(
+                related_path,
+                native_graph=graph,
+                max_results=5,
+                min_score=0.4,
+            ):
+                candidates.add(test_path)
+    return candidates
+
+
+def _support_path_boosts(
+    repo_root: Path,
+    documents: Sequence[DocumentRecord],
+    changed_paths: Sequence[str],
+) -> dict[str, float]:
+    graph = load_repository_native_graph(repo_root)
+    test_index = TestPathIndex.from_paths([document.path for document in documents])
+    candidate_paths = _support_candidate_paths(
+        repo_root,
+        documents,
+        changed_paths,
+        graph=graph,
+        test_index=test_index,
+    )
+    if not candidate_paths:
+        return {}
+    boosts: dict[str, float] = {}
+    for changed_path in changed_paths:
+        related_paths = _support_candidate_paths(
+            repo_root,
+            documents,
+            [changed_path],
+            graph=graph,
+            test_index=test_index,
+        )
+        for related_path in related_paths:
+            bonus = 0.16 if looks_like_test_path(related_path) else 0.1
+            boosts[related_path] = max(boosts.get(related_path, 0.0), bonus)
+        for test_path, score in test_index.linked_tests(
+            changed_path,
+            native_graph=graph,
+            max_results=5,
+            min_score=0.4,
+        ):
+            boosts[test_path] = max(boosts.get(test_path, 0.0), 0.12 + 0.18 * score)
+    return boosts
 
 
 def _build_repository_knowledge_base_from_documents(

@@ -117,3 +117,49 @@ def test_native_graph_ingestor_adds_graph_backed_retrieval_support(tmp_path: Pat
     assert hits
     assert hits[0].path == "src/entry.ts"
     assert not any(hit.path.startswith(".evidence-gate/graphs") for hit in hits)
+
+
+def test_search_repository_uses_native_graph_neighbors_for_changed_paths(tmp_path: Path) -> None:
+    repo_root = tmp_path / "vite_like"
+    _build_dynamic_ts_repo(repo_root)
+    graph_root = repo_root / ".evidence-gate" / "graphs"
+    scip_payload = {
+        "metadata": {"toolInfo": {"name": "scip-typescript"}},
+        "documents": [
+            {
+                "relative_path": "src/entry.ts",
+                "occurrences": [{"symbol": "fooFeature"}],
+                "symbols": [
+                    {
+                        "symbol": "entryLoader",
+                        "relationships": [
+                            {"symbol": "fooFeature", "is_reference": True},
+                        ],
+                    }
+                ],
+            },
+            {
+                "relative_path": "src/features/runtime-target.ts",
+                "occurrences": [{"symbol": "fooFeature"}],
+                "symbols": [{"symbol": "fooFeature", "relationships": []}],
+            },
+        ],
+    }
+    _write(graph_root / "vite.scip.json", json.dumps(scip_payload, indent=2))
+
+    plain_hits = search_repository(
+        repo_root,
+        query="Review the runtime feature change before merge.",
+        top_k=5,
+        settings=Settings(),
+    )
+    boosted_hits = search_repository(
+        repo_root,
+        query="Review the runtime feature change before merge.",
+        top_k=5,
+        settings=Settings(),
+        changed_paths=["src/features/runtime-target.ts"],
+    )
+
+    assert "tests/entry.spec.ts" not in {hit.path for hit in plain_hits[:5]}
+    assert "tests/entry.spec.ts" in {hit.path for hit in boosted_hits[:5]}

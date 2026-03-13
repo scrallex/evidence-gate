@@ -104,6 +104,14 @@ inputs:
     description: Base URL for the Evidence Gate API.
     required: false
     default: "http://127.0.0.1:8000"
+  container_image:
+    description: Prebuilt container image to run when start_service=true. Falls back to building the local Dockerfile if the pull fails.
+    required: false
+    default: "ghcr.io/scrallex/evidence-gate:latest"
+  force_local_build:
+    description: Force a local docker build instead of pulling the prebuilt CI image.
+    required: false
+    default: "false"
   start_service:
     description: Start the bundled Dockerized Evidence Gate service before evaluating the action.
     required: false
@@ -184,7 +192,13 @@ runs:
         docker rm -f evidence-gate-action >/dev/null 2>&1 || true
         mkdir -p "$RUNNER_TEMP/evidence-gate-data"
         mkdir -p "$RUNNER_TEMP/evidence-gate-live"
-        docker build -t evidence-gate-action "$GITHUB_ACTION_PATH"
+        if [ "${{ inputs.force_local_build }}" = "true" ]; then
+          docker build -t evidence-gate-action "$GITHUB_ACTION_PATH"
+        elif docker pull "${{ inputs.container_image }}" >/dev/null 2>&1; then
+          docker tag "${{ inputs.container_image }}" evidence-gate-action
+        else
+          docker build -t evidence-gate-action "$GITHUB_ACTION_PATH"
+        fi
         docker run -d \
           --name evidence-gate-action \
           -p 8000:8000 \

@@ -11,7 +11,10 @@ COPY pyproject.toml README.md ./
 COPY app ./app
 COPY scripts ./scripts
 
-RUN python -m pip install --upgrade pip \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl git \
+    && rm -rf /var/lib/apt/lists/* \
+    && python -m pip install --upgrade pip \
     && python -m pip install .
 
 EXPOSE 8000 8001
