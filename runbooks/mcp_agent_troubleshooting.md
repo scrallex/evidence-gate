@@ -7,7 +7,8 @@ Use it when a change touches:
 
 - `app/evidence_gate/mcp/server.py`
 - `scripts/run_agent_gate.py`
-- `docs/07_mcp_server.md`
+- `GUIDES.md`
+- `API.md`
 - `tests/test_mcp_server.py`
 - `tests/test_agent_gate_script.py`
 - `README.md`
@@ -29,7 +30,7 @@ An MCP workflow regression can affect:
 - the stdio or HTTP MCP entrypoint in `app/evidence_gate/mcp/server.py`
 - Cursor and Cline IDE integrations that depend on `evidence_gate_fail_explain_repair_retry`
 - shell-tool agents such as SWE-agent that depend on `scripts/run_agent_gate.py`
-- the repo-level setup guidance in `docs/07_mcp_server.md` and `README.md`
+- the repo-level setup guidance in `GUIDES.md`, `API.md`, and `README.md`
 - the retry loop contract validated by `tests/test_mcp_server.py` and `tests/test_agent_gate_script.py`
 
 Expected blast radius for the current integration surface is roughly:
@@ -65,11 +66,12 @@ python scripts/run_agent_gate.py \
   --action-summary "Review the MCP and agent integration workflow changes before claiming they are safe to merge." \
   --changed-path app/evidence_gate/mcp/server.py \
   --changed-path scripts/run_agent_gate.py \
-  --changed-path docs/07_mcp_server.md \
+  --changed-path GUIDES.md \
+  --changed-path API.md \
   --changed-path tests/test_mcp_server.py \
   --changed-path tests/test_agent_gate_script.py \
   --changed-path README.md \
-  --diff-summary "Add evidence_gate_prepare_repository, evidence_gate_gate_action_with_healing, and evidence_gate_fail_explain_repair_retry; add shell bridge scripts/run_agent_gate.py; document Cursor, Cline, and SWE-agent usage; add regression coverage in tests/test_mcp_server.py and tests/test_agent_gate_script.py."
+  --diff-summary "Add evidence_gate_prepare_repository, evidence_gate_gate_action_with_healing, and evidence_gate_fail_explain_repair_retry; add shell bridge scripts/run_agent_gate.py; document Cursor, Cline, and SWE-agent usage in GUIDES.md and API.md; add regression coverage in tests/test_mcp_server.py and tests/test_agent_gate_script.py."
 pytest -q tests/test_mcp_server.py tests/test_agent_gate_script.py
 ```
 

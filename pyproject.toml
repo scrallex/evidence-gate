@@ -5,10 +5,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "evidence-gate"
 version = "0.1.0"
-description = "Evidence Gate alpha service for engineering change intelligence."
+description = "Reliability layer for AI agents that gates actions on evidence and precedent."
 readme = "README.md"
 license = {file = "LICENSE"}
 requires-python = ">=3.11"
+keywords = ["ai-reliability", "agent-guardrails", "evidence-based-ai", "mcp", "ci-gating"]
 dependencies = [
   "fastapi>=0.115,<1.0",
   "mcp>=1.26,<2",
