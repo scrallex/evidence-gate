@@ -520,6 +520,125 @@ def test_action_decision_endpoint_escalates_when_changed_paths_do_not_match_retr
     )
 
 
+def test_dashboard_overview_summarizes_risk_feed_and_healing_rate(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    oss_repo = tmp_path / "oss_repo"
+    billing_repo = tmp_path / "billing_repo"
+    pagerduty_root = tmp_path / "pagerduty"
+    audit_root = tmp_path / "audit"
+    kb_root = tmp_path / "knowledge_bases"
+    _build_open_source_repo(oss_repo)
+    _build_billing_repo(billing_repo)
+    _write(
+        pagerduty_root / "incidents.json",
+        (
+            '[{"incident_number": 4417, "title": "Billing duplicate-charge incident", '
+            '"description": "Duplicate-charge safeguards failed after a billing authorization change.", '
+            '"status": "resolved", "service": {"summary": "billing"}, '
+            '"html_url": "https://pagerduty.example.com/incidents/4417", '
+            '"created_at": "2026-03-10T12:00:00+00:00"}]'
+        ),
+    )
+
+    monkeypatch.setenv("EVIDENCE_GATE_AUDIT_ROOT", str(audit_root))
+    monkeypatch.setenv("EVIDENCE_GATE_KB_ROOT", str(kb_root))
+    get_settings.cache_clear()
+    get_audit_store.cache_clear()
+    get_decision_service.cache_clear()
+
+    client = TestClient(create_app())
+
+    ingest = client.post(
+        "/v1/knowledge-bases/ingest",
+        json={
+            "repo_path": str(billing_repo),
+            "external_sources": [
+                {
+                    "type": "pagerduty",
+                    "path": str(pagerduty_root),
+                }
+            ],
+        },
+    )
+    assert ingest.status_code == 200
+
+    incident_block = client.post(
+        "/v1/decide/action",
+        json={
+            "repo_path": str(billing_repo),
+            "action_summary": "Review the billing service PR before merge.",
+            "changed_paths": ["services/billing.py"],
+            "diff_summary": "Removed duplicate-charge safeguards from the billing authorization flow.",
+            "top_k": 10,
+            "safety_policy": {
+                "require_precedent": True,
+                "require_incident_precedent": True,
+                "escalate_on_incident_match": True,
+            },
+        },
+    )
+    assert incident_block.status_code == 403
+
+    healing_block = client.post(
+        "/v1/decide/action",
+        json={
+            "repo_path": str(oss_repo),
+            "action_summary": "Review the cache behavior change before merge.",
+            "changed_paths": ["lib/cache.js"],
+        },
+    )
+    assert healing_block.status_code == 403
+
+    healing_allow = client.post(
+        "/v1/decide/action",
+        json={
+            "repo_path": str(oss_repo),
+            "action_summary": "Review the cache behavior change before merge.",
+            "changed_paths": ["lib/cache.js"],
+            "safety_policy": {
+                "corpus_profile": "open_source",
+                "require_test_evidence": True,
+            },
+        },
+    )
+    assert healing_allow.status_code == 200
+
+    overview = client.get("/v1/dashboard/overview", params={"limit": 20, "feed_limit": 10})
+    assert overview.status_code == 200
+    payload = overview.json()
+
+    assert payload["headline_metrics"]["blocked_actions"] >= 2
+    assert payload["headline_metrics"]["incident_linked_blocks"] >= 1
+    assert payload["headline_metrics"]["protected_files"] >= 2
+    assert payload["agent_healing"]["blocked_sequences"] >= 2
+    assert payload["agent_healing"]["healed_sequences"] >= 1
+    assert payload["agent_healing"]["healing_rate"] > 0
+    assert payload["agent_healing"]["recent_heals"][0]["action_summary"] == (
+        "Review the cache behavior change before merge."
+    )
+
+    assert any(item["status"] == "healed_on_retry" for item in payload["risk_avoided_feed"])
+    assert any(
+        any(signal["source"].startswith("external_pagerduty/") for signal in item["triggering_signals"])
+        for item in payload["risk_avoided_feed"]
+    )
+
+    repo_filtered = client.get(
+        "/v1/dashboard/overview",
+        params={"limit": 20, "feed_limit": 10, "repo_path": str(oss_repo)},
+    )
+    assert repo_filtered.status_code == 200
+    repo_payload = repo_filtered.json()
+    assert repo_payload["headline_metrics"]["incident_linked_blocks"] == 0
+    assert repo_payload["agent_healing"]["healed_sequences"] >= 1
+    assert all(
+        item["repo_path"] == str(oss_repo)
+        for item in repo_payload["risk_avoided_feed"]
+    )
+
+
 def test_knowledge_base_status_and_listing_endpoints(tmp_path: Path, monkeypatch) -> None:
     repo_root = tmp_path / "sample_repo"
     audit_root = tmp_path / "audit"

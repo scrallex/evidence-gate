@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from statistics import mean
+from statistics import mean, median
 from uuid import uuid4
 
 from evidence_gate.audit.store import FileAuditStore
@@ -16,6 +17,12 @@ from evidence_gate.decision.models import (
     ActionSafetyPolicy,
     BlastRadius,
     ChangeImpactRequest,
+    DashboardHealingCase,
+    DashboardHealingSummary,
+    DashboardHeadlineMetrics,
+    DashboardOverviewResponse,
+    DashboardRiskAvoidedItem,
+    DashboardSignal,
     DecisionName,
     DecisionRecord,
     EvidenceSpan,
@@ -65,6 +72,51 @@ _NO_TEST_EVIDENCE_NOTE = "No supporting test evidence was found for the affected
 _NO_RUNBOOK_EVIDENCE_NOTE = "No runbook or operational handling evidence was found."
 _NO_PRECEDENT_NOTE = "No prior PR or incident precedent was found."
 _OPEN_SOURCE_IGNORED_NOTES = frozenset({_NO_RUNBOOK_EVIDENCE_NOTE, _NO_PRECEDENT_NOTE})
+
+_DASHBOARD_METHODOLOGY = (
+    "Healing rate is inferred from audit history by grouping action decisions on the same repo, "
+    "action summary, and changed paths. A sequence counts as healed when a blocked action is followed "
+    "by a later allowed action for the same fingerprint."
+)
+_POLICY_LABELS = {
+    "require_test_evidence": "Test evidence required",
+    "require_runbook_evidence": "Runbook evidence required",
+    "require_precedent": "Precedent required",
+    "require_incident_precedent": "Incident precedent required",
+    "escalate_on_incident_match": "Incident match blocks rollout",
+    "max_blast_radius_files": "Blast radius limit",
+    "max_hazard": "Hazard threshold",
+    "min_confidence": "Minimum confidence",
+}
+
+
+@dataclass(slots=True)
+class _DashboardActionSnapshot:
+    record: DecisionRecord
+    repo_path: str
+    action_summary: str
+    changed_paths: tuple[str, ...]
+    fingerprint: str
+    blocked: bool
+    strongest_evidence_sources: tuple[str, ...]
+    triggering_signals: tuple[DashboardSignal, ...]
+    policy_labels: tuple[str, ...]
+
+
+@dataclass(slots=True)
+class _DashboardOpenSequence:
+    first_blocked: _DashboardActionSnapshot
+    latest_blocked: _DashboardActionSnapshot
+    blocked_attempts: int
+
+
+@dataclass(slots=True)
+class _DashboardHealingComputation:
+    blocked_sequences: int
+    unresolved_sequences: list[_DashboardOpenSequence]
+    healed_cases: list[DashboardHealingCase]
+    healed_by_blocked_id: dict[str, DashboardHealingCase]
+    blocked_snapshots_by_id: dict[str, _DashboardActionSnapshot]
 
 
 class DecisionService:
@@ -298,6 +350,102 @@ class DecisionService:
     def list_recent_decisions(self, limit: int = 20) -> list[DecisionRecord]:
         return self.audit_store.list_recent(limit)
 
+    def get_dashboard_overview(
+        self,
+        *,
+        limit: int = 250,
+        feed_limit: int = 12,
+        repo_path: str | None = None,
+    ) -> DashboardOverviewResponse:
+        recent_records = self.audit_store.list_recent(limit)
+        filtered_records = [
+            record
+            for record in recent_records
+            if self._matches_dashboard_repo_filter(record, repo_path)
+        ]
+        action_snapshots = sorted(
+            (
+                self._build_dashboard_snapshot(record)
+                for record in filtered_records
+                if record.request_type == "action"
+            ),
+            key=lambda snapshot: snapshot.record.created_at,
+        )
+        healing = self._infer_dashboard_healing(action_snapshots)
+        blocked_action_count = sum(1 for snapshot in action_snapshots if snapshot.blocked)
+        incident_linked_blocks = sum(
+            1
+            for snapshot in action_snapshots
+            if snapshot.blocked and snapshot.triggering_signals
+        )
+        protected_files = sum(
+            snapshot.record.blast_radius.files
+            for snapshot in action_snapshots
+            if snapshot.blocked
+        )
+        protected_tests = sum(
+            snapshot.record.blast_radius.tests
+            for snapshot in action_snapshots
+            if snapshot.blocked
+        )
+        protected_docs = sum(
+            snapshot.record.blast_radius.docs
+            for snapshot in action_snapshots
+            if snapshot.blocked
+        )
+        protected_runbooks = sum(
+            snapshot.record.blast_radius.runbooks
+            for snapshot in action_snapshots
+            if snapshot.blocked
+        )
+
+        recent_heals = sorted(
+            healing.healed_cases,
+            key=lambda case: case.healed_at,
+            reverse=True,
+        )[:5]
+        healing_times = [
+            case.time_to_heal_minutes
+            for case in healing.healed_cases
+            if case.time_to_heal_minutes is not None
+        ]
+        average_retries = mean(case.retries_before_heal for case in healing.healed_cases) if healing.healed_cases else 0.0
+        healing_rate = (
+            len(healing.healed_cases) / healing.blocked_sequences
+            if healing.blocked_sequences
+            else 0.0
+        )
+
+        risk_feed = self._build_dashboard_risk_feed(
+            healing=healing,
+            feed_limit=feed_limit,
+        )
+        return DashboardOverviewResponse(
+            generated_at=datetime.now(timezone.utc),
+            scanned_decisions=len(filtered_records),
+            scanned_action_decisions=len(action_snapshots),
+            headline_metrics=DashboardHeadlineMetrics(
+                blocked_actions=blocked_action_count,
+                blocked_sequences=healing.blocked_sequences,
+                incident_linked_blocks=incident_linked_blocks,
+                protected_files=protected_files,
+                protected_tests=protected_tests,
+                protected_docs=protected_docs,
+                protected_runbooks=protected_runbooks,
+            ),
+            agent_healing=DashboardHealingSummary(
+                blocked_sequences=healing.blocked_sequences,
+                healed_sequences=len(healing.healed_cases),
+                unresolved_sequences=len(healing.unresolved_sequences),
+                healing_rate=healing_rate,
+                average_retries_to_heal=round(average_retries, 2),
+                median_time_to_heal_minutes=round(median(healing_times), 2) if healing_times else None,
+                methodology=_DASHBOARD_METHODOLOGY,
+                recent_heals=recent_heals,
+            ),
+            risk_avoided_feed=risk_feed,
+        )
+
     def _resolve_repo_root(self, repo_path: str) -> Path:
         repo_root = self._normalize_repo_path(repo_path)
         if not repo_root.exists():
@@ -308,6 +456,283 @@ class DecisionService:
 
     def _normalize_repo_path(self, repo_path: str) -> Path:
         return Path(repo_path).expanduser().resolve()
+
+    def _matches_dashboard_repo_filter(
+        self,
+        record: DecisionRecord,
+        repo_path: str | None,
+    ) -> bool:
+        if repo_path is None or not repo_path.strip():
+            return True
+        record_repo = record.request_payload.get("repo_path")
+        if not isinstance(record_repo, str) or not record_repo.strip():
+            return False
+        return self._normalize_dashboard_repo_path(record_repo) == self._normalize_dashboard_repo_path(repo_path)
+
+    def _normalize_dashboard_repo_path(self, repo_path: str) -> str:
+        return Path(repo_path).expanduser().resolve(strict=False).as_posix()
+
+    def _build_dashboard_snapshot(self, record: DecisionRecord) -> _DashboardActionSnapshot:
+        payload = record.request_payload
+        raw_changed_paths = payload.get("changed_paths", [])
+        changed_paths = tuple(
+            self._normalize_relative_path(str(path))
+            for path in raw_changed_paths
+            if str(path).strip()
+        )
+        action_summary = str(payload.get("action_summary") or "Action decision")
+        blocking_decisions = {
+            self._normalize_dashboard_decision_name(item)
+            for item in payload.get(
+                "block_on",
+                [DecisionName.ABSTAIN.value, DecisionName.ESCALATE.value],
+            )
+        }
+        strongest_evidence_sources = tuple(span.source for span in record.evidence_spans[:3])
+        triggering_signals = tuple(self._collect_dashboard_signals(record))
+        policy_labels = tuple(self._extract_dashboard_policy_labels(payload))
+        repo_path = str(payload.get("repo_path") or "")
+        return _DashboardActionSnapshot(
+            record=record,
+            repo_path=repo_path,
+            action_summary=action_summary,
+            changed_paths=changed_paths,
+            fingerprint=self._dashboard_action_fingerprint(repo_path, action_summary, changed_paths),
+            blocked=record.decision.value in blocking_decisions,
+            strongest_evidence_sources=strongest_evidence_sources,
+            triggering_signals=triggering_signals,
+            policy_labels=policy_labels,
+        )
+
+    def _normalize_dashboard_decision_name(self, value: object) -> str:
+        if isinstance(value, DecisionName):
+            return value.value
+        text = str(value).strip().lower()
+        if "." in text:
+            text = text.rsplit(".", maxsplit=1)[-1]
+        return text
+
+    def _dashboard_action_fingerprint(
+        self,
+        repo_path: str,
+        action_summary: str,
+        changed_paths: tuple[str, ...],
+    ) -> str:
+        normalized_repo = self._normalize_dashboard_repo_path(repo_path) if repo_path else ""
+        normalized_summary = " ".join(action_summary.lower().split())
+        normalized_paths = "|".join(sorted(changed_paths))
+        return f"{normalized_repo}::{normalized_summary}::{normalized_paths}"
+
+    def _collect_dashboard_signals(self, record: DecisionRecord) -> list[DashboardSignal]:
+        signals: dict[tuple[str, str], DashboardSignal] = {}
+        for twin in record.twin_cases:
+            signal = self._dashboard_signal_from_source(
+                source=twin.source,
+                relation="twin_case",
+                summary=twin.summary,
+                metadata=twin.metadata,
+            )
+            if signal is not None:
+                signals[(signal.source, signal.relation)] = signal
+        for span in record.evidence_spans:
+            signal = self._dashboard_signal_from_source(
+                source=span.source,
+                relation="evidence_span",
+                summary=span.snippet,
+                metadata=span.metadata,
+            )
+            if signal is not None:
+                signals[(signal.source, signal.relation)] = signal
+        return sorted(
+            signals.values(),
+            key=lambda signal: (signal.label, signal.source),
+        )
+
+    def _dashboard_signal_from_source(
+        self,
+        *,
+        source: str,
+        relation: str,
+        summary: str | None,
+        metadata: object,
+    ) -> DashboardSignal | None:
+        classified = self._classify_dashboard_signal(source)
+        if classified is None:
+            return None
+        source_kind, label = classified
+        external_url = getattr(metadata, "external_url", None)
+        timestamp = getattr(metadata, "timestamp", None)
+        normalized_summary = self._trim_dashboard_text(summary)
+        return DashboardSignal(
+            source=source,
+            source_kind=source_kind,
+            label=label,
+            relation=relation,
+            title=self._dashboard_signal_title(source, normalized_summary),
+            summary=normalized_summary,
+            external_url=external_url,
+            timestamp=timestamp,
+        )
+
+    def _classify_dashboard_signal(self, source: str) -> tuple[str, str] | None:
+        lowered = source.lower()
+        if lowered.startswith("external_jira/"):
+            return "jira", "Jira"
+        if lowered.startswith("external_slack/"):
+            return "slack", "Slack"
+        if lowered.startswith("external_pagerduty/"):
+            return "pagerduty", "PagerDuty"
+        if lowered.startswith("external_incidents/") or lowered.startswith("incidents/"):
+            return "incident", "Incident"
+        if lowered.startswith("external_github_prs/") or lowered.startswith("prs/"):
+            return "github", "GitHub PR"
+        return None
+
+    def _dashboard_signal_title(self, source: str, summary: str | None) -> str:
+        if summary:
+            return summary.split(". ", maxsplit=1)[0][:96]
+        stem = Path(source).stem.replace("_", " ").replace("-", " ").strip()
+        return stem or source
+
+    def _trim_dashboard_text(self, text: str | None, *, limit: int = 180) -> str | None:
+        if text is None:
+            return None
+        normalized = " ".join(str(text).split())
+        if not normalized:
+            return None
+        if len(normalized) <= limit:
+            return normalized
+        return normalized[: limit - 1].rstrip() + "…"
+
+    def _extract_dashboard_policy_labels(self, payload: dict[str, object]) -> list[str]:
+        raw_policy = payload.get("safety_policy")
+        if not isinstance(raw_policy, dict):
+            return []
+        labels: list[str] = []
+        for key, value in raw_policy.items():
+            if value is None or value is False:
+                continue
+            label = _POLICY_LABELS.get(key)
+            if label is None:
+                continue
+            if isinstance(value, bool):
+                labels.append(label)
+                continue
+            labels.append(f"{label}: {value}")
+        return labels
+
+    def _infer_dashboard_healing(
+        self,
+        action_snapshots: list[_DashboardActionSnapshot],
+    ) -> _DashboardHealingComputation:
+        open_sequences: dict[str, _DashboardOpenSequence] = {}
+        blocked_sequences = 0
+        healed_cases: list[DashboardHealingCase] = []
+        healed_by_blocked_id: dict[str, DashboardHealingCase] = {}
+        blocked_snapshots_by_id: dict[str, _DashboardActionSnapshot] = {}
+
+        for snapshot in action_snapshots:
+            sequence = open_sequences.get(snapshot.fingerprint)
+            if snapshot.blocked:
+                if sequence is None:
+                    open_sequences[snapshot.fingerprint] = _DashboardOpenSequence(
+                        first_blocked=snapshot,
+                        latest_blocked=snapshot,
+                        blocked_attempts=1,
+                    )
+                    blocked_sequences += 1
+                    blocked_snapshots_by_id[snapshot.record.decision_id] = snapshot
+                    continue
+                sequence.latest_blocked = snapshot
+                sequence.blocked_attempts += 1
+                blocked_snapshots_by_id[sequence.first_blocked.record.decision_id] = sequence.first_blocked
+                continue
+
+            if sequence is None:
+                continue
+
+            blocked_snapshot = sequence.first_blocked
+            time_to_heal_minutes: float | None = None
+            elapsed_seconds = (snapshot.record.created_at - blocked_snapshot.record.created_at).total_seconds()
+            if elapsed_seconds >= 0:
+                time_to_heal_minutes = round(elapsed_seconds / 60.0, 2)
+            healed_case = DashboardHealingCase(
+                blocked_decision_id=blocked_snapshot.record.decision_id,
+                healed_decision_id=snapshot.record.decision_id,
+                blocked_at=blocked_snapshot.record.created_at,
+                healed_at=snapshot.record.created_at,
+                repo_path=blocked_snapshot.repo_path,
+                action_summary=blocked_snapshot.action_summary,
+                changed_paths=list(blocked_snapshot.changed_paths),
+                missing_before=list(blocked_snapshot.record.missing_evidence),
+                missing_after=list(snapshot.record.missing_evidence),
+                retries_before_heal=sequence.blocked_attempts,
+                time_to_heal_minutes=time_to_heal_minutes,
+            )
+            healed_cases.append(healed_case)
+            healed_by_blocked_id[blocked_snapshot.record.decision_id] = healed_case
+            blocked_snapshots_by_id[blocked_snapshot.record.decision_id] = blocked_snapshot
+            del open_sequences[snapshot.fingerprint]
+
+        return _DashboardHealingComputation(
+            blocked_sequences=blocked_sequences,
+            unresolved_sequences=list(open_sequences.values()),
+            healed_cases=healed_cases,
+            healed_by_blocked_id=healed_by_blocked_id,
+            blocked_snapshots_by_id=blocked_snapshots_by_id,
+        )
+
+    def _build_dashboard_risk_feed(
+        self,
+        *,
+        healing: _DashboardHealingComputation,
+        feed_limit: int,
+    ) -> list[DashboardRiskAvoidedItem]:
+        feed_items: list[DashboardRiskAvoidedItem] = []
+        for healed_case in healing.healed_cases:
+            blocked_snapshot = healing.blocked_snapshots_by_id.get(healed_case.blocked_decision_id)
+            if blocked_snapshot is None:
+                continue
+            feed_items.append(
+                self._dashboard_risk_item_from_snapshot(
+                    blocked_snapshot,
+                    healed_case=healed_case,
+                )
+            )
+        for unresolved in healing.unresolved_sequences:
+            feed_items.append(
+                self._dashboard_risk_item_from_snapshot(
+                    unresolved.latest_blocked,
+                    healed_case=None,
+                )
+            )
+        feed_items.sort(
+            key=lambda item: (len(item.triggering_signals) > 0, item.created_at),
+            reverse=True,
+        )
+        return feed_items[:feed_limit]
+
+    def _dashboard_risk_item_from_snapshot(
+        self,
+        snapshot: _DashboardActionSnapshot,
+        *,
+        healed_case: DashboardHealingCase | None,
+    ) -> DashboardRiskAvoidedItem:
+        return DashboardRiskAvoidedItem(
+            decision_id=snapshot.record.decision_id,
+            created_at=snapshot.record.created_at,
+            repo_path=snapshot.repo_path,
+            action_summary=snapshot.action_summary,
+            changed_paths=list(snapshot.changed_paths),
+            status="healed_on_retry" if healed_case is not None else "still_blocked",
+            healed_decision_id=healed_case.healed_decision_id if healed_case is not None else None,
+            healed_at=healed_case.healed_at if healed_case is not None else None,
+            blast_radius=snapshot.record.blast_radius,
+            missing_evidence=list(snapshot.record.missing_evidence),
+            strongest_evidence_sources=list(snapshot.strongest_evidence_sources),
+            triggering_signals=list(snapshot.triggering_signals),
+            policy_labels=list(snapshot.policy_labels),
+        )
 
     def _build_ingest_source_specs(
         self,

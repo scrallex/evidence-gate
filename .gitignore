@@ -27,6 +27,8 @@ var/knowledge_bases/
 !var/.gitkeep
 data/
 !data/.gitkeep
+dashboard/node_modules/
+dashboard/.next/
 
 # Private or exploratory research archives
 sources/archive/raw/

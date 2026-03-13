@@ -27,6 +27,8 @@ proceeds.
 - turns blocked action decisions into repair hints through `missing_evidence`
   so agents can retry with the required tests or file changes
 - writes decision audit records and manages knowledge-base lifecycle and retention
+- exposes a stakeholder dashboard that turns audit history into a Risk Avoided
+  feed and an Agent Healing Rate view
 - exposes the same decision contract through an MCP server and a composite
   GitHub Action for agent, IDE, and CI workflows
 
@@ -101,6 +103,17 @@ python scripts/run_agent_gate.py \
   --action-summary "Review the auth/session change before editing code." \
   --changed-path src/session.py
 ```
+
+Run the stakeholder dashboard:
+
+```bash
+cd dashboard
+npm install
+npm run dev
+```
+
+The dashboard expects the FastAPI service at `http://127.0.0.1:8000` by default.
+Set `EVIDENCE_GATE_API_BASE_URL` if your API is running somewhere else.
 
 Run the zero-to-value demo sandbox:
 
@@ -199,6 +212,7 @@ python scripts/run_value_proof_benchmarks.py
 - `POST /v1/decide/change-impact`
 - `POST /v1/decide/action`
 - `GET /v1/decisions/{id}`
+- `GET /v1/dashboard/overview`
 
 ## MCP Surface
 
@@ -217,6 +231,22 @@ or other shell-based workflows.
 See `docs/07_mcp_server.md` for local `stdio` and remote `streamable-http`
 configuration examples, and `docs/09_agent_skills.md` for Codex-oriented skill
 guidance.
+
+## Stakeholder Dashboard
+
+The repo now includes a small Next.js dashboard in [`dashboard/`](/sep/evidence-gate/dashboard)
+for VP Engineering, CTO, and CISO style review workflows.
+
+It reads `GET /v1/dashboard/overview` and shows:
+
+- `Risk Avoided`: blocked PR or agent actions, their blast radius, and the Jira,
+  Slack, PagerDuty, or incident signals that contributed to the block
+- `Agent Healing Rate`: how often blocked action sequences later came back as
+  allowed after a retry
+
+This view is intentionally separate from the terminal and MCP workflow. It is
+for communicating prevented downtime and avoided review debt to stakeholders who
+do not live inside the IDE.
 
 ## Evaluator Kit
 

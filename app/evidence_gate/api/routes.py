@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
 from evidence_gate.api.main import get_decision_service
 from evidence_gate.decision.models import (
     ActionDecisionRequest,
     ActionDecisionResponse,
     ChangeImpactRequest,
+    DashboardOverviewResponse,
     DecisionRecord,
     KnowledgeBaseIngestRequest,
     KnowledgeBaseIngestResponse,
@@ -72,6 +73,20 @@ def get_decision(
     if record is None:
         raise HTTPException(status_code=404, detail=f"Decision not found: {decision_id}")
     return record
+
+
+@router.get("/v1/dashboard/overview", response_model=DashboardOverviewResponse)
+def get_dashboard_overview(
+    limit: int = Query(default=250, ge=1, le=1000),
+    feed_limit: int = Query(default=12, ge=1, le=50),
+    repo_path: str | None = Query(default=None),
+    service: DecisionService = Depends(get_decision_service),
+) -> DashboardOverviewResponse:
+    return service.get_dashboard_overview(
+        limit=limit,
+        feed_limit=feed_limit,
+        repo_path=repo_path,
+    )
 
 
 @router.post("/v1/knowledge-bases/ingest", response_model=KnowledgeBaseIngestResponse)

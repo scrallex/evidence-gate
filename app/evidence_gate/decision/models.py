@@ -217,3 +217,74 @@ class ActionDecisionResponse(BaseModel):
     failure_reason: str | None = None
     policy_violations: list[str] = Field(default_factory=list)
     decision_record: DecisionRecord
+
+
+class DashboardSignal(BaseModel):
+    source: str
+    source_kind: Literal["jira", "slack", "pagerduty", "incident", "github", "other"]
+    label: str
+    relation: Literal["twin_case", "evidence_span"]
+    title: str
+    summary: str | None = None
+    external_url: str | None = None
+    timestamp: datetime | None = None
+
+
+class DashboardRiskAvoidedItem(BaseModel):
+    decision_id: str
+    created_at: datetime
+    repo_path: str
+    action_summary: str
+    changed_paths: list[str] = Field(default_factory=list)
+    status: Literal["still_blocked", "healed_on_retry"]
+    healed_decision_id: str | None = None
+    healed_at: datetime | None = None
+    blast_radius: BlastRadius = Field(default_factory=BlastRadius)
+    missing_evidence: list[str] = Field(default_factory=list)
+    strongest_evidence_sources: list[str] = Field(default_factory=list)
+    triggering_signals: list[DashboardSignal] = Field(default_factory=list)
+    policy_labels: list[str] = Field(default_factory=list)
+
+
+class DashboardHeadlineMetrics(BaseModel):
+    blocked_actions: int = Field(default=0, ge=0)
+    blocked_sequences: int = Field(default=0, ge=0)
+    incident_linked_blocks: int = Field(default=0, ge=0)
+    protected_files: int = Field(default=0, ge=0)
+    protected_tests: int = Field(default=0, ge=0)
+    protected_docs: int = Field(default=0, ge=0)
+    protected_runbooks: int = Field(default=0, ge=0)
+
+
+class DashboardHealingCase(BaseModel):
+    blocked_decision_id: str
+    healed_decision_id: str
+    blocked_at: datetime
+    healed_at: datetime
+    repo_path: str
+    action_summary: str
+    changed_paths: list[str] = Field(default_factory=list)
+    missing_before: list[str] = Field(default_factory=list)
+    missing_after: list[str] = Field(default_factory=list)
+    retries_before_heal: int = Field(default=1, ge=1)
+    time_to_heal_minutes: float | None = Field(default=None, ge=0.0)
+
+
+class DashboardHealingSummary(BaseModel):
+    blocked_sequences: int = Field(default=0, ge=0)
+    healed_sequences: int = Field(default=0, ge=0)
+    unresolved_sequences: int = Field(default=0, ge=0)
+    healing_rate: float = Field(default=0.0, ge=0.0, le=1.0)
+    average_retries_to_heal: float = Field(default=0.0, ge=0.0)
+    median_time_to_heal_minutes: float | None = Field(default=None, ge=0.0)
+    methodology: str
+    recent_heals: list[DashboardHealingCase] = Field(default_factory=list)
+
+
+class DashboardOverviewResponse(BaseModel):
+    generated_at: datetime
+    scanned_decisions: int = Field(default=0, ge=0)
+    scanned_action_decisions: int = Field(default=0, ge=0)
+    headline_metrics: DashboardHeadlineMetrics = Field(default_factory=DashboardHeadlineMetrics)
+    agent_healing: DashboardHealingSummary
+    risk_avoided_feed: list[DashboardRiskAvoidedItem] = Field(default_factory=list)
