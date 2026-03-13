@@ -18,6 +18,7 @@ from evidence_gate.decision.models import (
     ActionDecisionRequest,
     ActionDecisionResponse,
     ChangeImpactRequest,
+    DecisionName,
     DecisionRecord,
     KnowledgeBaseIngestRequest,
     KnowledgeBaseIngestResponse,
@@ -65,6 +66,15 @@ class MCPHealingLoopResponse(BaseModel):
     action_decision: ActionDecisionResponse
     retry_prompt: str | None = None
     next_step: Literal["proceed", "repair_and_retry", "inspect_evidence"]
+    strongest_evidence_sources: list[str]
+    twin_case_sources: list[str]
+
+
+class MCPIntentEvaluationResponse(BaseModel):
+    preparation: MCPRepositoryPreparationResponse | None = None
+    intent_decision: DecisionRecord
+    preflight_prompt: str | None = None
+    next_step: Literal["proceed", "inspect_evidence_first"]
     strongest_evidence_sources: list[str]
     twin_case_sources: list[str]
 
@@ -123,6 +133,19 @@ def _prepare_repository(
         knowledge_base_path=ingest.knowledge_base_path,
         external_source_count=source_count,
     )
+
+
+def _build_intent_prompt(intent_summary: str, decision: DecisionRecord) -> str:
+    strongest_sources = [span.source for span in decision.evidence_spans[:3]]
+    twin_sources = [twin.source for twin in decision.twin_cases[:2]]
+    evidence_clause = ", ".join(strongest_sources + twin_sources) or "the strongest retrieved evidence"
+    missing_clause = "; ".join(decision.missing_evidence[:3])
+    if missing_clause:
+        return (
+            f"Before implementing '{intent_summary}', inspect {evidence_clause}. "
+            f"Address the missing evidence first: {missing_clause}"
+        )
+    return f"Before implementing '{intent_summary}', inspect {evidence_clause} and preserve the cited behavior."
 
 
 def create_mcp_server(
@@ -364,6 +387,73 @@ def create_mcp_server(
         )
 
     @mcp.tool(
+        name="evidence_gate_evaluate_intent",
+        description=(
+            "Evaluate a planned engineering intent before code is written. Reuse or prepare the knowledge base, "
+            "search code plus external context, and return preflight guidance grounded in incidents, runbooks, "
+            "tickets, and prior code evidence."
+        ),
+        annotations=NON_DESTRUCTIVE,
+        structured_output=True,
+    )
+    def evaluate_intent(
+        repo_path: str,
+        intent_summary: str,
+        changed_paths: list[str] | None = None,
+        diff_summary: str | None = None,
+        top_k: int = 5,
+        prepare_repository: bool = True,
+        refresh_repository: bool = False,
+        external_sources: list[dict[str, str]] | None = None,
+    ) -> MCPIntentEvaluationResponse:
+        try:
+            preparation = None
+            if prepare_repository:
+                preparation = _prepare_repository(
+                    repo_path=repo_path,
+                    refresh=refresh_repository,
+                    external_sources=external_sources,
+                )
+            intent_query = (
+                "Before implementing this plan, what code, tests, docs, runbooks, tickets, wiki pages, "
+                f"or incidents should guide the work?\nPlan: {intent_summary}"
+            )
+            intent_decision = get_decision_service().decide_change_impact(
+                ChangeImpactRequest(
+                    repo_path=repo_path,
+                    change_summary=intent_query,
+                    changed_paths=changed_paths or [],
+                    diff_summary=diff_summary,
+                    top_k=top_k,
+                )
+            )
+        except ValueError as exc:
+            raise ToolError(str(exc)) from exc
+
+        next_step: Literal["proceed", "inspect_evidence_first"] = "proceed"
+        preflight_prompt: str | None = None
+        if (
+            intent_decision.decision != DecisionName.ADMIT
+            or bool(intent_decision.missing_evidence)
+            or any(twin.source_type.value == "incident" for twin in intent_decision.twin_cases)
+        ):
+            next_step = "inspect_evidence_first"
+            preflight_prompt = _build_intent_prompt(intent_summary, intent_decision)
+
+        return MCPIntentEvaluationResponse(
+            preparation=preparation,
+            intent_decision=intent_decision,
+            preflight_prompt=preflight_prompt,
+            next_step=next_step,
+            strongest_evidence_sources=[
+                span.source for span in intent_decision.evidence_spans[:3]
+            ],
+            twin_case_sources=[
+                twin.source for twin in intent_decision.twin_cases[:3]
+            ],
+        )
+
+    @mcp.tool(
         name="evidence_gate_get_decision",
         description="Fetch a prior decision record by ID from the audit store.",
         annotations=READ_ONLY,
@@ -471,6 +561,34 @@ def create_mcp_server(
                     "3. If `next_step` is `repair_and_retry`, use `retry_prompt` as the next agent instruction.\n"
                     "4. If `next_step` is `inspect_evidence`, inspect `missing_evidence`, strongest evidence, and twin cases before editing.\n"
                     "5. Only continue as if the change is safe when the returned action decision is allowed."
+                ),
+            }
+        ]
+
+    @mcp.prompt(
+        name="evidence_gate_plan_with_intent",
+        title="Evaluate Intent Before Writing Code",
+        description="Prime an agent to ask Evidence Gate for preflight guidance before it edits code.",
+    )
+    def plan_with_intent_prompt(
+        repo_path: str,
+        intent_summary: str,
+        changed_paths: str = "",
+    ) -> list[dict[str, str]]:
+        changed_display = changed_paths.strip() or "none provided"
+        return [
+            {
+                "role": "user",
+                "content": (
+                    "Before writing code, evaluate the plan with Evidence Gate.\n"
+                    f"Repository: {repo_path}\n"
+                    f"Planned intent: {intent_summary}\n"
+                    f"Likely changed paths: {changed_display}\n\n"
+                    "1. Call `evidence_gate_prepare_repository` if the knowledge base may be missing or stale.\n"
+                    "2. Call `evidence_gate_evaluate_intent`.\n"
+                    "3. If `next_step` is `inspect_evidence_first`, read the cited evidence and follow the "
+                    "returned `preflight_prompt` before editing code.\n"
+                    "4. Only proceed without extra review when the returned intent decision is `admit`."
                 ),
             }
         ]

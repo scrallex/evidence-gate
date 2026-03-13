@@ -165,6 +165,20 @@ async def _exercise_mcp_server(
                     },
                 },
             )
+            intent_decision = await session.call_tool(
+                "evidence_gate_evaluate_intent",
+                {
+                    "repo_path": str(repo_root),
+                    "intent_summary": "I am going to change auth/session handling and need preflight guidance.",
+                    "changed_paths": ["src/session.py"],
+                    "external_sources": [
+                        {
+                            "type": "incidents",
+                            "path": str(incident_root),
+                        }
+                    ],
+                },
+            )
             recent_decisions = await session.call_tool(
                 "evidence_gate_list_recent_decisions",
                 {"limit": 5},
@@ -197,6 +211,14 @@ async def _exercise_mcp_server(
                     "diff_summary": "Modify the billing tax calculation without test coverage.",
                 },
             )
+            intent_prompt = await session.get_prompt(
+                "evidence_gate_plan_with_intent",
+                {
+                    "repo_path": str(repo_root),
+                    "intent_summary": "Review an auth/session plan before writing code.",
+                    "changed_paths": "src/session.py",
+                },
+            )
 
     return {
         "tools": [tool.name for tool in tools.tools],
@@ -210,6 +232,7 @@ async def _exercise_mcp_server(
         "action_decision": _structured_payload(action_decision),
         "blocked_action_decision": _structured_payload(blocked_action_decision),
         "healing_loop": _structured_payload(healing_loop),
+        "intent_decision": _structured_payload(intent_decision),
         "recent_decisions": _structured_payload(recent_decisions),
         "external_query": _structured_payload(external_query),
         "decision_resource": decision_resource.contents[0].text,
@@ -217,6 +240,7 @@ async def _exercise_mcp_server(
         "audit_resource": audit_resource.contents[0].text,
         "prompt_messages": prompt.messages,
         "healing_prompt_messages": healing_prompt.messages,
+        "intent_prompt_messages": intent_prompt.messages,
     }
 
 
@@ -239,12 +263,14 @@ def test_mcp_stdio_server_exposes_evidence_gate_workflow(tmp_path: Path) -> None
     assert "evidence_gate_decide_action" in payload["tools"]
     assert "evidence_gate_prepare_repository" in payload["tools"]
     assert "evidence_gate_gate_action_with_healing" in payload["tools"]
+    assert "evidence_gate_evaluate_intent" in payload["tools"]
     assert "evidence_gate_list_recent_decisions" in payload["tools"]
     assert "evidence-gate://schemas/decision-record" in payload["resources"]
     assert "evidence-gate://audit/decisions.jsonl" in payload["resources"]
     assert "evidence-gate://decisions/{decision_id}" in payload["resource_templates"]
     assert "evidence_gate_review_change" in payload["prompts"]
     assert "evidence_gate_fail_explain_repair_retry" in payload["prompts"]
+    assert "evidence_gate_plan_with_intent" in payload["prompts"]
 
     prepare_payload = payload["prepare"]
     assert isinstance(prepare_payload, dict)
@@ -298,6 +324,12 @@ def test_mcp_stdio_server_exposes_evidence_gate_workflow(tmp_path: Path) -> None
     assert healing_payload["action_decision"]["decision_record"]["decision"] == "escalate"
     assert healing_payload["preparation"]["ready"] is True
 
+    intent_payload = payload["intent_decision"]
+    assert intent_payload["next_step"] == "inspect_evidence_first"
+    assert intent_payload["preparation"]["external_source_count"] == 1
+    assert intent_payload["twin_case_sources"]
+    assert intent_payload["preflight_prompt"].startswith("Before implementing 'I am going to change auth/session handling")
+
     decision_resource = json.loads(payload["decision_resource"])
     assert decision_resource["decision_id"] == decision_payload["decision_id"]
 
@@ -315,3 +347,7 @@ def test_mcp_stdio_server_exposes_evidence_gate_workflow(tmp_path: Path) -> None
     assert healing_prompt_messages
     assert "evidence_gate_prepare_repository" in healing_prompt_messages[0].content.text
     assert "evidence_gate_gate_action_with_healing" in healing_prompt_messages[0].content.text
+
+    intent_prompt_messages = payload["intent_prompt_messages"]
+    assert intent_prompt_messages
+    assert "evidence_gate_evaluate_intent" in intent_prompt_messages[0].content.text

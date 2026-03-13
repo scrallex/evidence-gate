@@ -20,6 +20,9 @@ proceeds.
 - can materialize live read-only GitHub, Jira, Confluence, Slack, and
   PagerDuty exports at ingest time through token-backed helper scripts and the
   composite GitHub Action
+- uses Tree-sitter-backed JavaScript and TypeScript analysis plus optional
+  LSIF/SCIP sidecars to improve blast radius on React, Node, and other
+  non-Python repos
 - ingests optional LSIF or SCIP sidecars from `.evidence-gate/graphs` to improve
   blast radius and retrieval on dynamic or non-Python repos
 - answers change-impact and engineering evidence queries
@@ -27,6 +30,8 @@ proceeds.
   `admit | abstain | escalate` decision
 - turns blocked action decisions into repair hints through `missing_evidence`
   so agents can retry with the required tests or file changes
+- can evaluate an agent's intent before code is written through MCP so the
+  model sees incidents, runbooks, and architecture context before it edits
 - writes decision audit records and manages knowledge-base lifecycle and retention
 - exposes a stakeholder dashboard that turns audit history into a Risk Avoided
   feed and an Agent Healing Rate view
@@ -64,7 +69,7 @@ It is suitable today for:
 - architecture discussion
 - guided demos on a target repository
 - design-partner evaluation with guided setup
-- CI guardrail previews on a target repository with explicit safety thresholds
+- shadow-mode CI guardrail previews on a target repository with explicit safety thresholds
 
 It is not yet ready as a self-serve product or production deployment. The main
 gaps are production hardening, broader CI adoption, partner validation on
@@ -103,6 +108,13 @@ python scripts/run_agent_gate.py \
   --repo-path /absolute/path/to/repo \
   --action-summary "Review the auth/session change before editing code." \
   --changed-path src/session.py
+```
+
+Ask the MCP server for preflight intent guidance before code is written:
+
+```text
+Call `evidence_gate_evaluate_intent` with the planned change and likely paths.
+If it returns `inspect_evidence_first`, read the cited incidents, runbooks, and docs before editing code.
 ```
 
 Run the stakeholder dashboard:
@@ -196,7 +208,9 @@ python scripts/sync_live_exports.py \
 ```
 
 That script keeps a small state file so each run can poll from the last
-successful sync instead of rebuilding the whole export surface every time.
+successful sync instead of rebuilding the whole export surface every time. The
+operational runbook for token rotation, poll cadence, and cursor repair lives
+at `runbooks/live_connector_operations.md`.
 
 Ask a change-impact question:
 

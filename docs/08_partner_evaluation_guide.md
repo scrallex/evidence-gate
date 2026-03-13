@@ -216,6 +216,8 @@ jobs:
           PY
       - id: evidence_gate
         uses: scrallex/evidence-gate@evidence-gate
+        env:
+          GATING_MODE: shadow
         with:
           action_summary: "Review the billing PR before merge"
           changed_paths: ${{ steps.diff.outputs.paths }}
@@ -235,7 +237,12 @@ jobs:
           pagerduty_token: ${{ secrets.PAGERDUTY_TOKEN }}
           safety_policy: >-
             {"max_blast_radius_files":6,"max_hazard":0.45,"min_confidence":0.55,"require_test_evidence":true,"require_precedent":true,"require_incident_precedent":true}
-          fail_on_block: "false"
+      - name: Enforce only after shadow review
+        if: ${{ env.GATING_MODE != 'shadow' && steps.evidence_gate.outputs.allowed != 'true' }}
+        shell: bash
+        run: |
+          echo "Evidence Gate blocked this pull request." >&2
+          exit 1
       - name: Enforce guardrail decision
         if: ${{ steps.evidence_gate.outputs.allowed != 'true' }}
         shell: bash
@@ -249,6 +256,8 @@ The action exposes:
 - `allowed`
 - `decision`
 - `decision_id`
+- `gating_mode`
+- `shadow_blocked`
 - `failure_reason`
 - `missing_evidence_json`
 - `policy_violations_json`
@@ -256,10 +265,13 @@ The action exposes:
 - `response_path`
 - `comment_path`
 
-For autonomous-agent evaluations, prefer `fail_on_block: "false"` on the first
-pass. Read the blocked response, inject the `missing_evidence` strings back into
-the agent prompt or feed `retry_prompt` directly into the next attempt, and
-only fail the workflow if the follow-up attempt is still blocked.
+For autonomous-agent evaluations, prefer `GATING_MODE=shadow` on the first
+pass. The action will still ingest the repo, calculate the real decision, write
+audit history for the dashboard, and emit a non-failing annotation when it
+would have blocked. Read the blocked response, inject the `missing_evidence`
+strings back into the agent prompt or feed `retry_prompt` directly into the
+next attempt, and only move to enforce mode after the partner is comfortable
+with the shadow-mode results.
 - `ingest_status`
 - `repo_fingerprint`
 
@@ -273,6 +285,8 @@ If you want a continuously refreshed context cache instead of one-shot exports,
 run `scripts/sync_live_exports.py` on a short poll interval with the same
 read-only tokens. It stores per-source sync cursors in a local state file so
 each pass only asks for newly updated context.
+The runbook for token rotation, safe poll cadence, and cursor repair is
+`runbooks/live_connector_operations.md`.
 
 ## 7. What a partner should provide for a useful evaluation
 

@@ -108,6 +108,10 @@ inputs:
     description: Force-refresh the knowledge base during the ingest step.
     required: false
     default: "false"
+  gating_mode:
+    description: Whether the action should enforce blocks or run in non-failing shadow mode. Defaults to env GATING_MODE or enforce.
+    required: false
+    default: ""
   fail_on_block:
     description: Fail the action when Evidence Gate blocks the proposed action.
     required: false
@@ -150,6 +154,12 @@ outputs:
   repo_fingerprint:
     description: Repository fingerprint returned by the ingest step.
     value: ${{ steps.guard.outputs.repo_fingerprint }}
+  gating_mode:
+    description: Effective action gating mode used by the wrapper.
+    value: ${{ steps.guard.outputs.gating_mode }}
+  shadow_blocked:
+    description: Whether shadow mode would have blocked the action while still returning success.
+    value: ${{ steps.guard.outputs.shadow_blocked }}
 
 branding:
   icon: check-circle
@@ -217,6 +227,7 @@ runs:
         START_SERVICE: ${{ inputs.start_service }}
         INGEST_BEFORE_ACTION: ${{ inputs.ingest_before_action }}
         REFRESH_KNOWLEDGE_BASE: ${{ inputs.refresh_knowledge_base }}
+        GATING_MODE_INPUT: ${{ inputs.gating_mode }}
         FAIL_ON_BLOCK: ${{ inputs.fail_on_block }}
       run: |
         set -euo pipefail
@@ -239,8 +250,13 @@ runs:
           DIFF_SUMMARY=$(git diff --stat --unified=0 "$BASE_SHA..$HEAD_SHA")
         fi
 
+        EFFECTIVE_GATING_MODE="$GATING_MODE_INPUT"
+        if [ -z "$EFFECTIVE_GATING_MODE" ]; then
+          EFFECTIVE_GATING_MODE="${GATING_MODE:-enforce}"
+        fi
+
         EXTRA_ARGS=()
-        if [ "$FAIL_ON_BLOCK" = "true" ]; then
+        if [ "$FAIL_ON_BLOCK" = "true" ] && [ "$EFFECTIVE_GATING_MODE" != "shadow" ]; then
           EXTRA_ARGS+=(--fail-on-block)
         fi
         if [ "$INGEST_BEFORE_ACTION" != "true" ]; then
@@ -277,6 +293,7 @@ runs:
           --output "$RUNNER_TEMP/evidence-gate-action.json" \
           --comment-output "$RUNNER_TEMP/evidence-gate-comment.md" \
           --github-output "$GITHUB_OUTPUT" \
+          --gating-mode "$EFFECTIVE_GATING_MODE" \
           "${EXTRA_ARGS[@]}"
 
     - name: Stop Evidence Gate

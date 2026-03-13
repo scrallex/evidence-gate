@@ -19,6 +19,7 @@ allow-or-block decision when needed.
 - `evidence_gate_decide_change_impact`
 - `evidence_gate_decide_action`
 - `evidence_gate_gate_action_with_healing`
+- `evidence_gate_evaluate_intent`
 - `evidence_gate_get_decision`
 - `evidence_gate_list_recent_decisions`
 
@@ -32,6 +33,7 @@ allow-or-block decision when needed.
 
 - `evidence_gate_review_change`
 - `evidence_gate_fail_explain_repair_retry`
+- `evidence_gate_plan_with_intent`
 
 `evidence_gate_ingest_repository` accepts:
 
@@ -65,6 +67,14 @@ Supported `external_sources` types:
 - `refresh_repository`
 - `external_sources`
 
+`evidence_gate_evaluate_intent` also accepts:
+
+- `changed_paths`
+- `diff_summary`
+- `prepare_repository`
+- `refresh_repository`
+- `external_sources`
+
 ## Recommended fast path
 
 For Cursor, Cline, and other MCP-native coding agents, the cleanest workflow is:
@@ -73,6 +83,14 @@ For Cursor, Cline, and other MCP-native coding agents, the cleanest workflow is:
 2. call `evidence_gate_gate_action_with_healing` for the actual fail-explain-repair-retry loop
 3. if `next_step` is `repair_and_retry`, feed `retry_prompt` back into the next agent turn
 4. rerun `evidence_gate_gate_action_with_healing` on the revised patch before presenting it as safe
+
+If you want the gate to guide an agent before it writes code, add a preflight
+step:
+
+1. call `evidence_gate_prepare_repository`
+2. call `evidence_gate_evaluate_intent` with the planned task and likely paths
+3. if `next_step` is `inspect_evidence_first`, read the cited runbooks,
+   incidents, and docs before the agent starts editing
 
 That tool wraps the lower-level action gate with the two integration details most IDE agents otherwise get wrong:
 
@@ -186,7 +204,9 @@ Example remote or local HTTP entry:
 Cursor usage note:
 prime the session with `evidence_gate_fail_explain_repair_retry` when you want
 the assistant to automatically interpret `retry_prompt` as the next coding
-instruction instead of a passive warning.
+instruction instead of a passive warning. Prime it with
+`evidence_gate_plan_with_intent` when you want the agent to ask for preflight
+guidance before it edits code.
 
 ## Cline config
 
@@ -293,6 +313,7 @@ For risky engineering edits:
 - If Cursor or Cline is orchestrating the coding loop directly, prefer `evidence_gate_gate_action_with_healing`; it already returns the retry prompt and next-step guidance.
 - If a shell-tool agent such as SWE-agent is not MCP-native, use `python scripts/run_agent_gate.py` as the bridge tool instead of reimplementing the retry contract in prompts.
 - If you change the MCP workflow in this repo itself, update `runbooks/mcp_agent_troubleshooting.md`; that file is the checked-in operational runbook for this integration surface.
+- If you change the live connector polling or token contract, update `runbooks/live_connector_operations.md`; that file is the checked-in operational runbook for the connector surface.
 - If the IDE launches the server outside the repo root, avoid relative paths such as `var/audit`; use absolute paths instead.
 - If you are evaluating the Evidence Gate repo itself, do not reuse repo-local `var/` paths for audit or knowledge-base storage. Use absolute paths outside the checkout, such as `/tmp/evidence-gate-audit` and `/tmp/evidence-gate-kb`.
 - If you want agents to inspect prior system decisions, use `evidence_gate_list_recent_decisions` or read `evidence-gate://audit/decisions.jsonl`.

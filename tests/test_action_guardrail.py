@@ -287,3 +287,71 @@ def test_run_action_guardrail_merges_live_external_sources_before_ingest(
         ],
         "timeout_seconds": 90,
     }
+
+
+def test_run_action_guardrail_shadow_mode_does_not_fail_blocked_action(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    github_output = tmp_path / "github-output.txt"
+
+    def _fake_action_endpoint(
+        *,
+        api_url: str,
+        repo_path: str,
+        action_summary: str,
+        changed_paths: list[str],
+        diff_summary: str | None,
+        safety_policy: dict[str, object] | None,
+        top_k: int,
+        timeout_seconds: int,
+    ) -> tuple[int, dict[str, object]]:
+        return 403, {
+            "allowed": False,
+            "status": "block",
+            "failure_reason": "Action blocked because Evidence Gate returned escalate for the proposed change.",
+            "policy_violations": [],
+            "decision_record": {
+                "decision": "escalate",
+                "decision_id": "decision-shadow-1",
+                "blast_radius": {"files": 3, "tests": 1, "docs": 1, "runbooks": 1},
+                "missing_evidence": ["No runbook or operational handling evidence was found."],
+                "twin_cases": [],
+                "evidence_spans": [{"source": "runbooks/live_connector_operations.md"}],
+                "explanation": "Decision escalate after missing runbook evidence.",
+            },
+        }
+
+    monkeypatch.setattr(run_action_guardrail, "_call_ingest_endpoint", lambda **_: (200, {"status": "built", "repo_fingerprint": "repo-shadow"}))
+    monkeypatch.setattr(run_action_guardrail, "_call_action_endpoint", _fake_action_endpoint)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "run_action_guardrail.py",
+            "--api-url",
+            "http://127.0.0.1:8000",
+            "--repo-path",
+            "/workspace/target",
+            "--action-summary",
+            "Review the live connector PR before merge.",
+            "--changed-paths-json",
+            '["scripts/live_connector_exports.py"]',
+            "--github-output",
+            str(github_output),
+            "--gating-mode",
+            "shadow",
+            "--fail-on-block",
+        ],
+    )
+
+    exit_code = run_action_guardrail.main()
+
+    assert exit_code == 0
+    stdout = capsys.readouterr().out
+    assert "::warning title=Evidence Gate Shadow Mode::Would have blocked this action (escalate)." in stdout
+
+    output_lines = github_output.read_text(encoding="utf-8").splitlines()
+    assert "gating_mode=shadow" in output_lines
+    assert "shadow_blocked=true" in output_lines

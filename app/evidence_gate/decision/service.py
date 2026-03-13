@@ -58,6 +58,7 @@ from evidence_gate.retrieval.structural import (
     prune_repository_knowledge_bases,
     search_repository,
 )
+from evidence_gate.structural.tree_sitter_support import is_frontend_code_path
 
 _WARNING_EVIDENCE_TERMS = (
     "deprecated",
@@ -69,6 +70,9 @@ _WARNING_EVIDENCE_TERMS = (
 _PATH_ALIGNMENT_GAP_NOTE = "The proposed changed paths were not directly supported by the retrieved evidence."
 _WARNING_EVIDENCE_NOTE = "Top retrieved evidence was marked deprecated or explicitly unsafe."
 _NO_TEST_EVIDENCE_NOTE = "No supporting test evidence was found for the affected flow."
+_NO_FRONTEND_TEST_EVIDENCE_NOTE = (
+    "Downstream frontend tests appear impacted, but no supporting frontend test evidence was found."
+)
 _NO_RUNBOOK_EVIDENCE_NOTE = "No runbook or operational handling evidence was found."
 _NO_PRECEDENT_NOTE = "No prior PR or incident precedent was found."
 _OPEN_SOURCE_IGNORED_NOTES = frozenset({_NO_RUNBOOK_EVIDENCE_NOTE, _NO_PRECEDENT_NOTE})
@@ -851,6 +855,12 @@ class DecisionService:
         missing_evidence = self._build_missing_evidence(
             evidence_spans,
             twin_cases,
+            blast_radius=blast_radius,
+            changed_paths=[
+                str(item)
+                for item in request_payload.get("changed_paths", [])
+                if isinstance(item, str) and str(item).strip()
+            ],
             path_alignment_gap=path_alignment_gap,
             warning_evidence_hit=warning_evidence_hit,
         )
@@ -1020,6 +1030,8 @@ class DecisionService:
             return False
         if _WARNING_EVIDENCE_NOTE in record.missing_evidence:
             return False
+        if _NO_FRONTEND_TEST_EVIDENCE_NOTE in record.missing_evidence:
+            return False
         if policy.require_test_evidence and not has_test_support:
             return False
         return (
@@ -1046,10 +1058,13 @@ class DecisionService:
         evidence_spans: list[EvidenceSpan],
         twin_cases: list[TwinCase],
         *,
+        blast_radius: BlastRadius,
+        changed_paths: list[str],
         path_alignment_gap: bool = False,
         warning_evidence_hit: bool = False,
     ) -> list[str]:
         missing: list[str] = []
+        has_test_support = any(span.source_type == SourceType.TEST for span in evidence_spans)
         if not evidence_spans:
             missing.append("No directly supporting code or documentation was found.")
         if evidence_spans and not any(span.verified for span in evidence_spans):
@@ -1058,8 +1073,12 @@ class DecisionService:
             missing.append(_PATH_ALIGNMENT_GAP_NOTE)
         if warning_evidence_hit:
             missing.append(_WARNING_EVIDENCE_NOTE)
-        if not any(span.source_type == SourceType.TEST for span in evidence_spans):
-            missing.append(_NO_TEST_EVIDENCE_NOTE)
+        if not has_test_support:
+            frontend_changed = any(is_frontend_code_path(path) for path in changed_paths)
+            if frontend_changed and blast_radius.tests > 0:
+                missing.append(_NO_FRONTEND_TEST_EVIDENCE_NOTE)
+            else:
+                missing.append(_NO_TEST_EVIDENCE_NOTE)
         if not any(span.source_type == SourceType.RUNBOOK for span in evidence_spans):
             missing.append(_NO_RUNBOOK_EVIDENCE_NOTE)
         if not twin_cases:

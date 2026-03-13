@@ -136,3 +136,36 @@ def test_ast_dependency_analyzer_dependency_depth_handles_cycles(tmp_path: Path)
 
     assert impacted == {"pkg/a.py", "pkg/b.py", "pkg/c.py", "pkg/d.py"}
     assert depth == 3
+
+
+def test_ast_dependency_analyzer_tracks_dynamic_tsx_imports_into_frontend_tests(tmp_path: Path) -> None:
+    repo_root = tmp_path / "frontend_repo"
+    _write(
+        repo_root / "apps" / "web" / "src" / "components" / "SharedPanel.tsx",
+        "export function SharedPanel() {\n"
+        "  return <section>shared</section>;\n"
+        "}\n",
+    )
+    _write(
+        repo_root / "apps" / "web" / "src" / "routes" / "DashboardPage.tsx",
+        "import {lazy} from 'react';\n\n"
+        "const SharedPanel = lazy(() => import('../components/SharedPanel'));\n\n"
+        "export function DashboardPage() {\n"
+        "  return <SharedPanel />;\n"
+        "}\n",
+    )
+    _write(
+        repo_root / "apps" / "web" / "src" / "routes" / "__tests__" / "DashboardPage.test.tsx",
+        "import {DashboardPage} from '../DashboardPage';\n\n"
+        "test('renders the dashboard page', () => {\n"
+        "  expect(DashboardPage).toBeTruthy();\n"
+        "});\n",
+    )
+
+    analyzer = ASTDependencyAnalyzer(repo_root)
+    analyzer.build_dependency_graph()
+
+    impacted = analyzer.impacted_files("apps/web/src/components/SharedPanel.tsx")
+
+    assert "apps/web/src/routes/DashboardPage.tsx" in impacted
+    assert "apps/web/src/routes/__tests__/DashboardPage.test.tsx" in impacted

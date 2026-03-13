@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import json
+import posixpath
 import re
 from collections import deque
 from dataclasses import dataclass, field
@@ -12,6 +13,11 @@ from pathlib import Path
 from evidence_gate.decision.models import BlastRadius
 from evidence_gate.native_graph import load_repository_native_graph
 from evidence_gate.retrieval.repository import SKIP_DIRS, classify_source_type
+from evidence_gate.structural.tree_sitter_support import (
+    analyze_js_ts_file,
+    frontend_anchor_tokens,
+    is_frontend_code_path,
+)
 
 
 @dataclass
@@ -19,6 +25,9 @@ class DependencyInfo:
     file_path: str
     imports: set[str] = field(default_factory=set)
     imported_by: set[str] = field(default_factory=set)
+    defined_symbols: set[str] = field(default_factory=set)
+    referenced_symbols: set[str] = field(default_factory=set)
+    frontend_tokens: set[str] = field(default_factory=set)
 
 
 class ASTDependencyAnalyzer:
@@ -62,18 +71,31 @@ class ASTDependencyAnalyzer:
             rel_path = source_file.relative_to(self.repo_root).as_posix()
             module_name = self._file_to_module(source_file)
             self.module_to_file[module_name] = rel_path
+            imports = self._extract_imports(source_file)
+            defined_symbols: set[str] = set()
+            referenced_symbols: set[str] = set()
+            tree_sitter_analysis = analyze_js_ts_file(source_file)
+            if tree_sitter_analysis is not None:
+                imports |= tree_sitter_analysis.imports
+                defined_symbols = tree_sitter_analysis.defined_symbols
+                referenced_symbols = tree_sitter_analysis.referenced_symbols
             self.dependencies[rel_path] = DependencyInfo(
                 file_path=rel_path,
-                imports=self._extract_imports(source_file),
+                imports=imports,
+                defined_symbols=defined_symbols,
+                referenced_symbols=referenced_symbols,
+                frontend_tokens=frontend_anchor_tokens(rel_path),
             )
 
         for file_path, dependency in self.dependencies.items():
             for imported_module in dependency.imports:
-                target_file = self._resolve_import(imported_module)
+                target_file = self._resolve_import(imported_module, source_path=file_path)
                 if target_file and target_file in self.dependencies:
                     self.dependencies[target_file].imported_by.add(file_path)
 
         self._apply_native_graph_edges()
+        self._apply_symbol_reference_edges()
+        self._apply_frontend_test_edges()
 
     def impacted_files(self, file_path: str) -> set[str]:
         return set(self._importer_depths(file_path))
@@ -201,7 +223,11 @@ class ASTDependencyAnalyzer:
             parts = parts[:-1]
         return ".".join(parts)
 
-    def _resolve_import(self, imported_module: str) -> str | None:
+    def _resolve_import(self, imported_module: str, source_path: str | None = None) -> str | None:
+        if source_path is not None and imported_module.startswith("."):
+            relative_match = self._resolve_relative_import(source_path, imported_module)
+            if relative_match is not None:
+                return relative_match
         normalized = imported_module.replace("./", "").replace("../", "").replace("/", ".")
         if normalized in self.module_to_file:
             return self.module_to_file[normalized]
@@ -211,6 +237,21 @@ class ASTDependencyAnalyzer:
         workspace_match = self._resolve_workspace_import(imported_module)
         if workspace_match is not None:
             return workspace_match
+        return None
+
+    def _resolve_relative_import(self, source_path: str, imported_module: str) -> str | None:
+        source_dir = posixpath.dirname(source_path)
+        candidate_root = posixpath.normpath(posixpath.join(source_dir, imported_module))
+        candidate_paths = [candidate_root]
+        if posixpath.splitext(candidate_root)[1]:
+            candidate_paths.append(candidate_root)
+        else:
+            for suffix in self.valid_extensions:
+                candidate_paths.append(candidate_root + suffix)
+                candidate_paths.append(posixpath.join(candidate_root, "index" + suffix))
+        for candidate in candidate_paths:
+            if candidate in self.dependencies:
+                return candidate
         return None
 
     def _discover_workspace_roots(self) -> dict[str, str]:
@@ -299,3 +340,75 @@ class ASTDependencyAnalyzer:
         if not candidates:
             return None
         return min(candidates, key=lambda path: ("/src/" not in path, path.count("/"), len(path)))
+
+    def _apply_symbol_reference_edges(self) -> None:
+        symbol_to_files: dict[str, set[str]] = {}
+        for file_path, dependency in self.dependencies.items():
+            if classify_source_type(file_path).value == "test":
+                continue
+            for symbol in dependency.defined_symbols:
+                symbol_to_files.setdefault(symbol, set()).add(file_path)
+
+        for file_path, dependency in self.dependencies.items():
+            for symbol in dependency.referenced_symbols:
+                candidates = {
+                    candidate
+                    for candidate in symbol_to_files.get(symbol, set())
+                    if candidate != file_path
+                }
+                target_file = self._pick_symbol_target(file_path, candidates)
+                if target_file is None:
+                    continue
+                dependency.imports.add(target_file)
+                self.dependencies[target_file].imported_by.add(file_path)
+
+    def _pick_symbol_target(self, source_path: str, candidates: set[str]) -> str | None:
+        if not candidates:
+            return None
+        if len(candidates) == 1:
+            return next(iter(candidates))
+        source_parts = Path(source_path).parts
+        return min(
+            candidates,
+            key=lambda candidate: (
+                -len(set(source_parts[:-1]) & set(Path(candidate).parts[:-1])),
+                candidate.count("/"),
+                len(candidate),
+            ),
+        )
+
+    def _apply_frontend_test_edges(self) -> None:
+        tests_by_token: dict[str, set[str]] = {}
+        for file_path, dependency in self.dependencies.items():
+            if classify_source_type(file_path).value != "test":
+                continue
+            for token in dependency.frontend_tokens:
+                tests_by_token.setdefault(token, set()).add(file_path)
+
+        for file_path, dependency in self.dependencies.items():
+            if classify_source_type(file_path).value == "test" or not is_frontend_code_path(file_path):
+                continue
+            candidate_tests: set[str] = set()
+            for token in dependency.frontend_tokens:
+                candidate_tests.update(tests_by_token.get(token, set()))
+            for test_path in candidate_tests:
+                if not self._frontend_test_matches(file_path, test_path):
+                    continue
+                dependency.imported_by.add(test_path)
+                self.dependencies[test_path].imports.add(file_path)
+
+    def _frontend_test_matches(self, source_path: str, test_path: str) -> bool:
+        source_tokens = self.dependencies[source_path].frontend_tokens
+        test_tokens = self.dependencies[test_path].frontend_tokens
+        overlap = source_tokens & test_tokens
+        if not overlap:
+            return False
+        source_stem = Path(source_path).stem.lower()
+        if source_stem not in {"index", "page", "route", "layout", "loading", "error"} and source_stem in test_tokens:
+            return True
+        source_name = Path(source_path).stem.lower()
+        if source_name in {"index", "page", "route", "layout", "loading", "error"}:
+            parent_name = Path(source_path).parent.name.lower()
+            if parent_name and parent_name in overlap:
+                return True
+        return len(overlap) >= 2 or len(source_tokens) == 1

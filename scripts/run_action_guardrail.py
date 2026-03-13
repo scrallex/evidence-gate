@@ -137,6 +137,7 @@ def main() -> int:
     parser.add_argument("--output")
     parser.add_argument("--comment-output")
     parser.add_argument("--github-output")
+    parser.add_argument("--gating-mode", choices=("enforce", "shadow"), default="enforce")
     parser.add_argument("--skip-ingest", action="store_true")
     parser.add_argument("--refresh-knowledge-base", action="store_true")
     parser.add_argument("--fail-on-block", action="store_true")
@@ -225,12 +226,26 @@ def main() -> int:
                 "comment_path": str(comment_path) if comment_path is not None else "",
                 "ingest_status": str(ingest_payload.get("status", "")),
                 "repo_fingerprint": str(ingest_payload.get("repo_fingerprint", "")),
+                "gating_mode": args.gating_mode,
+                "shadow_blocked": str(args.gating_mode == "shadow" and not payload.get("allowed", False)).lower(),
                 "failure_reason": _single_line(str(payload.get("failure_reason", "") or "")),
                 "missing_evidence_json": json.dumps(record.get("missing_evidence", []), separators=(",", ":")),
                 "policy_violations_json": json.dumps(payload.get("policy_violations", []), separators=(",", ":")),
                 "retry_prompt": _single_line(retry_prompt),
             },
         )
+
+    if args.gating_mode == "shadow":
+        decision_name = str(payload.get("decision_record", {}).get("decision", "")).strip() or "unknown"
+        summary = _single_line(str(payload.get("failure_reason", "") or "Evidence Gate would have blocked this action."))
+        if payload.get("allowed", False):
+            print(f"::notice title=Evidence Gate Shadow Mode::Would allow this action ({decision_name}).")
+        else:
+            print(
+                "::warning title=Evidence Gate Shadow Mode::"
+                f"Would have blocked this action ({decision_name}). {summary}"
+            )
+        return 0
 
     if args.fail_on_block and not payload.get("allowed", False):
         return 1

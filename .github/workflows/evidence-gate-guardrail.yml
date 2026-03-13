@@ -90,6 +90,8 @@ jobs:
       - name: Run Evidence Gate
         id: evidence_gate
         uses: scrallex/evidence-gate@evidence-gate
+        env:
+          GATING_MODE: shadow
         with:
           action_summary: >-
             Pull request #${{ github.event.pull_request.number }}:
@@ -105,7 +107,6 @@ jobs:
           jira_project_keys: ${{ vars.JIRA_PROJECT_KEYS }}
           pagerduty_token: ${{ secrets.PAGERDUTY_TOKEN }}
           safety_policy: ${{ steps.gate_inputs.outputs.safety_policy }}
-          fail_on_block: "false"
 
       - name: Upsert Evidence Gate PR comment
         if: ${{ always() && steps.evidence_gate.outputs.comment_path != '' }}
@@ -150,7 +151,7 @@ jobs:
             });
 
       - name: Enforce guardrail decision
-        if: ${{ steps.evidence_gate.outcome == 'success' && steps.evidence_gate.outputs.allowed != 'true' }}
+        if: ${{ env.GATING_MODE != 'shadow' && steps.evidence_gate.outcome == 'success' && steps.evidence_gate.outputs.allowed != 'true' }}
         shell: bash
         run: |
           echo "Evidence Gate blocked this pull request." >&2
