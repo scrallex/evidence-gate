@@ -22,6 +22,16 @@ If you change the gate, MCP surface, retrieval, or CI wrappers, it is also worth
 running the relevant local scripts or workflows called out in the README and
 runbooks.
 
+## Reporting issues
+
+When you open an issue, include:
+
+- the command you ran
+- the relevant repo path or changed paths
+- the observed result
+- the expected result
+- any useful logs or decision JSON
+
 ## Scope
 
 Good early contributions:
@@ -54,3 +64,4 @@ runbook too.
 - describe what changed and why
 - include the relevant command output if you changed behavior or tests
 - note any known gaps if you could not fully verify something
+- keep new docs in plain Markdown and follow the existing style instead of introducing a separate docs framework

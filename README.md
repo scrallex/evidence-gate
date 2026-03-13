@@ -17,6 +17,17 @@ flowchart LR
     E -->|abstain or escalate| G[Return missing_evidence and retry_prompt]
 ```
 
+## Table of contents
+
+- [Why it exists](#why-it-exists)
+- [What ships today](#what-ships-today)
+- [Quickstart](#quickstart)
+- [Proof, not promises](#proof-not-promises)
+- [Read next](#read-next)
+- [Current limits](#current-limits)
+- [Get involved](#get-involved)
+- [Repo layout](#repo-layout)
+
 ## Why it exists
 
 AI coding agents usually fail in the same predictable ways:
@@ -39,6 +50,9 @@ Evidence Gate is trying to solve that narrower problem well.
 - changed-path-aware test discovery to improve healing-loop success on real repos
 
 ## Quickstart
+
+If you want to test the flow quickly, point it at a small repo first, or use
+the included demo sandbox below.
 
 Install the package and dev dependencies:
 
@@ -95,20 +109,22 @@ If you want the quickest public demo, run:
 The most important current benchmark artifact is the 300-task SWE-bench Lite
 replay. It shows that the gate can block incomplete patches, emit repair
 guidance, and improve allow rate on retry without becoming a blanket allow.
+See [BENCHMARKS.md](./BENCHMARKS.md) for the raw artifacts, rerun commands, and
+current limitations.
 
 ## Read next
 
-- [VISION.md](/sep/evidence-gate/VISION.md): what the product is and why it is not "just AI PR review"
-- [GUIDES.md](/sep/evidence-gate/GUIDES.md): quickstart variants, MCP, CI, dashboard, connectors, and runbooks
-- [API.md](/sep/evidence-gate/API.md): HTTP endpoints, MCP tools, and decision payloads
-- [BENCHMARKS.md](/sep/evidence-gate/BENCHMARKS.md): results, artifact links, and reproduction commands
+- [VISION.md](./VISION.md): what the product is and why it is not "just AI PR review"
+- [GUIDES.md](./GUIDES.md): quickstart variants, MCP, CI, dashboard, connectors, and runbooks
+- [API.md](./API.md): HTTP endpoints, MCP tools, and decision payloads
+- [BENCHMARKS.md](./BENCHMARKS.md): results, artifact links, and reproduction commands
 
 Operational runbooks stay separate because they are part of the evidence
 surface:
 
-- [live_connector_operations.md](/sep/evidence-gate/runbooks/live_connector_operations.md)
-- [mcp_agent_troubleshooting.md](/sep/evidence-gate/runbooks/mcp_agent_troubleshooting.md)
-- [required_check_operations.md](/sep/evidence-gate/runbooks/required_check_operations.md)
+- [live_connector_operations.md](./runbooks/live_connector_operations.md)
+- [mcp_agent_troubleshooting.md](./runbooks/mcp_agent_troubleshooting.md)
+- [required_check_operations.md](./runbooks/required_check_operations.md)
 
 ## Current limits
 

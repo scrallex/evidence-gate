@@ -48,9 +48,9 @@ CTOs, and CISOs who care about prevented risk, not terminal output.
 
 Use the checked-in wrapper:
 
-- [evidence-gate-guardrail.yml](/sep/evidence-gate/.github/workflows/evidence-gate-guardrail.yml)
+- [evidence-gate-guardrail.yml](./.github/workflows/evidence-gate-guardrail.yml)
 
-The root [action.yml](/sep/evidence-gate/action.yml) now prefers the prebuilt
+The root [action.yml](./action.yml) now prefers the prebuilt
 image `ghcr.io/scrallex/evidence-gate:latest` and falls back to a local Docker
 build only when needed.
 
@@ -58,13 +58,13 @@ build only when needed.
 
 Use the checked-in merge-request job:
 
-- [evidence-gate-required-check.yml](/sep/evidence-gate/ci/gitlab/evidence-gate-required-check.yml)
+- [evidence-gate-required-check.yml](./ci/gitlab/evidence-gate-required-check.yml)
 
 ### Provider-neutral runner
 
 Both wrappers share:
 
-- [run_required_check.py](/sep/evidence-gate/scripts/run_required_check.py)
+- [run_required_check.py](./scripts/run_required_check.py)
 
 That script computes changed paths from the CI diff and then runs the normal
 action gate.
@@ -108,7 +108,7 @@ python scripts/sync_live_exports.py \
 
 Operational guidance is in:
 
-- [live_connector_operations.md](/sep/evidence-gate/runbooks/live_connector_operations.md)
+- [live_connector_operations.md](./runbooks/live_connector_operations.md)
 
 ## Native graphs and test discovery
 
@@ -136,12 +136,12 @@ Supported backend configuration surface:
 - Ollama config contract
 - vLLM config contract
 
-Relevant environment controls live in [config.py](/sep/evidence-gate/app/evidence_gate/config.py).
+Relevant environment controls live in [config.py](./app/evidence_gate/config.py).
 
 ## Runbooks
 
 These are part of the product surface, not internal notes:
 
-- [mcp_agent_troubleshooting.md](/sep/evidence-gate/runbooks/mcp_agent_troubleshooting.md)
-- [live_connector_operations.md](/sep/evidence-gate/runbooks/live_connector_operations.md)
-- [required_check_operations.md](/sep/evidence-gate/runbooks/required_check_operations.md)
+- [mcp_agent_troubleshooting.md](./runbooks/mcp_agent_troubleshooting.md): MCP and agent-loop debugging
+- [live_connector_operations.md](./runbooks/live_connector_operations.md): live token rotation, polling, and connector recovery
+- [required_check_operations.md](./runbooks/required_check_operations.md): GitHub or GitLab rollout, rollback, and CI image fallback

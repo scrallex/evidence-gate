@@ -38,12 +38,12 @@ path for future uplift.
 
 ## Artifact links
 
-- [fastapi_structural_vs_baseline.md](/sep/evidence-gate/benchmarks/results/fastapi_structural_vs_baseline.md)
-- [fastapi_structural_vs_baseline.json](/sep/evidence-gate/benchmarks/results/fastapi_structural_vs_baseline.json)
-- [value_proof_benchmarks.md](/sep/evidence-gate/benchmarks/results/value_proof_benchmarks.md)
-- [value_proof_benchmarks.json](/sep/evidence-gate/benchmarks/results/value_proof_benchmarks.json)
-- [swebench_lite_full_replay.md](/sep/evidence-gate/benchmarks/results/swebench_lite_full_replay.md)
-- [swebench_lite_full_replay.json](/sep/evidence-gate/benchmarks/results/swebench_lite_full_replay.json)
+- [fastapi_structural_vs_baseline.md](./benchmarks/results/fastapi_structural_vs_baseline.md)
+- [fastapi_structural_vs_baseline.json](./benchmarks/results/fastapi_structural_vs_baseline.json)
+- [value_proof_benchmarks.md](./benchmarks/results/value_proof_benchmarks.md)
+- [value_proof_benchmarks.json](./benchmarks/results/value_proof_benchmarks.json)
+- [swebench_lite_full_replay.md](./benchmarks/results/swebench_lite_full_replay.md)
+- [swebench_lite_full_replay.json](./benchmarks/results/swebench_lite_full_replay.json)
 
 ## Reproduce
 
