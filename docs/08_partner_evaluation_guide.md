@@ -170,7 +170,7 @@ The repo ships a root [action.yml](/sep/evidence-gate/action.yml) that:
 - starts the Dockerized Evidence Gate service in CI
 - mounts the checked-out repo at `/workspace/target`
 - automatically fetches recent GitHub pull request precedent when `github_token` is set
-- optionally fetches recent Jira or PagerDuty context when those tokens are set
+- optionally fetches recent Jira, Confluence, Slack, or PagerDuty context when those credentials are set
 - still accepts explicit `external_sources` when you want mounted corpora
 - computes a diff summary from `base_sha` and `head_sha` when available
 - calls `POST /v1/decide/action` with optional `safety_policy`
@@ -226,6 +226,12 @@ jobs:
           jira_base_url: ${{ vars.JIRA_BASE_URL }}
           jira_user_email: ${{ vars.JIRA_USER_EMAIL }}
           jira_project_keys: ${{ vars.JIRA_PROJECT_KEYS }}
+          confluence_api_token: ${{ secrets.CONFLUENCE_API_TOKEN }}
+          confluence_base_url: ${{ vars.CONFLUENCE_BASE_URL }}
+          confluence_user_email: ${{ vars.CONFLUENCE_USER_EMAIL }}
+          confluence_space_keys: ${{ vars.CONFLUENCE_SPACE_KEYS }}
+          slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
+          slack_channel_ids: ${{ vars.SLACK_CHANNEL_IDS }}
           pagerduty_token: ${{ secrets.PAGERDUTY_TOKEN }}
           safety_policy: >-
             {"max_blast_radius_files":6,"max_hazard":0.45,"min_confidence":0.55,"require_test_evidence":true,"require_precedent":true,"require_incident_precedent":true}
@@ -262,7 +268,11 @@ In this repository, the same pattern is already wired in
 
 For local or host-driven evaluations outside GitHub Actions, the companion
 script `scripts/fetch_live_exports.py` can materialize the same GitHub, Jira,
-and PagerDuty directories before you call ingest manually.
+Confluence, Slack, and PagerDuty directories before you call ingest manually.
+If you want a continuously refreshed context cache instead of one-shot exports,
+run `scripts/sync_live_exports.py` on a short poll interval with the same
+read-only tokens. It stores per-source sync cursors in a local state file so
+each pass only asks for newly updated context.
 
 ## 7. What a partner should provide for a useful evaluation
 

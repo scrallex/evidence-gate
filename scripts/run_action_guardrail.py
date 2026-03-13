@@ -126,6 +126,13 @@ def main() -> int:
     parser.add_argument("--jira-user-email", default="")
     parser.add_argument("--jira-project-keys", default="")
     parser.add_argument("--jira-lookback-days", type=int, default=30)
+    parser.add_argument("--confluence-base-url", default="")
+    parser.add_argument("--confluence-user-email", default="")
+    parser.add_argument("--confluence-space-keys", default="")
+    parser.add_argument("--confluence-cql", default="")
+    parser.add_argument("--confluence-lookback-days", type=int, default=30)
+    parser.add_argument("--slack-channel-ids", default="")
+    parser.add_argument("--slack-lookback-days", type=int, default=30)
     parser.add_argument("--pagerduty-lookback-days", type=int, default=30)
     parser.add_argument("--output")
     parser.add_argument("--comment-output")
@@ -152,6 +159,13 @@ def main() -> int:
             jira_user_email=args.jira_user_email,
             jira_project_keys=args.jira_project_keys,
             jira_lookback_days=args.jira_lookback_days,
+            confluence_base_url=args.confluence_base_url,
+            confluence_user_email=args.confluence_user_email,
+            confluence_space_keys=args.confluence_space_keys,
+            confluence_cql=args.confluence_cql,
+            confluence_lookback_days=args.confluence_lookback_days,
+            slack_channel_ids=args.slack_channel_ids,
+            slack_lookback_days=args.slack_lookback_days,
             pagerduty_lookback_days=args.pagerduty_lookback_days,
             timeout_seconds=args.timeout_seconds,
         )

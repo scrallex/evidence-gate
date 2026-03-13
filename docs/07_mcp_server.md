@@ -107,8 +107,11 @@ Example mixed-source ingest payload:
 
 If you want those directories generated from live systems instead of manual
 exports, use `scripts/fetch_live_exports.py` first. It fetches recent GitHub,
-Jira, and PagerDuty data into ingest-ready directories while preserving the
-existing MCP and HTTP ingest contract.
+Jira, Confluence, Slack, and PagerDuty data into ingest-ready directories while
+preserving the existing MCP and HTTP ingest contract. For continuous partner
+evaluation sync, use `scripts/sync_live_exports.py` so the live connector state
+advances from the last successful poll instead of replaying the full lookback
+window each time.
 
 ## Local stdio
 

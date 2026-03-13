@@ -17,8 +17,9 @@ proceeds.
 
 - ingests repository content plus optional local exports from incidents, Jira,
   PagerDuty, Slack, and Confluence into a persisted structural knowledge base
-- can materialize live read-only GitHub, Jira, and PagerDuty exports at ingest
-  time through token-backed helper scripts and the composite GitHub Action
+- can materialize live read-only GitHub, Jira, Confluence, Slack, and
+  PagerDuty exports at ingest time through token-backed helper scripts and the
+  composite GitHub Action
 - ingests optional LSIF or SCIP sidecars from `.evidence-gate/graphs` to improve
   blast radius and retrieval on dynamic or non-Python repos
 - answers change-impact and engineering evidence queries
@@ -159,6 +160,12 @@ GITHUB_REPOSITORY=owner/repo \
 JIRA_BASE_URL=https://company.atlassian.net \
 JIRA_API_TOKEN=... \
 JIRA_USER_EMAIL=you@company.com \
+CONFLUENCE_BASE_URL=https://company.atlassian.net/wiki \
+CONFLUENCE_API_TOKEN=... \
+CONFLUENCE_USER_EMAIL=you@company.com \
+CONFLUENCE_SPACE_KEYS=ARCH,OPS \
+SLACK_BOT_TOKEN=... \
+SLACK_CHANNEL_IDS=C01234567,C08999999 \
 PAGERDUTY_TOKEN=... \
 python scripts/fetch_live_exports.py --output-root /tmp/evidence-gate-live
 ```
@@ -166,7 +173,30 @@ python scripts/fetch_live_exports.py --output-root /tmp/evidence-gate-live
 The script prints a JSON `external_sources` array that can be passed straight
 into `/v1/knowledge-bases/ingest`. The composite GitHub Action now does this
 automatically for GitHub pull requests when `github_token` is supplied, and it
-can also fetch Jira and PagerDuty context when those tokens are configured.
+can also fetch Jira, Confluence, Slack, and PagerDuty context when those
+credentials are configured.
+
+For incremental polling instead of one-shot onboarding:
+
+```bash
+GITHUB_TOKEN=... \
+JIRA_API_TOKEN=... \
+CONFLUENCE_API_TOKEN=... \
+SLACK_BOT_TOKEN=... \
+PAGERDUTY_TOKEN=... \
+python scripts/sync_live_exports.py \
+  --output-root /tmp/evidence-gate-live \
+  --visible-root /tmp/evidence-gate-live \
+  --github-repository owner/repo \
+  --jira-base-url https://company.atlassian.net \
+  --confluence-base-url https://company.atlassian.net/wiki \
+  --confluence-space-keys ARCH,OPS \
+  --slack-channel-ids C01234567,C08999999 \
+  --poll-interval-seconds 300
+```
+
+That script keeps a small state file so each run can poll from the last
+successful sync instead of rebuilding the whole export surface every time.
 
 Ask a change-impact question:
 

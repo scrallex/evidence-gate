@@ -46,6 +46,7 @@ SKIP_DIRS = {
     "venv",
     "__pycache__",
     "node_modules",
+    ".next",
     "dist",
     "build",
     ".pytest_cache",

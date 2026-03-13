@@ -267,6 +267,13 @@ def test_run_action_guardrail_merges_live_external_sources_before_ingest(
         "jira_user_email": "",
         "jira_project_keys": "",
         "jira_lookback_days": 30,
+        "confluence_base_url": "",
+        "confluence_user_email": "",
+        "confluence_space_keys": "",
+        "confluence_cql": "",
+        "confluence_lookback_days": 30,
+        "slack_channel_ids": "",
+        "slack_lookback_days": 30,
         "pagerduty_lookback_days": 30,
         "timeout_seconds": 90,
     }

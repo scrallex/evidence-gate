@@ -52,6 +52,34 @@ inputs:
     description: Optional comma-separated Jira project keys to limit live issue fetch.
     required: false
     default: ""
+  confluence_api_token:
+    description: Optional Confluence API token used to fetch recent architecture and runbook pages during ingest.
+    required: false
+    default: ""
+  confluence_base_url:
+    description: Optional Confluence base URL, for example https://company.atlassian.net/wiki.
+    required: false
+    default: ""
+  confluence_user_email:
+    description: Optional Confluence user email for basic auth. If omitted, bearer auth is attempted.
+    required: false
+    default: ""
+  confluence_space_keys:
+    description: Optional comma-separated Confluence space keys to limit live page fetch.
+    required: false
+    default: ""
+  confluence_cql:
+    description: Optional Confluence CQL override for live page sync.
+    required: false
+    default: ""
+  slack_bot_token:
+    description: Optional Slack bot token used to fetch incident-channel threads during ingest.
+    required: false
+    default: ""
+  slack_channel_ids:
+    description: Optional comma-separated Slack channel IDs for live thread sync.
+    required: false
+    default: ""
   pagerduty_token:
     description: Optional PagerDuty API token used to fetch recent incidents during ingest.
     required: false
@@ -175,6 +203,13 @@ runs:
         JIRA_BASE_URL: ${{ inputs.jira_base_url }}
         JIRA_USER_EMAIL: ${{ inputs.jira_user_email }}
         JIRA_PROJECT_KEYS: ${{ inputs.jira_project_keys }}
+        CONFLUENCE_API_TOKEN: ${{ inputs.confluence_api_token }}
+        CONFLUENCE_BASE_URL: ${{ inputs.confluence_base_url }}
+        CONFLUENCE_USER_EMAIL: ${{ inputs.confluence_user_email }}
+        CONFLUENCE_SPACE_KEYS: ${{ inputs.confluence_space_keys }}
+        CONFLUENCE_CQL: ${{ inputs.confluence_cql }}
+        SLACK_BOT_TOKEN: ${{ inputs.slack_bot_token }}
+        SLACK_CHANNEL_IDS: ${{ inputs.slack_channel_ids }}
         PAGERDUTY_TOKEN: ${{ inputs.pagerduty_token }}
         SAFETY_POLICY_JSON: ${{ inputs.safety_policy }}
         REPO_PATH_INPUT: ${{ inputs.repo_path }}
@@ -229,6 +264,13 @@ runs:
           --jira-user-email "$JIRA_USER_EMAIL" \
           --jira-project-keys "$JIRA_PROJECT_KEYS" \
           --jira-lookback-days "$LIVE_LOOKBACK_DAYS" \
+          --confluence-base-url "$CONFLUENCE_BASE_URL" \
+          --confluence-user-email "$CONFLUENCE_USER_EMAIL" \
+          --confluence-space-keys "$CONFLUENCE_SPACE_KEYS" \
+          --confluence-cql "$CONFLUENCE_CQL" \
+          --confluence-lookback-days "$LIVE_LOOKBACK_DAYS" \
+          --slack-channel-ids "$SLACK_CHANNEL_IDS" \
+          --slack-lookback-days "$LIVE_LOOKBACK_DAYS" \
           --pagerduty-lookback-days "$LIVE_LOOKBACK_DAYS" \
           --diff-summary "$DIFF_SUMMARY" \
           --safety-policy-json "$SAFETY_POLICY_JSON" \
