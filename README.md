@@ -88,6 +88,15 @@ Run the MCP server over streamable HTTP:
 evidence-gate-mcp --transport streamable-http --port 8001
 ```
 
+Run the shell-friendly bridge for agents that do not speak MCP directly:
+
+```bash
+python scripts/run_agent_gate.py \
+  --repo-path /absolute/path/to/repo \
+  --action-summary "Review the auth/session change before editing code." \
+  --changed-path src/session.py
+```
+
 Run the zero-to-value demo sandbox:
 
 ```bash
@@ -190,10 +199,15 @@ python scripts/run_value_proof_benchmarks.py
 
 The repo ships an MCP server with:
 
-- tools for repository ingest, optional mixed-source ingest, knowledge-base status,
-  query decisions, change-impact decisions, action gating, and audit lookup
+- tools for repository ingest, automatic repository preparation, optional mixed-source ingest,
+  query decisions, change-impact decisions, raw action gating, and a higher-level
+  gate-plus-healing workflow that returns retry guidance for blocked changes
 - a decision-contract schema resource, per-decision resources, and the raw audit ledger
-- a prompt that tells an agent to gate risky code edits before proceeding
+- prompts for both change review and the full fail-explain-repair-retry loop
+
+For agents that do not natively consume MCP, `scripts/run_agent_gate.py` exposes
+the same gate-plus-retry contract as plain JSON for SWE-agent-style tool bundles
+or other shell-based workflows.
 
 See `docs/07_mcp_server.md` for local `stdio` and remote `streamable-http`
 configuration examples, and `docs/09_agent_skills.md` for Codex-oriented skill

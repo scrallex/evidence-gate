@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from collections.abc import Sequence
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -28,10 +29,11 @@ from evidence_gate.decision.models import (
 SERVER_INSTRUCTIONS = """
 Evidence Gate is a reliability layer for AI agents operating over engineering repositories.
 Use it before proposing or applying risky changes. Prefer `evidence_gate_decide_change_impact`
-for planned code edits and `evidence_gate_decide_query` for repository evidence questions.
-If the decision is `abstain` or `escalate`, do not represent the change as safe. Summarize
-the missing evidence, cite the strongest evidence spans, and inspect returned twin PR or
-incident cases before continuing.
+for planned code edits, `evidence_gate_prepare_repository` when the knowledge base may be
+missing or stale, and `evidence_gate_gate_action_with_healing` when you want the full
+fail-explain-repair-retry loop. If the decision is `abstain` or `escalate`, do not represent
+the change as safe. Summarize the missing evidence, cite the strongest evidence spans, and
+inspect returned twin PR or incident cases before continuing.
 """.strip()
 
 
@@ -47,8 +49,80 @@ class RecentDecisionsResponse(BaseModel):
     decisions: list[DecisionRecord]
 
 
+class MCPRepositoryPreparationResponse(BaseModel):
+    repo_path: str
+    ready: bool
+    status: str
+    preparation_action: Literal["reused", "ingested"]
+    ingest_status: str | None = None
+    repo_fingerprint: str | None = None
+    knowledge_base_path: str | None = None
+    external_source_count: int = 0
+
+
+class MCPHealingLoopResponse(BaseModel):
+    preparation: MCPRepositoryPreparationResponse | None = None
+    action_decision: ActionDecisionResponse
+    retry_prompt: str | None = None
+    next_step: Literal["proceed", "repair_and_retry", "inspect_evidence"]
+    strongest_evidence_sources: list[str]
+    twin_case_sources: list[str]
+
+
 READ_ONLY = ToolAnnotations(readOnlyHint=True, destructiveHint=False, openWorldHint=False)
 NON_DESTRUCTIVE = ToolAnnotations(destructiveHint=False, openWorldHint=False)
+
+
+def _build_retry_prompt(missing_evidence: Sequence[str]) -> str:
+    guidance = "; ".join(str(item).strip() for item in missing_evidence if str(item).strip())
+    if not guidance:
+        return ""
+    guidance = "; ".join(guidance.split("; ")[:3])
+    return (
+        "Evidence Gate blocked the previous attempt because: "
+        f"{guidance}. "
+        "Write the missing tests or update the supported files, then retry the gate."
+    )
+
+
+def _prepare_repository(
+    *,
+    repo_path: str,
+    refresh: bool,
+    external_sources: list[dict[str, str]] | None,
+) -> MCPRepositoryPreparationResponse:
+    service = get_decision_service()
+    status = service.get_repository_ingest_status(repo_path)
+    source_count = len(external_sources or [])
+    if status.status == "ready" and not refresh:
+        return MCPRepositoryPreparationResponse(
+            repo_path=repo_path,
+            ready=True,
+            status=status.status,
+            preparation_action="reused",
+            repo_fingerprint=status.cached_repo_fingerprint,
+            knowledge_base_path=status.knowledge_base_path,
+            external_source_count=source_count,
+        )
+
+    ingest = service.ingest_repository(
+        KnowledgeBaseIngestRequest(
+            repo_path=repo_path,
+            refresh=True,
+            external_sources=external_sources or [],
+        )
+    )
+    updated_status = service.get_repository_ingest_status(repo_path)
+    return MCPRepositoryPreparationResponse(
+        repo_path=repo_path,
+        ready=updated_status.status == "ready",
+        status=updated_status.status,
+        preparation_action="ingested",
+        ingest_status=ingest.status,
+        repo_fingerprint=ingest.repo_fingerprint,
+        knowledge_base_path=ingest.knowledge_base_path,
+        external_source_count=source_count,
+    )
 
 
 def create_mcp_server(
@@ -125,6 +199,30 @@ def create_mcp_server(
     def get_knowledge_base_status(repo_path: str) -> KnowledgeBaseStatusResponse:
         try:
             return get_decision_service().get_repository_ingest_status(repo_path)
+        except ValueError as exc:
+            raise ToolError(str(exc)) from exc
+
+    @mcp.tool(
+        name="evidence_gate_prepare_repository",
+        description=(
+            "Ensure a repository knowledge base is ready for later Evidence Gate decisions. Reuse a ready "
+            "knowledge base when possible, or ingest automatically when the cache is missing, stale, or "
+            "the caller requests a refresh."
+        ),
+        annotations=NON_DESTRUCTIVE,
+        structured_output=True,
+    )
+    def prepare_repository(
+        repo_path: str,
+        refresh: bool = False,
+        external_sources: list[dict[str, str]] | None = None,
+    ) -> MCPRepositoryPreparationResponse:
+        try:
+            return _prepare_repository(
+                repo_path=repo_path,
+                refresh=refresh,
+                external_sources=external_sources,
+            )
         except ValueError as exc:
             raise ToolError(str(exc)) from exc
 
@@ -206,6 +304,66 @@ def create_mcp_server(
             raise ToolError(str(exc)) from exc
 
     @mcp.tool(
+        name="evidence_gate_gate_action_with_healing",
+        description=(
+            "Run the full fail-explain-repair-retry loop: optionally prepare the repository, gate a "
+            "proposed action, and return a retry prompt plus next-step guidance when the action is blocked."
+        ),
+        annotations=NON_DESTRUCTIVE,
+        structured_output=True,
+    )
+    def gate_action_with_healing(
+        repo_path: str,
+        action_summary: str,
+        changed_paths: list[str] | None = None,
+        diff_summary: str | None = None,
+        safety_policy: dict[str, object] | None = None,
+        top_k: int = 5,
+        prepare_repository: bool = True,
+        refresh_repository: bool = False,
+        external_sources: list[dict[str, str]] | None = None,
+    ) -> MCPHealingLoopResponse:
+        try:
+            preparation = None
+            if prepare_repository:
+                preparation = _prepare_repository(
+                    repo_path=repo_path,
+                    refresh=refresh_repository,
+                    external_sources=external_sources,
+                )
+            action_decision = get_decision_service().decide_action(
+                ActionDecisionRequest(
+                    repo_path=repo_path,
+                    action_summary=action_summary,
+                    changed_paths=changed_paths or [],
+                    diff_summary=diff_summary,
+                    safety_policy=safety_policy,
+                    top_k=top_k,
+                )
+            )
+        except ValueError as exc:
+            raise ToolError(str(exc)) from exc
+
+        retry_prompt = ""
+        next_step: Literal["proceed", "repair_and_retry", "inspect_evidence"] = "proceed"
+        if not action_decision.allowed:
+            retry_prompt = _build_retry_prompt(action_decision.decision_record.missing_evidence)
+            next_step = "repair_and_retry" if retry_prompt else "inspect_evidence"
+
+        return MCPHealingLoopResponse(
+            preparation=preparation,
+            action_decision=action_decision,
+            retry_prompt=retry_prompt or None,
+            next_step=next_step,
+            strongest_evidence_sources=[
+                span.source for span in action_decision.decision_record.evidence_spans[:3]
+            ],
+            twin_case_sources=[
+                twin.source for twin in action_decision.decision_record.twin_cases[:3]
+            ],
+        )
+
+    @mcp.tool(
         name="evidence_gate_get_decision",
         description="Fetch a prior decision record by ID from the audit store.",
         annotations=READ_ONLY,
@@ -282,6 +440,37 @@ def create_mcp_server(
                     "If the decision is `abstain` or `escalate`, do not present the change as safe. "
                     "Summarize missing evidence, cite the strongest evidence spans, and inspect any "
                     "returned PR or incident twins before continuing."
+                ),
+            }
+        ]
+
+    @mcp.prompt(
+        name="evidence_gate_fail_explain_repair_retry",
+        title="Run The Evidence Gate Healing Loop",
+        description="Prime an agent to prepare the repo, gate an action, and retry with the returned repair guidance.",
+    )
+    def fail_explain_repair_retry_prompt(
+        repo_path: str,
+        action_summary: str,
+        changed_paths: str = "",
+        diff_summary: str = "",
+    ) -> list[dict[str, str]]:
+        changed_display = changed_paths.strip() or "none provided"
+        diff_display = diff_summary.strip() or "none provided"
+        return [
+            {
+                "role": "user",
+                "content": (
+                    "Run Evidence Gate as a fail-explain-repair-retry loop before changing code.\n"
+                    f"Repository: {repo_path}\n"
+                    f"Proposed action: {action_summary}\n"
+                    f"Changed paths: {changed_display}\n"
+                    f"Diff summary: {diff_display}\n\n"
+                    "1. Call `evidence_gate_prepare_repository` if the knowledge base may be missing or stale.\n"
+                    "2. Call `evidence_gate_gate_action_with_healing`.\n"
+                    "3. If `next_step` is `repair_and_retry`, use `retry_prompt` as the next agent instruction.\n"
+                    "4. If `next_step` is `inspect_evidence`, inspect `missing_evidence`, strongest evidence, and twin cases before editing.\n"
+                    "5. Only continue as if the change is safe when the returned action decision is allowed."
                 ),
             }
         ]
