@@ -116,6 +116,13 @@ surface:
 - It does not yet prove end-to-end solved-task uplift against a live framework such as OpenHands or SWE-agent.
 - It does not yet ship multi-tenant auth, hosted sync, or a production SaaS control plane.
 
+## Get involved
+
+- Star the repo if the reliability-gate angle is useful to your AI agent work.
+- Run the quickstart or demo sandbox on a small repo and open an issue with what breaks or feels unclear.
+- Fork it if you want to add connectors, policy presets, benchmarks, or agent integrations.
+- Open a discussion or issue if you want to compare notes on pilots, CI rollout, or healing-loop evaluations.
+
 ## Repo layout
 
 - `app/`: service, retrieval, blast radius, MCP, and audit code
