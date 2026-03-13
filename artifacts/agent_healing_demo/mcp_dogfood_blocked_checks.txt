@@ -1,0 +1,16 @@
+evidence-gate / mcp-runbook-policy    fail    00m23s
+
+Status: block
+Decision: escalate
+Failure reason: Action blocked because Evidence Gate safety thresholds were violated: Policy requires runbook or operational evidence.
+
+Blast radius:
+- 7 files
+- 2 tests
+- 1 docs
+- 0 runbooks
+
+Strongest evidence:
+- app/evidence_gate/mcp/server.py
+- tests/test_mcp_server.py
+- app/evidence_gate/benchmark/fastapi.py

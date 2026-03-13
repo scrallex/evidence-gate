@@ -1,0 +1,35 @@
+{
+  "demo_type": "dogfood_runbook",
+  "repo": "scrallex/evidence-gate",
+  "repo_url": "https://github.com/scrallex/evidence-gate",
+  "story": {
+    "policy_name": "require_runbook_evidence",
+    "policy_summary": "Organizational standard: MCP workflow changes need operational runbook coverage before merge.",
+    "changed_paths": [
+      "app/evidence_gate/mcp/server.py",
+      "scripts/run_agent_gate.py",
+      "docs/07_mcp_server.md",
+      "tests/test_mcp_server.py",
+      "tests/test_agent_gate_script.py"
+    ],
+    "repair_file": "runbooks/mcp_agent_troubleshooting.md",
+    "repair_prompt": "Evidence Gate blocked the previous attempt because: Safety policy violation: Policy requires runbook or operational evidence. Write the operational runbook for the MCP workflow, then retry the gate.",
+    "repair_summary": "Add failure modes, blast radius, debug commands, and rollback steps for Cursor, Cline, and SWE-agent integrations."
+  },
+  "blocked": {
+    "phase": "blocked",
+    "decision_id": "71099761365840a5b80f09d8c4951540",
+    "comment_path": "/sep/evidence-gate/artifacts/agent_healing_demo/mcp_dogfood_blocked_comment.md",
+    "checks_path": "/sep/evidence-gate/artifacts/agent_healing_demo/mcp_dogfood_blocked_checks.txt",
+    "retry_prompt": "Evidence Gate blocked the previous attempt because: Safety policy violation: Policy requires runbook or operational evidence. Write the operational runbook for the MCP workflow, then retry the gate.",
+    "status": "block"
+  },
+  "healed": {
+    "phase": "healed",
+    "decision_id": "c43b1d837e3b4bea8668a77d2a3b6be4",
+    "comment_path": "/sep/evidence-gate/artifacts/agent_healing_demo/mcp_dogfood_healed_comment.md",
+    "checks_path": "/sep/evidence-gate/artifacts/agent_healing_demo/mcp_dogfood_healed_checks.txt",
+    "retry_prompt": "",
+    "status": "allow"
+  }
+}

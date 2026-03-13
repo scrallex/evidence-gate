@@ -41,6 +41,11 @@ block the agent attempt, emit machine-readable `missing_evidence`, and force
 the next retry to add the missing test, runbook context, or supported file path
 before a human ever has to review the patch.
 
+The repo now also carries a checked-in dogfood example of standards
+enforcement on its own MCP workflow: under a `require_runbook_evidence` policy,
+the integration diff blocked until `runbooks/mcp_agent_troubleshooting.md`
+existed, then admitted on retry.
+
 In the checked-in 50-case FastAPI benchmark, `Evidence Gate structural` reaches
 84.00% binary accuracy with a 0.00% false-admit rate. The baseline reaches
 76.00% binary accuracy with a 48.00% false-admit rate.

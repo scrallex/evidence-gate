@@ -46,6 +46,12 @@ The rendered video artifact in this repository is:
 
 - `artifacts/agent_healing_demo/evidence-gate-healing-loop-demo.mp4`
 
+For engineering-leader and investor conversations, there is now a second
+internal dogfood asset:
+
+- `artifacts/agent_healing_demo/evidence-gate-mcp-runbook-dogfood-demo.mp4`
+- `artifacts/agent_healing_demo/mcp_dogfood_demo_summary.json`
+
 ## Publish the public repo
 
 ```bash
@@ -84,10 +90,19 @@ artifacts/agent_healing_demo/evidence-gate-healing-loop-demo.mp4
 The refreshed sales cut now renders to about 91 seconds and closes with the
 full 300-task `SWE-bench_Lite` replay numbers instead of the old pilot slice.
 
+To render the internal runbook-policy dogfood cut:
+
+```bash
+python scripts/render_agent_healing_video.py \
+  --summary-json artifacts/agent_healing_demo/mcp_dogfood_demo_summary.json \
+  --output artifacts/agent_healing_demo/evidence-gate-mcp-runbook-dogfood-demo.mp4
+```
+
 ## Findings
 
 - the public run exposed a real composite-action manifest bug in `action.yml`; the demo failed until the diff-summary step was rewritten as valid shell
 - the final public PR shows the exact red-to-green healing loop: blocked for missing test evidence, then admitted after the regression test was added
+- the repo now has an internal dogfood demo where Evidence Gate blocked its own MCP integration until `runbooks/mcp_agent_troubleshooting.md` existed under a `require_runbook_evidence` policy
 - the broader benchmark story now matches the demo shape at dataset scale: on the full 300-instance `SWE-bench_Lite` replay, admit rate moved from 32.67% to 50.67% after the healing retry while wrong-file false allows stayed at 1.00%
 
 ## Talk track

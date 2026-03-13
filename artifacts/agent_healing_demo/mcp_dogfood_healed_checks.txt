@@ -1,0 +1,16 @@
+evidence-gate / mcp-runbook-policy    pass    00m24s
+
+Status: allow
+Decision: admit
+Failure reason: none
+
+Blast radius:
+- 8 files
+- 2 tests
+- 1 docs
+- 1 runbooks
+
+Strongest evidence:
+- runbooks/mcp_agent_troubleshooting.md
+- app/evidence_gate/mcp/server.py
+- tests/test_mcp_server.py

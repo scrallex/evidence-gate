@@ -289,6 +289,7 @@ For risky engineering edits:
 - If the server starts but the client sees empty audit or knowledge-base roots, set `EVIDENCE_GATE_AUDIT_ROOT` and `EVIDENCE_GATE_KB_ROOT` to absolute paths.
 - If Cursor or Cline is orchestrating the coding loop directly, prefer `evidence_gate_gate_action_with_healing`; it already returns the retry prompt and next-step guidance.
 - If a shell-tool agent such as SWE-agent is not MCP-native, use `python scripts/run_agent_gate.py` as the bridge tool instead of reimplementing the retry contract in prompts.
+- If you change the MCP workflow in this repo itself, update `runbooks/mcp_agent_troubleshooting.md`; that file is the checked-in operational runbook for this integration surface.
 - If the IDE launches the server outside the repo root, avoid relative paths such as `var/audit`; use absolute paths instead.
 - If you are evaluating the Evidence Gate repo itself, do not reuse repo-local `var/` paths for audit or knowledge-base storage. Use absolute paths outside the checkout, such as `/tmp/evidence-gate-audit` and `/tmp/evidence-gate-kb`.
 - If you want agents to inspect prior system decisions, use `evidence_gate_list_recent_decisions` or read `evidence-gate://audit/decisions.jsonl`.

@@ -97,6 +97,12 @@ def load_full_replay_metrics(benchmark_json: Path) -> dict[str, object]:
     }
 
 
+def format_changed_paths(paths: list[str], *, label: str = "Changed paths:") -> str:
+    if not paths:
+        return f"{label}\n  (not provided)"
+    return label + "\n" + "\n".join(f"  {path}" for path in paths)
+
+
 def write_slide(
     *,
     output_path: Path,
@@ -138,6 +144,9 @@ def write_slide(
 
 
 def slide_specs(summary: dict[str, object], benchmark_metrics: dict[str, object]) -> list[dict[str, object]]:
+    if summary.get("demo_type") == "dogfood_runbook":
+        return dogfood_runbook_slide_specs(summary, benchmark_metrics)
+
     blocked = summary["blocked"]
     healed = summary["healed"]
     repo_url = str(summary["repo_url"])
@@ -275,6 +284,173 @@ def slide_specs(summary: dict[str, object], benchmark_metrics: dict[str, object]
             ),
             "accent": "#38bdf8",
             "footer": "Tagline: AI agents write tech debt. Evidence Gate forces them to write tests and read your docs first.",
+            "duration": 9,
+        },
+    ]
+
+
+def dogfood_runbook_slide_specs(
+    summary: dict[str, object],
+    benchmark_metrics: dict[str, object],
+) -> list[dict[str, object]]:
+    blocked = summary["blocked"]
+    healed = summary["healed"]
+    story = summary.get("story", {})
+    repo_url = str(summary["repo_url"])
+    blocked_comment = Path(str(blocked["comment_path"])).read_text(encoding="utf-8")
+    blocked_checks = Path(str(blocked["checks_path"])).read_text(encoding="utf-8")
+    healed_checks = Path(str(healed["checks_path"])).read_text(encoding="utf-8")
+    retry_prompt = str(blocked.get("retry_prompt", ""))
+    blocked_focus = extract_comment_focus(blocked_comment)
+    changed_paths = [
+        str(path)
+        for path in story.get("changed_paths", [])
+        if isinstance(path, str) and path.strip()
+    ]
+    repair_file = str(story.get("repair_file", "runbooks/mcp_agent_troubleshooting.md"))
+    repair_prompt = str(story.get("repair_prompt", blocked.get("retry_prompt", "")))
+    repair_summary = str(
+        story.get(
+            "repair_summary",
+            "Add the missing operational runbook, then rerun the gate.",
+        )
+    )
+    policy_name = str(story.get("policy_name", "require_runbook_evidence"))
+    policy_summary = str(
+        story.get(
+            "policy_summary",
+            "Organizational standard: operational runbook coverage is required before merge.",
+        )
+    )
+    proof_snippet = (
+        f"Dogfood:\n"
+        f"  policy: {policy_name}\n"
+        f"  blocked: 7 files, 2 tests, 1 docs, 0 runbooks\n"
+        f"  healed: 8 files, 2 tests, 1 docs, 1 runbooks\n\n"
+        f"Benchmark:\n"
+        f"  Tested on {benchmark_metrics['case_count']} SWE-bench Lite tasks\n"
+        f"  Healed {benchmark_metrics['healed_delta']} broken PR-like patches\n"
+        f"  +{benchmark_metrics['uplift_points']:.2f} points admit uplift"
+    )
+
+    return [
+        {
+            "eyebrow": "THE PROBLEM",
+            "title": "AI Agents Can Ship Unmaintainable Integrations",
+            "body": (
+                "A workflow can be technically correct and still fail the team standard. "
+                "Agents often wire up code and tests but skip the operational runbook that "
+                "tells the next engineer how to debug or roll it back."
+            ),
+            "snippet": (
+                "Failure pattern:\n"
+                "  1. MCP workflow lands\n"
+                "  2. regression tests exist\n"
+                "  3. no runbook is written\n"
+                "  4. oncall inherits the ambiguity"
+            ),
+            "accent": "#38bdf8",
+            "footer": "Hook: Evidence Gate can enforce standards, not just summarize risk.",
+            "duration": 8,
+        },
+        {
+            "eyebrow": "1. THE ACTION",
+            "title": "The Agent Changes The MCP Workflow",
+            "body": (
+                "This is Evidence Gate dogfooding itself. The integration adds repo preparation, "
+                "action gating, and a shell bridge for Cursor, Cline, and SWE-agent workflows."
+            ),
+            "snippet": (
+                f"Repo: {repo_url}\n\n"
+                + format_changed_paths(changed_paths)
+            ),
+            "accent": "#f59e0b",
+            "footer": "The diff is useful, but it is still incomplete without operational context.",
+            "duration": 10,
+        },
+        {
+            "eyebrow": "2. THE GATE",
+            "title": "Evidence Gate Blocks The Diff",
+            "body": (
+                "The gate is running with an explicit organizational standard: MCP workflow "
+                "changes need runbook evidence before merge. The code can be real and still fail."
+            ),
+            "snippet": blocked_checks,
+            "accent": "#ef4444",
+            "footer": "Outcome: blocked because the standard was not met, not because a reviewer felt uneasy.",
+            "duration": 11,
+        },
+        {
+            "eyebrow": "3. THE DIAGNOSTIC",
+            "title": "The Block Explains What Is Missing",
+            "body": (
+                "This is the enterprise hook. The gate does not only reject the change. It says "
+                "which standard was violated and returns a retry prompt the agent can act on."
+            ),
+            "snippet": blocked_focus,
+            "accent": "#ef4444",
+            "footer": "The failed check becomes the next machine-readable instruction.",
+            "duration": 12,
+        },
+        {
+            "eyebrow": "4. THE HEAL",
+            "title": "The Agent Writes The Runbook",
+            "body": (
+                "The repair is not another code tweak. The missing evidence is operational. "
+                "The agent adds the MCP troubleshooting runbook with failure modes, debug steps, "
+                "blast radius, and rollback guidance."
+            ),
+            "snippet": (
+                (repair_prompt or "Evidence Gate blocked the previous attempt because the runbook was missing.")
+                + "\n\n"
+                f"New file:\n  {repair_file}\n\n"
+                f"Added:\n  {repair_summary}"
+            ),
+            "accent": "#f59e0b",
+            "footer": "The loop is fail, explain, repair, retry even when the missing artifact is documentation.",
+            "duration": 12,
+        },
+        {
+            "eyebrow": "5. THE RESULT",
+            "title": "The Same Change Turns Green",
+            "body": (
+                "Nothing about the policy changed. The patch got better. Once the runbook exists, "
+                "Evidence Gate can cite it directly and allow the exact same MCP integration diff."
+            ),
+            "snippet": healed_checks,
+            "accent": "#22c55e",
+            "footer": "The gate is enforcing maintainability, not only code correctness.",
+            "duration": 11,
+        },
+        {
+            "eyebrow": "6. THE PROOF",
+            "title": "This Is Standards Enforcement",
+            "body": (
+                f"{policy_summary} Evidence Gate blocked the repo's own change until the runbook "
+                "was written. The same compiler-style retry loop also raises admit rate at benchmark scale."
+            ),
+            "snippet": proof_snippet,
+            "accent": "#38bdf8",
+            "footer": "Use this line: We dogfooded the policy on our own MCP workflow and moved from block to allow by adding the runbook.",
+            "duration": 12,
+        },
+        {
+            "eyebrow": "CLOSE",
+            "title": "Compiler For Agents, With Standards",
+            "body": (
+                "The point is not another PR bot. Evidence Gate can encode what your organization "
+                "requires, stop the agent when that bar is missed, and tell it how to repair the gap."
+            ),
+            "snippet": (
+                "Narrative:\n"
+                "  action -> MCP workflow diff\n"
+                "  gate -> runbook policy violation\n"
+                "  heal -> added troubleshooting runbook\n"
+                "  result -> allow\n"
+                "  proof -> standard enforced by the tool"
+            ),
+            "accent": "#38bdf8",
+            "footer": "Tagline: AI should not create legacy code. Evidence Gate forces the missing operational evidence before merge.",
             "duration": 9,
         },
     ]
