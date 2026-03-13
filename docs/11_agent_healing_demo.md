@@ -87,6 +87,7 @@ The current cut renders to 114 seconds.
 
 - the public run exposed a real composite-action manifest bug in `action.yml`; the demo failed until the diff-summary step was rewritten as valid shell
 - the final public PR shows the exact red-to-green healing loop: blocked for missing test evidence, then admitted after the regression test was added
+- the broader benchmark story now matches the demo shape at dataset scale: on the full 300-instance `SWE-bench_Lite` replay, admit rate moved from 32.67% to 50.67% after the healing retry while wrong-file false allows stayed at 1.00%
 
 ## Talk track
 
@@ -97,3 +98,8 @@ Use this exact message on the final slide or voiceover:
 Short variant for investor or partner conversations:
 
 `This is not another AI PR reviewer. It is a compiler for agents: block, diagnose, retry, then admit.`
+
+Use the benchmark numbers carefully in the spoken pitch:
+
+- say `the healing loop improved admit rate by 18 points on a 300-task SWE-bench Lite replay`
+- do not say `it solved 50.67% of SWE-bench`; this benchmark measures gate admission behavior, not end-to-end task completion

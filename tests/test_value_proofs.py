@@ -116,6 +116,7 @@ def test_render_swebench_replay_report_mentions_compiler_loop_and_limit() -> Non
     )
 
     assert "compiler-like healing loop" in report
+    assert "Absolute admit uplift from healing" in report
     assert "OpenHands or SWE-agent" in report
 
 

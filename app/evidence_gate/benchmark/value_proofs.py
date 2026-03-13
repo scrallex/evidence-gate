@@ -6,6 +6,7 @@ import json
 import shutil
 import subprocess
 import warnings
+from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from statistics import mean
@@ -1154,6 +1155,28 @@ def _select_swebench_instances(
 
 def render_swebench_replay_report(payload: dict[str, Any]) -> str:
     summary = payload["summary"]
+    cases = payload.get("cases", [])
+    case_count = summary["case_count"]
+    initial_allowed_count = sum(1 for case in cases if case.get("initial_gold_allowed"))
+    healed_allowed_count = sum(1 for case in cases if case.get("healed_gold_allowed"))
+    retry_attempt_count = sum(1 for case in cases if case.get("retry_attempted"))
+    healing_success_count = sum(
+        1
+        for case in cases
+        if case.get("retry_attempted") and case.get("healed_gold_allowed")
+    )
+    test_gap_count = sum(1 for case in cases if case.get("initial_missing_test_evidence"))
+    alignment_gap_count = sum(1 for case in cases if case.get("alignment_gap_triggered"))
+    wrong_file_false_allows = [case for case in cases if case.get("decoy_allowed")]
+    wrong_file_false_allow_count = len(wrong_file_false_allows)
+    absolute_uplift = summary["healed_gold_allow_rate"] - summary["initial_gold_allow_rate"]
+    absolute_uplift_points = absolute_uplift * 100.0
+    baseline_allow_count = sum(1 for case in cases if case.get("baseline_predicted_admit"))
+    repo_counts = Counter(str(case["repo"]) for case in cases)
+    top_repos = repo_counts.most_common(3)
+    top_two_share = (
+        sum(count for _, count in repo_counts.most_common(2)) / case_count if case_count else 0.0
+    )
     lines = [
         "# SWE-bench Lite Replay Report",
         "",
@@ -1173,15 +1196,86 @@ def render_swebench_replay_report(payload: dict[str, Any]) -> str:
         "",
         "## Results",
         "",
-        f"- Initial gold-path allow rate: {summary['initial_gold_allow_rate']:.2%}",
-        f"- Healed gold-path allow rate: {summary['healed_gold_allow_rate']:.2%}",
-        f"- Healing retry rate: {summary['healing_retry_rate']:.2%}",
-        f"- Healing success rate: {summary['healing_success_rate']:.2%}",
-        f"- Initial test-gap block rate: {summary['test_gap_block_rate']:.2%}",
-        f"- Wrong-file false-allow rate: {summary['decoy_false_allow_rate']:.2%}",
-        f"- Baseline allow rate: {summary['baseline_allow_rate']:.2%}",
-        f"- Alignment-gap trigger rate: {summary['alignment_gap_trigger_rate']:.2%}",
+        (
+            f"- Initial gold-path allow rate: {summary['initial_gold_allow_rate']:.2%}"
+            + (f" ({initial_allowed_count}/{case_count})" if cases else "")
+        ),
+        (
+            f"- Healed gold-path allow rate: {summary['healed_gold_allow_rate']:.2%}"
+            + (f" ({healed_allowed_count}/{case_count})" if cases else "")
+        ),
+        (
+            f"- Absolute admit uplift from healing: {absolute_uplift_points:+.2f} points"
+            + (
+                f" (+{healed_allowed_count - initial_allowed_count} cases)"
+                if cases
+                else ""
+            )
+        ),
+        (
+            f"- Healing retry rate: {summary['healing_retry_rate']:.2%}"
+            + (f" ({retry_attempt_count}/{case_count})" if cases else "")
+        ),
+        (
+            f"- Healing success rate: {summary['healing_success_rate']:.2%}"
+            + (f" ({healing_success_count}/{max(1, retry_attempt_count)})" if cases else "")
+        ),
+        (
+            f"- Initial test-gap block rate: {summary['test_gap_block_rate']:.2%}"
+            + (f" ({test_gap_count}/{case_count})" if cases else "")
+        ),
+        (
+            f"- Wrong-file false-allow rate: {summary['decoy_false_allow_rate']:.2%}"
+            + (f" ({wrong_file_false_allow_count}/{case_count})" if cases else "")
+        ),
+        (
+            f"- Baseline allow rate: {summary['baseline_allow_rate']:.2%}"
+            + (f" ({baseline_allow_count}/{case_count})" if cases else "")
+        ),
+        (
+            f"- Alignment-gap trigger rate: {summary['alignment_gap_trigger_rate']:.2%}"
+            + (f" ({alignment_gap_count}/{case_count})" if cases else "")
+        ),
         "",
+    ]
+
+    if top_repos:
+        lines.extend(
+            [
+                "## Dataset Concentration",
+                "",
+                f"- Top two repositories account for {top_two_share:.2%} of the evaluated tasks.",
+            ]
+        )
+        for repo, count in top_repos:
+            lines.append(f"- {repo}: {count} cases ({count / case_count:.2%})")
+        lines.append("")
+
+    if wrong_file_false_allows:
+        false_allow_clusters = Counter(
+            ", ".join(case.get("decoy_paths", [])) or "<unknown>"
+            for case in wrong_file_false_allows
+        )
+        dominant_cluster, dominant_cluster_count = false_allow_clusters.most_common(1)[0]
+        lines.extend(
+            [
+                "## Notable Misses",
+                "",
+                (
+                    f"- All {wrong_file_false_allow_count} wrong-file admits came from `{wrong_file_false_allows[0]['repo']}` "
+                    f"and concentrated on `{dominant_cluster}` decoys."
+                )
+                if len({case["repo"] for case in wrong_file_false_allows}) == 1
+                else (
+                    f"- The most common wrong-file admit cluster was `{dominant_cluster}` "
+                    f"({dominant_cluster_count}/{wrong_file_false_allow_count} cases)."
+                ),
+                "",
+            ]
+        )
+
+    lines.extend(
+        [
         "## Interpretation",
         "",
         (
@@ -1190,11 +1284,17 @@ def render_swebench_replay_report(payload: dict[str, Any]) -> str:
             "the missing evidence instead of merely rephrasing the request."
         ),
         (
+            "The full replay is materially less optimistic than the earlier 4-task pilot: the healing loop still "
+            "adds 18 percentage points of admit lift, but most tasks never enter the retry path because the current "
+            "harness only retries when it can identify missing test evidence and a plausible test file."
+        ),
+        (
             "This benchmark still replays official tasks instead of running a full autonomous agent such as "
             "OpenHands or SWE-agent end-to-end. It proves the healing contract, not final task-completion pass rate."
         ),
         "",
-    ]
+        ]
+    )
     return "\n".join(lines)
 
 

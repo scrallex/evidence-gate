@@ -226,8 +226,11 @@ The repo now includes a reproducible benchmark against a real open-source corpus
 - `benchmarks/cases/fastapi_cases.json`: 50 admit/withhold benchmark queries
 - `benchmarks/results/fastapi_structural_vs_baseline.md`: latest checked-in report
 - `scripts/run_fastapi_benchmark.py`: rebuild the corpus and rerun the comparison
-- `benchmarks/results/value_proof_benchmarks.md`: poisoned-corpus, mixed-source, SWE-bench healing-loop, and multi-corpus findings
-- `scripts/run_value_proof_benchmarks.py`: rerun the extended proof suite
+- `benchmarks/results/value_proof_benchmarks.md`: fast proof suite with poisoned-corpus, mixed-source, compact SWE-bench, and multi-corpus findings
+- `scripts/run_value_proof_benchmarks.py`: rerun the fast extended proof suite
+- `benchmarks/results/swebench_lite_full_replay.md`: standalone 300-instance SWE-bench Lite replay report
+- `benchmarks/results/swebench_lite_full_replay.json`: raw per-instance full-replay results
+- `scripts/run_swebench_full_replay.py`: rerun the full 300-instance replay
 
 Current checked-in result:
 
@@ -243,19 +246,19 @@ The broader proof suite now adds four more signals:
 
 - poisoned corpus: 12.50% structural false-admit versus 87.50% for the lexical baseline
 - mixed-source incident blocking: 80.00% incremental block rate when external incident evidence is available
-- SWE-bench replay with healing loop: 25.00% initial gold-path allow, 75.00% healed gold-path allow, and 0.00% wrong-file false-allow
+- full SWE-bench Lite replay: 32.67% initial gold-path allow, 50.67% healed gold-path allow, 18.00 points of admit lift, and 1.00% wrong-file false-allow across 300 official tasks
 - multi-corpus generalization pilot: 12 curated cases across Redis, React, and Vite with 75.00% gold-path allow and 0.00% wrong-file false-allow
 
-The repo also now supports a dedicated full-dataset SWE-bench Lite replay path:
-
-- `scripts/run_swebench_full_replay.py`: runs the full 300-instance replay and writes a standalone report
-- `benchmarks/results/swebench_lite_full_replay.md`: full replay summary artifact
-- `benchmarks/results/swebench_lite_full_replay.json`: raw per-instance results
+The fast `value_proof_benchmarks` artifact still keeps a compact SWE-bench slice
+for runtime, but the standalone full-replay report is now the representative
+dataset-scale evidence for the healing-loop claim.
 
 The current evidence therefore supports a strong false-admit and safety claim,
 an initial compiler-for-agents claim when the agent consumes `missing_evidence`
 and retries, and a cross-language design-partner story across Python, C,
-JavaScript, and TypeScript. It still does not support a universal throughput
+JavaScript, and TypeScript. The stronger statement is now specific: the gate
+improves admit rate on the full SWE-bench Lite replay while still rejecting
+99.00% of wrong-file decoys. It still does not support a universal throughput
 claim, and it still does not prove final autonomous task pass-rate uplift
 against a live framework such as OpenHands or SWE-agent.
 

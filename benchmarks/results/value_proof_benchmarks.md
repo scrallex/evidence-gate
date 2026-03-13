@@ -22,6 +22,13 @@ a SWE-bench replay with a healing retry loop, and a cross-language multi-corpus 
 
 ## 3. SWE-bench Replay With Healing Loop
 
+Fast-suite note:
+the checked-in `value_proof_benchmarks` run still keeps a compact 4-task
+SWE-bench slice so the full proof suite stays lightweight. The representative
+dataset-scale artifact is now `benchmarks/results/swebench_lite_full_replay.md`,
+which reports 32.67% initial gold-path allow, 50.67% healed gold-path allow,
+and 1.00% wrong-file false-allow across all 300 `SWE-bench_Lite` tasks.
+
 - Dataset: princeton-nlp/SWE-bench_Lite
 - Cases: 4 across 4 repositories
 - Initial gold-path allow rate: 25.00%
@@ -50,14 +57,14 @@ Per-repository detail:
 
 - Evidence Gate retains a much lower false-admit profile than a lexical baseline on deliberately poisoned corpora.
 - External incident evidence can now block a change that a repo-only review would otherwise allow.
-- On the SWE-bench replay, changed-path alignment blocked every wrong-file decoy while the healing loop raised gold-path allow from 25.00% to 75.00%.
+- On the compact SWE-bench replay, changed-path alignment blocked every wrong-file decoy while the healing loop raised gold-path allow from 25.00% to 75.00%. On the standalone 300-task replay, the same pattern persists with a more realistic 32.67% to 50.67% uplift and 1.00% wrong-file false-allow.
 - The healing loop turns `missing_evidence` into a compiler-like retry instruction instead of treating `escalate` as a terminal failure.
 - After the JS or TS test-classification and workspace-alias fixes, the cross-language pilot reached 75.00% gold-path allow with 0.00% false-allow.
 
 ## Limitations
 
 - The SWE-bench run is a replay benchmark over official tasks, not a full autonomous-agent pass-rate study.
-- The checked-in SWE-bench pilot uses a 4-repo slice by default so the run completes in a reasonable time; scale it out with the script flags when you want a longer sweep.
+- The checked-in fast SWE-bench slice uses a 4-repo sample by default so the full proof suite completes quickly; use `benchmarks/results/swebench_lite_full_replay.md` for the full 300-task result.
 - The mixed-source benchmark is synthetic but exercises the live Jira, PagerDuty, Slack, and Confluence ingestors.
 - The multi-corpus pilot is still a curated slice; scale it out to more repositories and cases if you need a broader confidence interval.
 - The cross-language source-hit rate is still only 33.33%, so JS or TS workspace-to-source linking remains partial.

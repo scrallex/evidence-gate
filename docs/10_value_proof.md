@@ -47,26 +47,46 @@ change.
 
 ## 3. SWE-bench replay with healing loop
 
+Artifacts:
+
+- [swebench_lite_full_replay.md](/sep/evidence-gate/benchmarks/results/swebench_lite_full_replay.md)
+- [swebench_lite_full_replay.json](/sep/evidence-gate/benchmarks/results/swebench_lite_full_replay.json)
+
 Question:
 does the gate both reject wrong-file proposals and help an agent repair an
 initially incomplete patch on real benchmark tasks?
 
 Current result:
 
-- 4 official `SWE-bench_Lite` tasks across 4 repositories
-- initial gold-path allow rate: 25.00%
-- healed gold-path allow rate: 75.00%
-- healing retry rate: 75.00%
-- healing success rate: 66.67%
-- decoy-path false-allow rate: 0.00%
-- lexical baseline allow rate: 100.00%
+- 300 official `SWE-bench_Lite` tasks across 12 repositories
+- initial gold-path allow rate: 32.67% (`98/300`)
+- healed gold-path allow rate: 50.67% (`152/300`)
+- absolute admit uplift from healing: `+18.00` points (`+54` cases)
+- healing retry rate: 26.00% (`78/300`)
+- healing success rate: 69.23% (`54/78`)
+- initial test-gap block rate: 49.00% (`147/300`)
+- decoy-path false-allow rate: 1.00% (`3/300`)
+- alignment-gap trigger rate: 99.00% (`297/300`)
+- lexical baseline allow rate: 100.00% (`300/300`)
 
 Interpretation:
-this is the first concrete uplift proof in the repo. Once the benchmark uses an
-open-source safety policy and feeds `missing_evidence` back into the retry
-prompt, the gate admits three of four gold paths while still rejecting every
-wrong-file decoy. The remaining failed case healed into a path-alignment miss,
-which is a real guardrail signal rather than a missing-test problem.
+the 300-instance run is more credible and less flattering than the old 4-task
+pilot. The core claim still holds: when the harness can identify missing test
+evidence and a plausible retry path, the gate turns a block into structured
+repair guidance and lifts admit rate by 18 percentage points without turning
+into a blanket allow.
+
+The right way to read the remaining gap is not "the healing loop failed." Most
+tasks never entered the retry path at all because the current harness only
+retries missing-test cases where it can nominate a candidate test file. That is
+why the replay shows 78 retries instead of 300. The benchmark is proving the
+healing contract, not an unconstrained auto-fix policy.
+
+Where the current system is still weak:
+
+- the dataset is concentrated: `django/django` and `sympy/sympy` account for `191/300` cases, or 63.67% of the run
+- all three wrong-file false allows came from `sphinx-doc/sphinx`, each admitting a `.circleci/config.yml` decoy with no alignment warning
+- `147/300` initial blocks were test-gap blocks, which means test discovery and test-to-code linking remain the highest-leverage path for future uplift
 
 Why this matters:
 this is the core "compiler for agents" claim. A human-facing PR reviewer can
@@ -74,12 +94,11 @@ describe the missing test after the fact. Evidence Gate instead turns the block
 into structured repair guidance that an agent can consume immediately on the
 next attempt.
 
-Full-dataset replay:
-the repo now includes a dedicated `scripts/run_swebench_full_replay.py` path
-for a 300-instance `SWE-bench_Lite` replay. That is the right next proof layer
-for the current harness because the previous default only sampled one instance
-per repository. Even that full replay is still a replay benchmark, not an
-end-to-end autonomous pass-rate study with OpenHands or SWE-agent.
+Limit:
+even this completed full replay is still a replay benchmark, not an end-to-end
+autonomous pass-rate study with OpenHands or SWE-agent. It proves that the gate
+can block, diagnose, and help repair some benchmark tasks. It does not yet
+prove final solved-task uplift against a live coding agent.
 
 ## 4. Multi-corpus generalization pilot
 
