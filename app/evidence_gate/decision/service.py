@@ -41,6 +41,7 @@ from evidence_gate.decision.models import (
     TwinCase,
 )
 from evidence_gate.retrieval.repository import SearchHit
+from evidence_gate.retrieval.repository import classify_source_type
 from evidence_gate.retrieval.structural import (
     CONFLUENCE_SOURCE_KIND,
     GITHUB_SOURCE_KIND,
@@ -833,7 +834,10 @@ class DecisionService:
     def _compute_blast_radius(self, repo_root: Path, focus_paths: list[str]) -> BlastRadius:
         if not focus_paths:
             return BlastRadius()
-        analyzer = ASTDependencyAnalyzer(repo_root)
+        analyzer = ASTDependencyAnalyzer(
+            repo_root,
+            cache_root=self.settings.ast_cache.root if self.settings.ast_cache.enabled else None,
+        )
         analyzer.build_dependency_graph()
         return analyzer.summarize(focus_paths)
 
@@ -930,8 +934,13 @@ class DecisionService:
     ) -> tuple[DecisionRecord, list[str]]:
         record = self._recalibrate_record_for_corpus(record, policy)
         policy_violations: list[str] = []
-        has_test_support = any(span.source_type == SourceType.TEST for span in record.evidence_spans)
-        has_runbook_support = any(span.source_type == SourceType.RUNBOOK for span in record.evidence_spans)
+        changed_paths = self._request_changed_paths(record)
+        has_test_support = any(span.source_type == SourceType.TEST for span in record.evidence_spans) or any(
+            classify_source_type(path) == SourceType.TEST for path in changed_paths
+        )
+        has_runbook_support = any(span.source_type == SourceType.RUNBOOK for span in record.evidence_spans) or any(
+            classify_source_type(path) == SourceType.RUNBOOK for path in changed_paths
+        )
         has_precedent = bool(record.twin_cases)
         has_incident_precedent = any(twin.source_type == SourceType.INCIDENT for twin in record.twin_cases)
 
@@ -1025,7 +1034,9 @@ class DecisionService:
             span.verified and span.source_type in {SourceType.DOC, SourceType.TEST}
             for span in record.evidence_spans
         )
-        has_test_support = any(span.source_type == SourceType.TEST for span in record.evidence_spans)
+        has_test_support = any(span.source_type == SourceType.TEST for span in record.evidence_spans) or any(
+            classify_source_type(path) == SourceType.TEST for path in self._request_changed_paths(record)
+        )
         if _PATH_ALIGNMENT_GAP_NOTE in record.missing_evidence:
             return False
         if _WARNING_EVIDENCE_NOTE in record.missing_evidence:
@@ -1064,7 +1075,12 @@ class DecisionService:
         warning_evidence_hit: bool = False,
     ) -> list[str]:
         missing: list[str] = []
-        has_test_support = any(span.source_type == SourceType.TEST for span in evidence_spans)
+        has_test_support = any(span.source_type == SourceType.TEST for span in evidence_spans) or any(
+            classify_source_type(path) == SourceType.TEST for path in changed_paths
+        )
+        has_runbook_support = any(span.source_type == SourceType.RUNBOOK for span in evidence_spans) or any(
+            classify_source_type(path) == SourceType.RUNBOOK for path in changed_paths
+        )
         if not evidence_spans:
             missing.append("No directly supporting code or documentation was found.")
         if evidence_spans and not any(span.verified for span in evidence_spans):
@@ -1079,11 +1095,18 @@ class DecisionService:
                 missing.append(_NO_FRONTEND_TEST_EVIDENCE_NOTE)
             else:
                 missing.append(_NO_TEST_EVIDENCE_NOTE)
-        if not any(span.source_type == SourceType.RUNBOOK for span in evidence_spans):
+        if not has_runbook_support:
             missing.append(_NO_RUNBOOK_EVIDENCE_NOTE)
         if not twin_cases:
             missing.append(_NO_PRECEDENT_NOTE)
         return missing
+
+    def _request_changed_paths(self, record: DecisionRecord) -> list[str]:
+        payload = record.request_payload
+        raw_paths = payload.get("changed_paths", [])
+        if not isinstance(raw_paths, list):
+            return []
+        return [str(item) for item in raw_paths if isinstance(item, str) and str(item).strip()]
 
     def _decide(
         self,

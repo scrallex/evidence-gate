@@ -7,8 +7,16 @@ import argparse
 import json
 import os
 from pathlib import Path
+import sys
 from typing import Any
 from urllib import error, request
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+APP_ROOT = REPO_ROOT / "app"
+if str(APP_ROOT) not in sys.path:
+    sys.path.insert(0, str(APP_ROOT))
+
+from evidence_gate.policy_loader import resolve_action_safety_policy
 
 from format_pr_comment import build_comment, build_retry_prompt
 from live_connector_exports import materialize_live_external_sources
@@ -116,6 +124,8 @@ def main() -> int:
     parser.add_argument("--external-sources-json", default="[]")
     parser.add_argument("--diff-summary")
     parser.add_argument("--safety-policy-json", default="")
+    parser.add_argument("--safety-policy-file", default="")
+    parser.add_argument("--safety-policy-preset", default="")
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--timeout-seconds", type=int, default=90)
     parser.add_argument("--live-output-root")
@@ -171,12 +181,15 @@ def main() -> int:
             timeout_seconds=args.timeout_seconds,
         )
     external_sources = _merge_external_sources(external_sources, live_external_sources)
-    safety_policy: dict[str, Any] | None = None
-    if args.safety_policy_json:
-        loaded_policy = json.loads(args.safety_policy_json)
-        if not isinstance(loaded_policy, dict):
-            raise SystemExit("--safety-policy-json must be a JSON object")
-        safety_policy = loaded_policy
+    try:
+        safety_policy = resolve_action_safety_policy(
+            inline_json=args.safety_policy_json,
+            preset=args.safety_policy_preset,
+            file_path=args.safety_policy_file,
+            cwd=Path.cwd(),
+        )
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
 
     ingest_payload: dict[str, Any] = {}
     if not args.skip_ingest:

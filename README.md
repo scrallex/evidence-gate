@@ -23,6 +23,8 @@ proceeds.
 - uses Tree-sitter-backed JavaScript and TypeScript analysis plus optional
   LSIF/SCIP sidecars to improve blast radius on React, Node, and other
   non-Python repos
+- persists AST parse results for unchanged files so blast-radius analysis can
+  reuse structural edges on large monorepos instead of reparsing everything
 - ingests optional LSIF or SCIP sidecars from `.evidence-gate/graphs` to improve
   blast radius and retrieval on dynamic or non-Python repos
 - answers change-impact and engineering evidence queries
@@ -74,6 +76,9 @@ It is suitable today for:
 It is not yet ready as a self-serve product or production deployment. The main
 gaps are production hardening, broader CI adoption, partner validation on
 private corpora, prebuilt CI packaging, and hosted sync beyond mounted export data.
+
+Security and privacy posture for enterprise pilots is documented in
+[docs/12_security_and_privacy.md](/sep/evidence-gate/docs/12_security_and_privacy.md).
 
 ## Quickstart
 
@@ -211,6 +216,21 @@ That script keeps a small state file so each run can poll from the last
 successful sync instead of rebuilding the whole export surface every time. The
 operational runbook for token rotation, poll cadence, and cursor repair lives
 at `runbooks/live_connector_operations.md`.
+
+Use a built-in YAML policy preset instead of writing inline JSON from scratch:
+
+```bash
+python scripts/run_agent_gate.py \
+  --repo-path /absolute/path/to/repo \
+  --action-summary "Review the checkout flow before merge." \
+  --changed-path apps/web/src/routes/CheckoutPage.tsx \
+  --safety-policy-preset agile-frontend
+```
+
+Built-in presets currently ship in `policies/`:
+
+- `strict-financial`
+- `agile-frontend`
 
 Ask a change-impact question:
 

@@ -173,7 +173,7 @@ The repo ships a root [action.yml](/sep/evidence-gate/action.yml) that:
 - optionally fetches recent Jira, Confluence, Slack, or PagerDuty context when those credentials are set
 - still accepts explicit `external_sources` when you want mounted corpora
 - computes a diff summary from `base_sha` and `head_sha` when available
-- calls `POST /v1/decide/action` with optional `safety_policy`
+- calls `POST /v1/decide/action` with optional inline, file-backed, or preset safety policy
 - writes a formatted PR comment markdown file
 - optionally fails the workflow when the action is blocked
 
@@ -235,16 +235,9 @@ jobs:
           slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
           slack_channel_ids: ${{ vars.SLACK_CHANNEL_IDS }}
           pagerduty_token: ${{ secrets.PAGERDUTY_TOKEN }}
-          safety_policy: >-
-            {"max_blast_radius_files":6,"max_hazard":0.45,"min_confidence":0.55,"require_test_evidence":true,"require_precedent":true,"require_incident_precedent":true}
+          safety_policy_preset: strict-financial
       - name: Enforce only after shadow review
         if: ${{ env.GATING_MODE != 'shadow' && steps.evidence_gate.outputs.allowed != 'true' }}
-        shell: bash
-        run: |
-          echo "Evidence Gate blocked this pull request." >&2
-          exit 1
-      - name: Enforce guardrail decision
-        if: ${{ steps.evidence_gate.outputs.allowed != 'true' }}
         shell: bash
         run: |
           echo "Evidence Gate blocked this pull request." >&2
@@ -264,6 +257,8 @@ The action exposes:
 - `retry_prompt`
 - `response_path`
 - `comment_path`
+- `ingest_status`
+- `repo_fingerprint`
 
 For autonomous-agent evaluations, prefer `GATING_MODE=shadow` on the first
 pass. The action will still ingest the repo, calculate the real decision, write
@@ -272,8 +267,11 @@ would have blocked. Read the blocked response, inject the `missing_evidence`
 strings back into the agent prompt or feed `retry_prompt` directly into the
 next attempt, and only move to enforce mode after the partner is comfortable
 with the shadow-mode results.
-- `ingest_status`
-- `repo_fingerprint`
+
+Built-in zero-config presets now ship in `policies/`:
+
+- `strict-financial`
+- `agile-frontend`
 
 In this repository, the same pattern is already wired in
 [evidence-gate-guardrail.yml](/sep/evidence-gate/.github/workflows/evidence-gate-guardrail.yml).
@@ -287,6 +285,8 @@ read-only tokens. It stores per-source sync cursors in a local state file so
 each pass only asks for newly updated context.
 The runbook for token rotation, safe poll cadence, and cursor repair is
 `runbooks/live_connector_operations.md`.
+The security and privacy posture for remote or local model backends is
+documented in [12_security_and_privacy.md](/sep/evidence-gate/docs/12_security_and_privacy.md).
 
 ## 7. What a partner should provide for a useful evaluation
 

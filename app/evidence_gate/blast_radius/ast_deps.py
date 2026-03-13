@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import ast
+import hashlib
 import json
 import posixpath
 import re
 from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 from evidence_gate.decision.models import BlastRadius
 from evidence_gate.native_graph import load_repository_native_graph
@@ -18,6 +20,8 @@ from evidence_gate.structural.tree_sitter_support import (
     frontend_anchor_tokens,
     is_frontend_code_path,
 )
+
+AST_PARSE_CACHE_VERSION = 1
 
 
 @dataclass
@@ -50,15 +54,20 @@ class ASTDependencyAnalyzer:
         ".hpp",
     }
 
-    def __init__(self, repo_root: Path):
+    def __init__(self, repo_root: Path, *, cache_root: Path | None = None):
         self.repo_root = Path(repo_root)
+        self.cache_root = cache_root.resolve() if cache_root is not None else None
         self.dependencies: dict[str, DependencyInfo] = {}
         self.module_to_file: dict[str, str] = {}
         self.workspace_roots: dict[str, str] = {}
         self.native_graph = load_repository_native_graph(self.repo_root)
 
     def build_dependency_graph(self) -> None:
+        self.dependencies = {}
+        self.module_to_file = {}
         self.workspace_roots = self._discover_workspace_roots()
+        parse_cache = self._load_parse_cache()
+        next_cache: dict[str, dict[str, Any]] = {}
         source_files = [
             path
             for path in self.repo_root.rglob("*")
@@ -69,16 +78,37 @@ class ASTDependencyAnalyzer:
 
         for source_file in source_files:
             rel_path = source_file.relative_to(self.repo_root).as_posix()
-            module_name = self._file_to_module(source_file)
+            stat = source_file.stat()
+            cache_entry = parse_cache.get(rel_path)
+            cache_hit = self._cache_entry_matches(cache_entry, stat.st_size, stat.st_mtime_ns)
+            if cache_hit:
+                module_name = str(cache_entry.get("module_name", ""))
+                imports = {
+                    str(item)
+                    for item in cache_entry.get("imports", [])
+                    if isinstance(item, str)
+                }
+                defined_symbols = {
+                    str(item)
+                    for item in cache_entry.get("defined_symbols", [])
+                    if isinstance(item, str)
+                }
+                referenced_symbols = {
+                    str(item)
+                    for item in cache_entry.get("referenced_symbols", [])
+                    if isinstance(item, str)
+                }
+            else:
+                module_name = self._file_to_module(source_file)
+                imports = self._extract_imports(source_file)
+                defined_symbols: set[str] = set()
+                referenced_symbols: set[str] = set()
+                tree_sitter_analysis = analyze_js_ts_file(source_file)
+                if tree_sitter_analysis is not None:
+                    imports |= tree_sitter_analysis.imports
+                    defined_symbols = tree_sitter_analysis.defined_symbols
+                    referenced_symbols = tree_sitter_analysis.referenced_symbols
             self.module_to_file[module_name] = rel_path
-            imports = self._extract_imports(source_file)
-            defined_symbols: set[str] = set()
-            referenced_symbols: set[str] = set()
-            tree_sitter_analysis = analyze_js_ts_file(source_file)
-            if tree_sitter_analysis is not None:
-                imports |= tree_sitter_analysis.imports
-                defined_symbols = tree_sitter_analysis.defined_symbols
-                referenced_symbols = tree_sitter_analysis.referenced_symbols
             self.dependencies[rel_path] = DependencyInfo(
                 file_path=rel_path,
                 imports=imports,
@@ -86,6 +116,14 @@ class ASTDependencyAnalyzer:
                 referenced_symbols=referenced_symbols,
                 frontend_tokens=frontend_anchor_tokens(rel_path),
             )
+            next_cache[rel_path] = {
+                "module_name": module_name,
+                "imports": sorted(imports),
+                "defined_symbols": sorted(defined_symbols),
+                "referenced_symbols": sorted(referenced_symbols),
+                "size": stat.st_size,
+                "mtime_ns": stat.st_mtime_ns,
+            }
 
         for file_path, dependency in self.dependencies.items():
             for imported_module in dependency.imports:
@@ -96,6 +134,7 @@ class ASTDependencyAnalyzer:
         self._apply_native_graph_edges()
         self._apply_symbol_reference_edges()
         self._apply_frontend_test_edges()
+        self._persist_parse_cache(next_cache)
 
     def impacted_files(self, file_path: str) -> set[str]:
         return set(self._importer_depths(file_path))
@@ -412,3 +451,54 @@ class ASTDependencyAnalyzer:
             if parent_name and parent_name in overlap:
                 return True
         return len(overlap) >= 2 or len(source_tokens) == 1
+
+    def _load_parse_cache(self) -> dict[str, dict[str, Any]]:
+        cache_path = self._cache_file_path()
+        if cache_path is None or not cache_path.exists():
+            return {}
+        try:
+            payload = json.loads(cache_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            return {}
+        if not isinstance(payload, dict):
+            return {}
+        if payload.get("version") != AST_PARSE_CACHE_VERSION:
+            return {}
+        entries = payload.get("entries")
+        if not isinstance(entries, dict):
+            return {}
+        normalized: dict[str, dict[str, Any]] = {}
+        for key, value in entries.items():
+            if isinstance(key, str) and isinstance(value, dict):
+                normalized[key] = value
+        return normalized
+
+    def _persist_parse_cache(self, entries: dict[str, dict[str, Any]]) -> None:
+        cache_path = self._cache_file_path()
+        if cache_path is None:
+            return
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "version": AST_PARSE_CACHE_VERSION,
+            "repo_root": str(self.repo_root.resolve()),
+            "entries": entries,
+        }
+        tmp_path = cache_path.with_suffix(".tmp")
+        tmp_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+        tmp_path.replace(cache_path)
+
+    def _cache_file_path(self) -> Path | None:
+        if self.cache_root is None:
+            return None
+        repo_hash = hashlib.sha256(str(self.repo_root.resolve()).encode("utf-8")).hexdigest()[:16]
+        return self.cache_root / f"{repo_hash}.json"
+
+    def _cache_entry_matches(
+        self,
+        cache_entry: dict[str, Any] | None,
+        size: int,
+        mtime_ns: int,
+    ) -> bool:
+        if not isinstance(cache_entry, dict):
+            return False
+        return cache_entry.get("size") == size and cache_entry.get("mtime_ns") == mtime_ns

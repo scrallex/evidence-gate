@@ -16,6 +16,7 @@ if str(APP_ROOT) not in sys.path:
 from evidence_gate.api.main import get_decision_service
 from evidence_gate.decision.models import ActionDecisionRequest
 from evidence_gate.mcp.server import _build_retry_prompt, _prepare_repository
+from evidence_gate.policy_loader import resolve_action_safety_policy
 
 
 def _parse_external_source(raw_value: str) -> dict[str, str]:
@@ -70,12 +71,30 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Optional inline JSON object for the action safety policy.",
     )
+    parser.add_argument(
+        "--safety-policy-file",
+        default=None,
+        help="Optional YAML or JSON file describing the action safety policy.",
+    )
+    parser.add_argument(
+        "--safety-policy-preset",
+        default=None,
+        help="Optional built-in policy preset name from the policies/ directory.",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
-    safety_policy = json.loads(args.safety_policy_json) if args.safety_policy_json else None
+    try:
+        safety_policy = resolve_action_safety_policy(
+            inline_json=args.safety_policy_json,
+            preset=args.safety_policy_preset,
+            file_path=args.safety_policy_file,
+            cwd=Path.cwd(),
+        )
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
 
     preparation = None
     if not args.skip_prepare:

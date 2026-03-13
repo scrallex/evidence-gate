@@ -1,0 +1,13 @@
+# Evidence Gate built-in preset for high-risk financial systems.
+# Use when money movement, ledger correctness, or regulated operational flows
+# should not merge without explicit tests, runbook coverage, and precedent.
+
+corpus_profile: enterprise
+max_blast_radius_files: 4
+max_hazard: 0.35
+min_confidence: 0.6
+require_test_evidence: true
+require_runbook_evidence: true
+require_precedent: true
+require_incident_precedent: true
+escalate_on_incident_match: true

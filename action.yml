@@ -88,6 +88,14 @@ inputs:
     description: JSON object describing explicit safety thresholds for the action gate.
     required: false
     default: ""
+  safety_policy_preset:
+    description: Optional built-in YAML policy preset from the action's policies/ directory, for example strict-financial or agile-frontend.
+    required: false
+    default: ""
+  safety_policy_file:
+    description: Optional YAML or JSON safety policy file path, usually relative to the checked-out repository.
+    required: false
+    default: ""
   repo_path:
     description: Repository path visible to the Evidence Gate service. Defaults to /workspace/target when start_service=true.
     required: false
@@ -222,6 +230,8 @@ runs:
         SLACK_CHANNEL_IDS: ${{ inputs.slack_channel_ids }}
         PAGERDUTY_TOKEN: ${{ inputs.pagerduty_token }}
         SAFETY_POLICY_JSON: ${{ inputs.safety_policy }}
+        SAFETY_POLICY_PRESET: ${{ inputs.safety_policy_preset }}
+        SAFETY_POLICY_FILE: ${{ inputs.safety_policy_file }}
         REPO_PATH_INPUT: ${{ inputs.repo_path }}
         API_URL: ${{ inputs.api_url }}
         START_SERVICE: ${{ inputs.start_service }}
@@ -290,6 +300,8 @@ runs:
           --pagerduty-lookback-days "$LIVE_LOOKBACK_DAYS" \
           --diff-summary "$DIFF_SUMMARY" \
           --safety-policy-json "$SAFETY_POLICY_JSON" \
+          --safety-policy-preset "$SAFETY_POLICY_PRESET" \
+          --safety-policy-file "$SAFETY_POLICY_FILE" \
           --output "$RUNNER_TEMP/evidence-gate-action.json" \
           --comment-output "$RUNNER_TEMP/evidence-gate-comment.md" \
           --github-output "$GITHUB_OUTPUT" \

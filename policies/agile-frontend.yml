@@ -1,0 +1,13 @@
+# Evidence Gate built-in preset for fast-moving frontend teams.
+# Use when UI and React/TypeScript work must prove test coverage, but minor
+# component or route changes should not require prior incident precedent.
+
+corpus_profile: enterprise
+max_blast_radius_files: 10
+max_hazard: 0.55
+min_confidence: 0.4
+require_test_evidence: true
+require_runbook_evidence: false
+require_precedent: false
+require_incident_precedent: false
+escalate_on_incident_match: false

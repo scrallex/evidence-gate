@@ -169,3 +169,78 @@ def test_ast_dependency_analyzer_tracks_dynamic_tsx_imports_into_frontend_tests(
 
     assert "apps/web/src/routes/DashboardPage.tsx" in impacted
     assert "apps/web/src/routes/__tests__/DashboardPage.test.tsx" in impacted
+
+
+def test_ast_dependency_analyzer_reuses_persistent_parse_cache(tmp_path: Path, monkeypatch) -> None:
+    repo_root = tmp_path / "cached_repo"
+    cache_root = tmp_path / "ast-cache"
+    _write(
+        repo_root / "pkg" / "a.py",
+        "from pkg.b import b\n\n"
+        "def a():\n"
+        "    return b()\n",
+    )
+    _write(
+        repo_root / "pkg" / "b.py",
+        "def b():\n"
+        "    return 'ok'\n",
+    )
+
+    analyzer = ASTDependencyAnalyzer(repo_root, cache_root=cache_root)
+    analyzer.build_dependency_graph()
+
+    def _fail_extract(*args, **kwargs):
+        raise AssertionError("unchanged files should reuse the persistent AST parse cache")
+
+    monkeypatch.setattr(ASTDependencyAnalyzer, "_extract_imports", _fail_extract)
+
+    warm_analyzer = ASTDependencyAnalyzer(repo_root, cache_root=cache_root)
+    warm_analyzer.build_dependency_graph()
+
+    assert warm_analyzer.impacted_files("pkg/b.py") == {"pkg/a.py", "pkg/b.py"}
+
+
+def test_ast_dependency_analyzer_reparses_only_changed_files(tmp_path: Path, monkeypatch) -> None:
+    repo_root = tmp_path / "cached_repo"
+    cache_root = tmp_path / "ast-cache"
+    _write(
+        repo_root / "pkg" / "a.py",
+        "from pkg.b import b\n\n"
+        "def a():\n"
+        "    return b()\n",
+    )
+    _write(
+        repo_root / "pkg" / "b.py",
+        "def b():\n"
+        "    return 'ok'\n",
+    )
+
+    analyzer = ASTDependencyAnalyzer(repo_root, cache_root=cache_root)
+    analyzer.build_dependency_graph()
+
+    _write(
+        repo_root / "pkg" / "b.py",
+        "from pkg.c import c\n\n"
+        "def b():\n"
+        "    return c()\n",
+    )
+    _write(
+        repo_root / "pkg" / "c.py",
+        "def c():\n"
+        "    return 'updated'\n",
+    )
+
+    original_extract = ASTDependencyAnalyzer._extract_imports
+    parsed_files: list[str] = []
+
+    def _tracking_extract(self, file_path: Path) -> set[str]:
+        parsed_files.append(file_path.relative_to(repo_root).as_posix())
+        return original_extract(self, file_path)
+
+    monkeypatch.setattr(ASTDependencyAnalyzer, "_extract_imports", _tracking_extract)
+
+    warm_analyzer = ASTDependencyAnalyzer(repo_root, cache_root=cache_root)
+    warm_analyzer.build_dependency_graph()
+
+    assert sorted(parsed_files) == ["pkg/b.py", "pkg/c.py"]
+    assert "pkg/a.py" in warm_analyzer.impacted_files("pkg/c.py")

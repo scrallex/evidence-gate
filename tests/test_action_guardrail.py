@@ -355,3 +355,78 @@ def test_run_action_guardrail_shadow_mode_does_not_fail_blocked_action(
     output_lines = github_output.read_text(encoding="utf-8").splitlines()
     assert "gating_mode=shadow" in output_lines
     assert "shadow_blocked=true" in output_lines
+
+
+def test_run_action_guardrail_loads_policy_preset_and_file_override(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    calls: dict[str, object] = {}
+    custom_policy = tmp_path / "custom-policy.yml"
+    custom_policy.write_text("max_blast_radius_files: 7\nrequire_runbook_evidence: true\n", encoding="utf-8")
+
+    def _fake_action_endpoint(
+        *,
+        api_url: str,
+        repo_path: str,
+        action_summary: str,
+        changed_paths: list[str],
+        diff_summary: str | None,
+        safety_policy: dict[str, object] | None,
+        top_k: int,
+        timeout_seconds: int,
+    ) -> tuple[int, dict[str, object]]:
+        calls["safety_policy"] = safety_policy
+        return 200, {
+            "allowed": True,
+            "status": "allow",
+            "policy_violations": [],
+            "decision_record": {
+                "decision": "admit",
+                "decision_id": "decision-policy-1",
+                "blast_radius": {"files": 1, "tests": 1, "docs": 0, "runbooks": 1},
+                "missing_evidence": [],
+                "twin_cases": [],
+                "evidence_spans": [{"source": "tests/ui/button.test.tsx"}],
+                "explanation": "Decision admit with preset-backed policy.",
+            },
+        }
+
+    monkeypatch.setattr(run_action_guardrail, "_call_ingest_endpoint", lambda **_: (200, {"status": "built", "repo_fingerprint": "repo-policy"}))
+    monkeypatch.setattr(run_action_guardrail, "_call_action_endpoint", _fake_action_endpoint)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "run_action_guardrail.py",
+            "--api-url",
+            "http://127.0.0.1:8000",
+            "--repo-path",
+            "/workspace/target",
+            "--action-summary",
+            "Review the frontend PR before merge.",
+            "--changed-paths-json",
+            '["apps/web/src/components/Button.tsx"]',
+            "--safety-policy-preset",
+            "agile-frontend",
+            "--safety-policy-file",
+            str(custom_policy),
+            "--safety-policy-json",
+            '{"min_confidence":0.55}',
+        ],
+    )
+
+    exit_code = run_action_guardrail.main()
+
+    assert exit_code == 0
+    assert calls["safety_policy"] == {
+        "corpus_profile": "enterprise",
+        "max_blast_radius_files": 7,
+        "max_hazard": 0.55,
+        "min_confidence": 0.55,
+        "require_test_evidence": True,
+        "require_runbook_evidence": True,
+        "require_precedent": False,
+        "require_incident_precedent": False,
+        "escalate_on_incident_match": False,
+    }

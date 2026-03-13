@@ -106,6 +106,7 @@ jobs:
           jira_user_email: ${{ vars.JIRA_USER_EMAIL }}
           jira_project_keys: ${{ vars.JIRA_PROJECT_KEYS }}
           pagerduty_token: ${{ secrets.PAGERDUTY_TOKEN }}
+          safety_policy_preset: strict-financial
           safety_policy: ${{ steps.gate_inputs.outputs.safety_policy }}
 
       - name: Upsert Evidence Gate PR comment
